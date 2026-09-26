@@ -31,6 +31,7 @@ export const offers: readonly Offer[] = [
       "Complaints and refund requests reach a person within 10 minutes in business hours.",
       "A booking is confirmed only after code checks the slot against the calendar.",
       "Payments are links the customer taps; the concierge never asks for card or bank details in chat.",
+      "The concierge only handles this business's own questions, orders and bookings: WhatsApp's Business API has banned general-purpose AI chatbots since January 2026.",
     ],
     review: "The owner approves every new answer before it goes live; conversations below 0.7 confidence are flagged daily.",
     delivery: "Live site, WhatsApp concierge, and a weekly WhatsApp summary of what customers asked.",

@@ -81,7 +81,7 @@ Edit `packages/catalog/src/offers.ts` and nothing else. The directory, offer pag
 
 ## The rulebook
 
-A person correcting an agent's output is a new rule. Log it in `company/ops/rulebook-log.md` (date, job, what was wrong, the rule), then fold it into the offer's `rulebook` in the catalog and into the matching playbook in `company/ops/playbooks/`. The rulebook is the moat; don't let corrections evaporate.
+A person correcting an agent's output is a new rule. Log it in `company/ops/rulebook-log.md` (date, job, what was wrong, the rule), then fold it into the offer's `rulebook` in the catalog and into the matching playbook in `company/ops/playbooks/`. The rulebook is the moat; don't let corrections evaporate. Rules that come from research or a platform's policy skip the log: add them to the catalog rulebook and the playbook directly, citing the source in `research/`.
 
 ## Voice
 
