@@ -63,7 +63,7 @@ export function BrainDemo({ names }: { names: Record<string, string> }) {
     : [];
 
   return (
-    <div className="card overflow-hidden !bg-bg/90 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.6)]">
+    <div className="card overflow-hidden !bg-bg shadow-[0_40px_120px_-40px_rgb(0_0_0/0.6)]">
       <div className="flex items-center justify-between border-b border-line px-5 py-3">
         <p className="label flex items-center gap-2 !text-dim">
           <span className="dot live-dot" /> The brain, live

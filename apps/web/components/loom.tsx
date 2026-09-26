@@ -266,7 +266,8 @@ export function Loom({ className = "" }: { className?: string }) {
         s.x += s.speed * 16;
         weave(s, now);
         if (s.x >= s.to) {
-          chips.push({ x: s.to * CELL, y: s.row * CELL, text: s.label, kind: s.kind, born: now });
+          // No labels in the band under the nav, where they'd sit on the links.
+          if (s.row * CELL >= 96) chips.push({ x: s.to * CELL, y: s.row * CELL, text: s.label, kind: s.kind, born: now });
           shuttles.splice(i, 1);
         }
       }

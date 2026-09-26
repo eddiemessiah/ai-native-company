@@ -95,8 +95,8 @@ Branch:  $branch
 Path:    $path
 
   cd "$path"
-  PORT=$(port_for "$line") pnpm dev    # dev server on its own port
-  pnpm check                  # typecheck + tests before every commit
+  PORT=$(port_for "$line") pnpm dev   # dev server on its own port
+  pnpm check           # typecheck + tests before every commit
 
 Stay inside the line's files. Changes to shared packages go through the brain or catalog line.
 EOF
