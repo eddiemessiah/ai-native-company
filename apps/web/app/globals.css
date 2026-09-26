@@ -1,0 +1,407 @@
+@import "tailwindcss";
+
+/*
+ * Fundi design system.
+ * Monochrome base. Colour carries meaning, and only four meanings:
+ *   write  (saffron)  an LLM generates
+ *   decide (indigo)   a System One model decides
+ *   code   (bone)     code executes
+ *   human  (kola)     a person approves
+ */
+
+:root {
+  --bg: #0b0b0a;
+  --bg-2: #121210;
+  --bg-3: #1a1916;
+  --fg: #ede8dc;
+  --dim: #a8a293;
+  --faint: #6f6a60;
+  --line: rgb(237 232 220 / 0.09);
+  --line-2: rgb(237 232 220 / 0.18);
+  --card: rgb(18 18 16 / 0.72);
+  --write: #ffb000;
+  --decide: #7480ff;
+  --code: #ede8dc;
+  --human: #ff5a36;
+  --live: #4fd08c;
+  --grain: 0.045;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f2eee4;
+  --bg-2: #ebe6da;
+  --bg-3: #e2dccd;
+  --fg: #141311;
+  --dim: #56524a;
+  --faint: #8b867b;
+  --line: rgb(20 19 17 / 0.1);
+  --line-2: rgb(20 19 17 / 0.22);
+  --card: rgb(242 238 228 / 0.8);
+  --write: #b87700;
+  --decide: #3440d8;
+  --code: #141311;
+  --human: #d8401c;
+  --live: #1e8a52;
+  --grain: 0.07;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f2eee4;
+    --bg-2: #ebe6da;
+    --bg-3: #e2dccd;
+    --fg: #141311;
+    --dim: #56524a;
+    --faint: #8b867b;
+    --line: rgb(20 19 17 / 0.1);
+    --line-2: rgb(20 19 17 / 0.22);
+    --card: rgb(242 238 228 / 0.8);
+    --write: #b87700;
+    --decide: #3440d8;
+    --code: #141311;
+    --human: #d8401c;
+    --live: #1e8a52;
+    --grain: 0.07;
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-fg: var(--fg);
+  --color-dim: var(--dim);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-card: var(--card);
+  --color-write: var(--write);
+  --color-decide: var(--decide);
+  --color-code: var(--code);
+  --color-human: var(--human);
+  --color-live: var(--live);
+
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-deal: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: var(--decide);
+    color: #fff;
+  }
+  :focus-visible {
+    outline: 1.5px solid var(--decide);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.035em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* Grid items default to min-width:auto, so a wide <pre> would stretch its column past the viewport. */
+  .grid > * {
+    min-width: 0;
+  }
+}
+
+@layer components {
+  .serif {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .wrap {
+    width: 100%;
+    max-width: 1320px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 4vw, 40px);
+  }
+  .rule {
+    border-color: var(--line);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: 44px;
+    padding-inline: 18px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--line-2);
+    transition:
+      background-color 0.25s var(--ease-expo),
+      color 0.25s var(--ease-expo),
+      border-color 0.25s var(--ease-expo),
+      transform 0.25s var(--ease-expo);
+  }
+  .btn:hover {
+    border-color: var(--fg);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn-solid {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .btn-solid:hover {
+    background: var(--write);
+    border-color: var(--write);
+    color: #0b0b0a;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding-inline: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line-2);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .field {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--line-2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--fg);
+    transition: border-color 0.2s;
+  }
+  .field::placeholder {
+    color: var(--faint);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--decide);
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    display: inline-block;
+    flex: none;
+  }
+  .live-dot {
+    background: var(--live);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 50%, transparent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  /* A woven-strip texture: narrow bands like aso-oke and kente strip cloth. */
+  .strip-weave {
+    background-image:
+      repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 14px),
+      repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 14px);
+  }
+  .prose-fundi {
+    font-size: 17px;
+    line-height: 1.75;
+    color: color-mix(in srgb, var(--fg) 88%, var(--bg));
+  }
+  .prose-fundi h2 {
+    font-size: clamp(26px, 3vw, 34px);
+    line-height: 1.15;
+    margin: 2.4em 0 0.6em;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .prose-fundi h3 {
+    font-size: 21px;
+    margin: 2em 0 0.5em;
+    color: var(--fg);
+    font-weight: 600;
+  }
+  .prose-fundi p,
+  .prose-fundi ul,
+  .prose-fundi ol,
+  .prose-fundi pre,
+  .prose-fundi blockquote,
+  .prose-fundi table {
+    margin: 1.1em 0;
+  }
+  .prose-fundi ul {
+    list-style: disc;
+    padding-left: 1.3em;
+  }
+  .prose-fundi ol {
+    list-style: decimal;
+    padding-left: 1.3em;
+  }
+  .prose-fundi li {
+    margin: 0.35em 0;
+  }
+  .prose-fundi a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-color: var(--decide);
+    text-underline-offset: 3px;
+  }
+  .prose-fundi strong {
+    color: var(--fg);
+    font-weight: 650;
+  }
+  .prose-fundi p,
+  .prose-fundi li {
+    overflow-wrap: break-word;
+  }
+  .prose-fundi code {
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    padding: 0.1em 0.35em;
+    border-radius: 6px;
+  }
+  .prose-fundi pre {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .prose-fundi pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
+  .prose-fundi blockquote {
+    border-left: 2px solid var(--write);
+    padding-left: 1em;
+    color: var(--dim);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.2em;
+  }
+  .prose-fundi table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    display: block;
+    overflow-x: auto;
+  }
+  .prose-fundi th,
+  .prose-fundi td {
+    border-bottom: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose-fundi th {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .prose-fundi hr {
+    border-color: var(--line);
+    margin: 2.5em 0;
+  }
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee {
+  animation: marquee 60s linear infinite;
+}
+
+/* Keep the loom bright on the right, quiet behind the headline. */
+.loom-mask {
+  -webkit-mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.22) 0%, rgb(0 0 0 / 0.3) 38%, #000 68%);
+  mask-image: linear-gradient(90deg, rgb(0 0 0 / 0.22) 0%, rgb(0 0 0 / 0.3) 38%, #000 68%);
+}
+@media (max-width: 1023px) {
+  .loom-mask {
+    -webkit-mask-image: linear-gradient(180deg, rgb(0 0 0 / 0.5) 0%, rgb(0 0 0 / 0.1) 22%, rgb(0 0 0 / 0.1) 100%);
+    mask-image: linear-gradient(180deg, rgb(0 0 0 / 0.5) 0%, rgb(0 0 0 / 0.1) 22%, rgb(0 0 0 / 0.1) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
