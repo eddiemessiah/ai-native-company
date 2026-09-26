@@ -19,8 +19,8 @@ The fastest money isn't a new product. It's selling finished work to your existi
 
 ## Day 0 · Saturday 26 Sep: set up (evening)
 
-- [ ] Decide the name, or keep **Fundi** as the working name (`company/brand/names.md`).
-- [ ] Deploy the site to Vercel. Work through `ops/setup-checklist.md`: set `NEXT_PUBLIC_SITE_URL` before the build, and create the Telegram lead bot.
+- [ ] Run the name checks for **Nova** (domains, trademark class 42, CAC, handles) before buying a domain: `company/brand/names.md`.
+- [ ] Deploy the site to Vercel. Work through `ops/setup-checklist.md`, and create the Telegram lead bot.
 - [ ] Create payment links:
   - a Paystack page for naira deposits (₦150k, ₦60k and ₦25k products);
   - a Stripe payment link for dollars;

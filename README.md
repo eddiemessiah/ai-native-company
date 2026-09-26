@@ -1,8 +1,8 @@
-# Fundi
+# Nova
 
 **The work, done.** An AI-native firm from Lagos: agents do the work, a person owns the outcome.
 
-Fundi sells finished work (audits, agents in production, grant applications, company brains) priced per unit against the human alternative, and sells decisions to other agents per call in USDC on Celo. Every job runs on the same split:
+Nova sells finished work (audits, agents in production, grant applications, company brains) priced per unit against the human alternative, and sells decisions to other agents per call in USDC on Celo. Every job runs on the same split:
 
 | | Who | Does |
 |---|---|---|
@@ -63,7 +63,7 @@ Pay with any x402 v2 client (`@x402/fetch` with a Celo account) and retry with `
 ## Deploy (Vercel)
 
 1. Import the repo and set the **Root Directory** to `apps/web`. Keep "Include files outside the root directory" on: the research pages read `content/posts` at build time.
-2. Set `NEXT_PUBLIC_SITE_URL` **before the first build**: llms.txt, the agent card, the sitemap and OG tags bake it in.
+2. Nothing else is required for a first deploy: without `NEXT_PUBLIC_SITE_URL`, the build uses the Vercel production domain. Set it (before building) once you add a custom domain, because llms.txt, the agent card, the sitemap and OG tags bake it in.
 3. Add the provider, alert and payment variables above.
 
 The full day-0 list (entity, payments, Telegram bot, x402, ERC-8004) is in [`company/ops/setup-checklist.md`](company/ops/setup-checklist.md).

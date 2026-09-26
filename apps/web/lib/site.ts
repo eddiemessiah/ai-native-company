@@ -1,4 +1,11 @@
-export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+// A custom domain goes in NEXT_PUBLIC_SITE_URL. Without it, Vercel builds use the
+// project's production domain, so llms.txt, the agent card and the sitemap are
+// right from the first deploy.
+const vercelDomain = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
+export const siteUrl = (
+  process.env.NEXT_PUBLIC_SITE_URL || (vercelDomain ? `https://${vercelDomain}` : "http://localhost:3000")
+).replace(/\/$/, "");
 
 export function absolute(path: string): string {
   return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;

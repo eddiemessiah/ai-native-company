@@ -15,7 +15,7 @@ Everything needed to take the first payment and run the site in production.
 ## Deploy the site (Vercel)
 
 1. Import the repo into Vercel. **Root directory: `apps/web`.** Keep "Include files outside the root directory" enabled: the research posts live in `content/` at the repo root.
-2. Set the environment variables (the full list is in `apps/web/.env.example`). **`NEXT_PUBLIC_SITE_URL` must be set before the build**, because llms.txt, the agent card and the OG tags are generated at build time.
+2. Set the environment variables (the full list is in `apps/web/.env.example`). Without `NEXT_PUBLIC_SITE_URL` the build uses the Vercel production domain. **Once you add a custom domain, set it and redeploy**, because llms.txt, the agent card and the OG tags are generated at build time.
 3. Deploy, then check `/llms.txt`, `/.well-known/agent-card.json`, `/api/v1/catalog` and the homepage demo.
 
 ## Lead alerts on your phone (Telegram, 5 minutes)

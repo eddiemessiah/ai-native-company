@@ -964,8 +964,8 @@ export const offers: readonly Offer[] = [
     tags: ["education", "community", "certificates", "celo"],
   },
   {
-    slug: "fundi-bench",
-    name: "Fundi Bench",
+    slug: "nova-bench",
+    name: "Nova Bench",
     category: "community",
     status: "soon",
     oneLiner: "Vetted AI builders from the Study Group, available for contract work and forward-deployed roles.",

@@ -1,14 +1,14 @@
 # CLAUDE.md: operating manual
 
-This repo is **Fundi**, an AI-native firm. It sells finished work (audits, agents in production, grant applications, company brains) to businesses, and per-call decisions to other agents. Agents do the work; a person owns the outcome. Read this before changing anything.
+This repo is **Nova**, an AI-native firm. It sells finished work (audits, agents in production, grant applications, company brains) to businesses, and per-call decisions to other agents. Agents do the work; a person owns the outcome. Read this before changing anything.
 
 ## Who decides what
 
-The firm is led by a person, Edidiong Umana, and an agent, Fundi One (the decision brain in `packages/brain`).
+The firm is led by a person, Edidiong Umana, and an agent, Nova One (the decision brain in `packages/brain`).
 
 | Decision | Owner |
 |---|---|
-| Routing, scoring, triage, drafts, research, first-pass review | Fundi One, logged with its confidence |
+| Routing, scoring, triage, drafts, research, first-pass review | Nova One, logged with its confidence |
 | Anything below its confidence gate | Escalates to Edidiong |
 | Prices, new offers, what we won't do | Edidiong |
 | Money, contracts, signatures, submissions, anything sent in a client's name | Edidiong approves each one; agents only prepare |
@@ -35,7 +35,7 @@ scripts/worktree.sh one git worktree per product line
 pnpm install
 pnpm dev                          # site on :3000; with no keys the demo uses the heuristic brain
 pnpm check                        # typecheck + tests in every package; run before each commit
-pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL first
+pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL for a custom domain
 pnpm --filter @repo/brain test
 pnpm worktree <line>              # open a product line in its own worktree (see below)
 ```

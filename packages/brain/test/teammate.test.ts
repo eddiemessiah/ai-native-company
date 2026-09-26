@@ -48,7 +48,7 @@ function answers(over: Partial<Record<string, unknown>> = {}): TriageAnswers {
 
 describe("teammate triage", () => {
   it("has 18 questions that pass the linter without warnings", () => {
-    const qs = triageQuestions("Fundi");
+    const qs = triageQuestions("Nova");
     expect(Object.keys(qs)).toHaveLength(18);
     expect(lintQuestions(qs).filter((d) => d.level === "warn")).toEqual([]);
   });

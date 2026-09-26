@@ -354,7 +354,7 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={0.08} className="card relative overflow-hidden p-8">
-            <Glyph seed="fundi-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
+            <Glyph seed="nova-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
             <p className="label">{brand.agent.role}</p>
             <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">{brand.agent.name}</p>
             <p className="mt-1 font-mono text-sm text-decide">System One brain · every decision logged</p>

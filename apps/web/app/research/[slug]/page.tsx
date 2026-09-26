@@ -45,7 +45,7 @@ export default async function PostPage(props: PageProps<"/research/[slug]">) {
           {brand.founder.name} · {post.date} · {post.minutes} min read
         </p>
       </header>
-      <div className="prose-fundi mx-auto mt-10 max-w-3xl" dangerouslySetInnerHTML={{ __html: post.html }} />
+      <div className="prose-nova mx-auto mt-10 max-w-3xl" dangerouslySetInnerHTML={{ __html: post.html }} />
     </article>
   );
 }

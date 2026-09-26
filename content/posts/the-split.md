@@ -9,7 +9,7 @@ Open any agent you've built and look at what it spends money on. A frontier mode
 
 None of those answers are text. They're a choice from a list, a number on a scale, a yes or no.
 
-That's the design principle Fundi is built on. Every unit of work we sell, whether an audit, an agent, a grant application or a company brain, is split three ways, and a fourth colour marks where a person approves.
+That's the design principle Nova is built on. Every unit of work we sell, whether an audit, an agent, a grant application or a company brain, is split three ways, and a fourth colour marks where a person approves.
 
 ## The four colours
 

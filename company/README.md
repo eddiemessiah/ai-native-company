@@ -1,6 +1,6 @@
 # The company OS
 
-Everything that runs Fundi besides code. Agents read these before doing client work; Edidiong owns every change to prices, offers and what we won't do.
+Everything that runs Nova besides code. Agents read these before doing client work; Edidiong owns every change to prices, offers and what we won't do.
 
 ## Start here
 
@@ -37,7 +37,7 @@ Every correction a person makes to delivered work goes into [`ops/rulebook-log.m
 |---|---|
 | [`funding/plan.md`](funding/plan.md) | Frontier pool application, grants, credits, deadlines |
 | [`ops/conflicts-of-interest.md`](ops/conflicts-of-interest.md) | Where the founder's ecosystem roles and the firm's interests collide, and the rules for each |
-| [`brand/names.md`](brand/names.md) | Why Fundi, the alternatives, product names, checks still to run |
+| [`brand/names.md`](brand/names.md) | Why Nova, its risks, the alternatives, product names, checks still to run |
 
 ## Research behind all of it
 

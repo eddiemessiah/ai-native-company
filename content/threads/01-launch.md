@@ -7,7 +7,7 @@ Not an agency. Not a SaaS.
 
 A firm that sells finished work (audits, agents, grant applications, company brains), where agents do the work and people own the outcome.
 
-It's called Fundi. Here's how it works 🧵
+It's called Nova. Here's how it works 🧵
 
 2/
 The $120k accountant vs the $10k QuickBooks problem:

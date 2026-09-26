@@ -86,4 +86,4 @@ A person owns anything irreversible.
 
 That's a service business that runs like software.
 
-We're doing several of these at Fundi. First audit's free: {link}
+We're doing several of these at Nova. First audit's free: {link}

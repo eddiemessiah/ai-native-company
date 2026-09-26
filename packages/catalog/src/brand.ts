@@ -1,16 +1,16 @@
 import type { Proof } from "./types";
 
 /**
- * Brand in one place. "Fundi" is the working name (see company/brand/names.md);
- * renaming the company is a change to this file.
+ * Brand in one place (see company/brand/names.md). The site, llms.txt, the
+ * agent card and the OG image all read the name from here.
  */
 export const brand = {
-  name: "Fundi",
+  name: "Nova",
   tagline: "The work, done.",
   description:
-    "Fundi is an AI-native firm. Agents do the work, people own the outcome. We sell finished work, not hours or seats: audits, agents, grant applications and company brains, each priced per unit against what the human alternative costs.",
+    "Nova is an AI-native firm. Agents do the work, people own the outcome. We sell finished work, not hours or seats: audits, agents, grant applications and company brains, each priced per unit against what the human alternative costs.",
   story:
-    "In Kiswahili, a fundi is the master craftsperson who does the job for you. In isiZulu, umfundi is a learner. Fundi is both: a firm that ships work, and a school that trains the people who ship it.",
+    "Nova is Latin for new. In astronomy, a nova is a star that suddenly burns thousands of times brighter than before. That's the plan: a firm that ships finished work today, and a school that turns Africa's builders into the people who run agents.",
   thesis: [
     "LLMs write: briefs, drafts, code, explanations.",
     "A System One model decides: route, score, approve, escalate.",
@@ -26,7 +26,7 @@ export const brand = {
     telegram: "https://t.me/defimessiah0x",
   },
   agent: {
-    name: "Fundi One",
+    name: "Nova One",
     role: "Agent co-founder",
     description:
       "The firm's decision brain: every intake, route, score and approval runs through it and is logged with its confidence. It prepares; a person approves anything that moves money or can't be undone.",
