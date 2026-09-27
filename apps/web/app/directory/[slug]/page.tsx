@@ -6,6 +6,7 @@ import { Arrow, SplitRows, StatusPill } from "@/components/bits";
 import { Glyph } from "@/components/glyph";
 import { OfferCard } from "@/components/offer-card";
 import { Reveal } from "@/components/reveal";
+import { stripeConfigured } from "@/lib/stripe";
 
 export function generateStaticParams() {
   return offers.map((o) => ({ slug: o.slug }));
@@ -54,7 +55,7 @@ export default async function OfferPage(props: PageProps<"/directory/[slug]">) {
           <div className="card sticky top-24 p-6">
             <p className="label">Price</p>
             <p className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{offer.price.label}</p>
-            {offer.price.ngn ? <p className="mt-1 font-mono text-sm text-dim">{offer.price.ngn}</p> : null}
+            {offer.price.ngn ? <p className="mt-1 font-mono text-sm text-dim">In Nigeria: {offer.price.ngn}</p> : null}
             <p className="mt-5 border-t border-line pt-4 text-sm text-dim">
               <span className="font-mono text-xs text-faint">INSTEAD OF · </span>
               {offer.price.humanAlternative}
@@ -67,6 +68,21 @@ export default async function OfferPage(props: PageProps<"/directory/[slug]">) {
               <Link href={`/start?offer=${offer.slug}`} className="btn mt-6 w-full justify-center">
                 Join the waitlist <Arrow />
               </Link>
+            ) : offer.checkout && stripeConfigured() ? (
+              <>
+                <form action="/api/checkout" method="post" className="mt-6">
+                  <input type="hidden" name="offer" value={offer.slug} />
+                  <button type="submit" className="btn btn-solid w-full justify-center">
+                    Pay ${offer.checkout.amountUsd.toLocaleString("en-US")} and start <Arrow />
+                  </button>
+                </form>
+                <p className="mt-2 text-center font-mono text-[11px] text-faint">
+                  {offer.checkout.label} · card, wallet or bank, in your currency
+                </p>
+                <Link href={`/start?offer=${offer.slug}`} className="btn mt-3 w-full justify-center">
+                  {offer.firstJobFree ? "Claim a free first job" : "Ask first"}
+                </Link>
+              </>
             ) : (
               <Link href={`/start?offer=${offer.slug}`} className="btn btn-solid mt-6 w-full justify-center">
                 {offer.firstJobFree ? "Claim a free first job" : "Start this job"} <Arrow />

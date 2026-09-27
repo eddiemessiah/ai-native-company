@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@repo/brain", "@repo/catalog"],
+  transpilePackages: ["@repo/agents", "@repo/brain", "@repo/catalog"],
   poweredByHeader: false,
   async headers() {
     return [

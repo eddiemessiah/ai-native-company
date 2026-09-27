@@ -48,8 +48,8 @@ const LABELS: Record<Kind, readonly string[]> = {
     "score fit · 2.71/3",
   ],
   write: ["draft → reply", "draft → audit §3", "rewrite → milestones", "summary → 212 tok", "draft → proposal", "brief → tomorrow 07:00"],
-  code: ["lookup_order A-104 ✓", "slot 14:00 free ✓", "total ₦450,000 ✓", "x402 settle 0.01 USDC", "deadline in 3d ✓", "limit 10 actions ✓"],
-  human: ["approve? refund ₦12,500", "approve? send proposal", "escalate → founder", "approve? transfer 120 USDm"],
+  code: ["lookup_order A-104 ✓", "slot 14:00 free ✓", "total €4,500 ✓", "x402 settle 0.01 USDC", "deadline in 3d ✓", "limit 10 actions ✓"],
+  human: ["approve? refund $125", "approve? send proposal", "escalate → founder", "approve? transfer 120 USDC"],
 };
 
 const WEIGHTS: readonly [Kind, number][] = [

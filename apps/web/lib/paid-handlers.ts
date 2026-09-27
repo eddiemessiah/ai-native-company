@@ -1,5 +1,16 @@
+import {
+  checkPayment,
+  CheckInputError,
+  decodePaymentResponse,
+  fetchReceipt,
+  NeedsBrainError,
+  ReceiptInputError,
+  ReceiptNotFoundError,
+  resolveNetwork,
+  signReceipt,
+} from "@repo/agents";
 import { BrainError } from "@repo/brain";
-import { decideLead, gateDraft, scoreGrant, triageTicket, type RubricCriterion } from "@repo/brain/recipes";
+import { decideActionGate, decideLead, gateDraft, scoreGrant, triageTicket, type RubricCriterion } from "@repo/brain/recipes";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { getPaidBrain, publicDecision } from "./brain";
@@ -107,6 +118,101 @@ export async function contentGate(req: NextRequest): Promise<NextResponse> {
   });
 }
 
+// ─── For agents ──────────────────────────────────────────────────────────────
+
+const address = z.string().min(3).max(100);
+
+export const checkSchema = z.object({
+  paymentRequired: z.union([z.string().min(2).max(20_000), z.record(z.string(), z.unknown())]),
+  url: z.string().url().max(2000).optional(),
+  task: z.string().min(3).max(2000).optional(),
+  budgetUsd: z.number().nonnegative().max(1_000_000).optional(),
+  autoApproveUsd: z.number().nonnegative().max(1_000_000).optional(),
+  allowPayTo: z.array(address).max(50).optional(),
+});
+
+export async function check(req: NextRequest): Promise<NextResponse> {
+  const input = await body(req, checkSchema);
+  if (input instanceof NextResponse) return input;
+  // The intent check needs a model; the code checks don't.
+  const brain = input.task ? getPaidBrain() : null;
+  if (input.task && !brain) return unavailable();
+  try {
+    const { result, decision } = await checkPayment(input, brain);
+    return NextResponse.json({ ...result, ...(decision ? { decision: publicDecision(decision) } : {}) });
+  } catch (error) {
+    if (error instanceof CheckInputError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof NeedsBrainError) return unavailable();
+    const status = error instanceof BrainError ? 503 : 500;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "failed" }, { status });
+  }
+}
+
+export const gateSchema = z.object({
+  action: z.string().min(3).max(2000),
+  request: z.string().min(3).max(4000),
+  risk: z.enum(["read", "write", "external", "money", "irreversible"]),
+  context: z.string().max(12_000).optional(),
+  minConfidence: z.number().min(0).max(0.99).optional(),
+});
+
+export async function gateAction(req: NextRequest): Promise<NextResponse> {
+  const input = await body(req, gateSchema);
+  if (input instanceof NextResponse) return input;
+  const brain = getPaidBrain();
+  if (!brain) return unavailable();
+  return run(async () => {
+    const { decision, route } = await decideActionGate(brain, input);
+    return { ...route, decision: publicDecision(decision) };
+  });
+}
+
+const expected = z.object({
+  payTo: address.optional(),
+  amount: z.string().regex(/^\d+$/).max(80).optional(),
+  payer: address.optional(),
+});
+
+export const receiptSchema = z.union([
+  z.object({ paymentResponse: z.string().min(10).max(10_000), expected: expected.optional() }),
+  z.object({
+    network: z.string().min(3).max(100),
+    transaction: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+    expected: expected.optional(),
+  }),
+]);
+
+/** RPC_URL_<chainId> overrides the public endpoint, e.g. RPC_URL_42220 for Celo. */
+function rpcFor(network: string): string | undefined {
+  const { chainId } = resolveNetwork(network);
+  return chainId === undefined ? undefined : process.env[`RPC_URL_${chainId}`] || undefined;
+}
+
+export async function receipt(req: NextRequest): Promise<NextResponse> {
+  const input = await body(req, receiptSchema);
+  if (input instanceof NextResponse) return input;
+  try {
+    const query =
+      "paymentResponse" in input
+        ? (() => {
+            const decoded = decodePaymentResponse(input.paymentResponse);
+            const exp = { ...(decoded.payer ? { payer: decoded.payer } : {}), ...input.expected };
+            return { network: decoded.network, transaction: decoded.transaction, expected: exp };
+          })()
+        : { network: input.network, transaction: input.transaction, ...(input.expected ? { expected: input.expected } : {}) };
+    const rpcUrl = rpcFor(query.network);
+    const result = await fetchReceipt(query, rpcUrl ? { rpcUrl } : {});
+    const key = process.env.RECEIPT_SIGNING_KEY;
+    if (key && /^0x[0-9a-fA-F]{64}$/.test(key)) return NextResponse.json(await signReceipt(result, key as `0x${string}`));
+    return NextResponse.json({ receipt: result });
+  } catch (error) {
+    if (error instanceof ReceiptInputError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof ReceiptNotFoundError) return NextResponse.json({ error: error.message }, { status: 404 });
+    // An RPC outage is not the caller's fault, and nothing settles on a 5xx.
+    return NextResponse.json({ error: "Could not read the chain right now. Try again shortly." }, { status: 502 });
+  }
+}
+
 /** JSON-schema views of the bodies, for the Bazaar discovery extension. */
 export const discovery = {
   triage: {
@@ -135,5 +241,35 @@ export const discovery = {
   content: {
     properties: { draft: { type: "string", description: "The draft post, thread or article" } },
     required: ["draft"],
+  },
+  check: {
+    properties: {
+      paymentRequired: { type: "string", description: "The PAYMENT-REQUIRED header value (base64 JSON), or the decoded JSON" },
+      url: { type: "string", description: "The URL your agent called" },
+      task: { type: "string", description: "What the user asked for; enables the intent check" },
+      budgetUsd: { type: "number", description: "The most your agent may spend on this call" },
+      autoApproveUsd: { type: "number", description: "Above this, the verdict is at most confirm (default 0.10)" },
+      allowPayTo: { type: "array", description: "Optional payee allowlist" },
+    },
+    required: ["paymentRequired"],
+  },
+  gate: {
+    properties: {
+      action: { type: "string", description: "What the agent is about to do" },
+      request: { type: "string", description: "What the user asked for" },
+      risk: { type: "string", description: "read | write | external | money | irreversible" },
+      context: { type: "string", description: "Relevant conversation or state" },
+      minConfidence: { type: "number", description: "Raise the bar for this call" },
+    },
+    required: ["action", "request", "risk"],
+  },
+  receipt: {
+    properties: {
+      network: { type: "string", description: "CAIP-2 network, e.g. eip155:42220" },
+      transaction: { type: "string", description: "The settlement transaction hash" },
+      paymentResponse: { type: "string", description: "Or: the PAYMENT-RESPONSE header value" },
+      expected: { type: "object", description: "Optional: { payTo, amount, payer } to match" },
+    },
+    required: [],
   },
 } as const;

@@ -1,3 +1,4 @@
+import { createFacilitatorConfig } from "@coinbase/x402";
 import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import type { Network } from "@x402/core/types";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -5,7 +6,7 @@ import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import { withX402 } from "@x402/next";
 import { NextResponse, type NextRequest } from "next/server";
 import { brand, offerBySlug } from "@repo/catalog";
-import { NETWORK as CHAIN_NETWORK, USDC_CELO } from "./chain";
+import { BASE_NETWORK as BASE, baseConfigured, NETWORK as CHAIN_NETWORK, USDC_CELO } from "./chain";
 
 /**
  * x402 v2 on Celo. Agents get a 402 with payment requirements, sign a gasless
@@ -19,6 +20,9 @@ export { USDC_CELO };
 
 const DEFAULT_FACILITATOR = NETWORK === "eip155:11142220" ? "https://api.x402.sepolia.celo.org" : "https://api.x402.celo.org";
 
+export const BASE_NETWORK = BASE as Network;
+export { baseConfigured };
+
 let server: x402ResourceServer | undefined;
 
 function resourceServer(): x402ResourceServer {
@@ -31,7 +35,11 @@ function resourceServer(): x402ResourceServer {
         return { verify: h, settle: h, supported: h };
       },
     });
-    server = new x402ResourceServer([celo]).register("eip155:*", new ExactEvmScheme());
+    // Earlier facilitators win routing, so Celo stays first.
+    const facilitators = baseConfigured()
+      ? [celo, new HTTPFacilitatorClient(createFacilitatorConfig(process.env.CDP_API_KEY_ID, process.env.CDP_API_KEY_SECRET))]
+      : [celo];
+    server = new x402ResourceServer(facilitators).register("eip155:*", new ExactEvmScheme());
   }
   return server;
 }
@@ -67,9 +75,13 @@ export function paid(
       handler,
       {
         [api.path]: {
+          // An agent pays with the first option it has funds for.
           accepts: [
             { scheme: "exact", network: NETWORK, payTo: process.env.X402_PAY_TO as `0x${string}`, price: `$${api.priceUsd}` },
             { scheme: "exact", network: NETWORK, payTo: process.env.X402_PAY_TO as `0x${string}`, price: `$${api.priceUsd} USDT` },
+            ...(baseConfigured()
+              ? [{ scheme: "exact", network: BASE_NETWORK, payTo: process.env.X402_PAY_TO as `0x${string}`, price: `$${api.priceUsd}` }]
+              : []),
           ],
           description: api.description,
           mimeType: "application/json",

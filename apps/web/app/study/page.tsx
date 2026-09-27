@@ -9,7 +9,7 @@ import { links } from "@/lib/site";
 export const metadata: Metadata = {
   title: "AI Study Group",
   description:
-    "A global study group for becoming an AI engineer: free tracks, weekly pods, live cohorts, city chapters across Africa and the diaspora, and certificates on Celo.",
+    "A global study group for becoming an AI engineer: free tracks, weekly pods across time zones, live cohorts, city chapters, and certificates on Celo.",
 };
 
 const UPGRADES = [
@@ -22,8 +22,8 @@ const UPGRADES = [
 ];
 
 const TIERS = [
-  { name: "Free", price: "₦0", body: "Every track, lesson, quiz and certificate. Self-paced, forever.", cta: "Start now" },
-  { name: "Pro cohort", price: "$49 · ₦25,000", body: "Four weeks live, a weekly pod, mentor reviews, demo day, priority for the bench.", cta: "Apply" },
+  { name: "Free", price: "$0", body: "Every track, lesson, quiz and certificate. Self-paced, forever.", cta: "Start now" },
+  { name: "Pro cohort", price: "$49 (₦25,000 in Nigeria)", body: "Four weeks live, a weekly pod, mentor reviews, demo day, priority for the bench.", cta: "Apply" },
   { name: "Team", price: "From $4,000 / 20 seats", body: "A private cohort for your company, capstones on your workflows, manager reports.", cta: "Talk to us" },
   { name: "Sponsor", price: "From $2,500 / cohort", body: "Fund scholarships or a track. Your name on the certificates and first look at the talent.", cta: "Sponsor" },
 ];
@@ -40,7 +40,7 @@ export default function StudyPage() {
           </h1>
           <p className="mt-8 max-w-2xl text-lg text-dim">
             The academy started as a free, self-paced course. Version two makes it a study <em>group</em>: pods, live
-            cohorts and city chapters across Africa and the diaspora, and a direct line from certificate to paid work.
+            cohorts, online pods across time zones and city chapters, and a direct line from certificate to paid work.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <a href="#apply" className="btn btn-solid">
@@ -55,7 +55,7 @@ export default function StudyPage() {
           {[
             { v: tracks.length, l: "tracks, 2 open now" },
             { v: chapters.length, l: `chapters planned, ${active} active` },
-            { v: "₦0", l: "to start, forever" },
+            { v: "$0", l: "to start, forever" },
           ].map((s) => (
             <div key={s.l} className="bg-bg p-5">
               <dt className="sr-only">{s.l}</dt>
@@ -109,8 +109,8 @@ export default function StudyPage() {
           <SectionHead
             n="03"
             label="Chapters"
-            title={<>Lagos first. <span className="serif text-dim">Then</span> everywhere.</>}
-            lede="A chapter is a lead, a monthly build night and a group chat. We start where we've already run workshops, then recruit leads city by city: alumni who can host ten people and a projector."
+            title={<>Start local. <span className="serif text-dim">Meet</span> worldwide.</>}
+            lede="A chapter is a lead, a monthly build night and a group chat. The first ones are where we've already run workshops; pods meet online across time zones, and any city gets a chapter once an alumnus can host ten people and a projector."
           />
           <div className="mt-14">
             <ChapterMap chapters={chapters} />

@@ -11,11 +11,18 @@ export type Audience = "smb" | "startup" | "enterprise" | "builders" | "agents" 
 export interface Price {
   /** What we show, e.g. "$490 per audit". */
   readonly label: string;
-  /** Local-market price where it differs, e.g. "₦350,000". */
+  /** Local price in Nigeria where it differs, paid through Paystack, e.g. "₦350,000". */
   readonly ngn?: string;
   /** What the buyer pays today for the human alternative. We price against this, not our costs. */
   readonly humanAlternative: string;
   readonly model: "per-unit" | "retainer" | "share-of-savings" | "per-call" | "cohort" | "free" | "sponsorship";
+}
+
+/** Buy online through Stripe Checkout: a fixed price or a deposit, in USD. */
+export interface Checkout {
+  readonly amountUsd: number;
+  /** What the buyer pays for, e.g. "50% deposit on one agent ($2,500)". */
+  readonly label: string;
 }
 
 export interface X402Route {
@@ -52,6 +59,7 @@ export interface Offer {
   readonly featured?: boolean;
   readonly firstJobFree?: boolean;
   readonly api?: X402Route;
+  readonly checkout?: Checkout;
   readonly links?: readonly { label: string; href: string }[];
 }
 

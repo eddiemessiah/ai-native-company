@@ -8,9 +8,9 @@ export const brand = {
   name: "Nova",
   tagline: "The work, done.",
   description:
-    "Nova is an AI-native firm. Agents do the work, people own the outcome. We sell finished work, not hours or seats: audits, agents, grant applications and company brains, each priced per unit against what the human alternative costs.",
+    "Nova is an AI-native firm for agents and businesses worldwide. Agents do the work, people own the outcome. We sell to agents per call, with no account, and to businesses per unit of finished work: audits, agents, grant applications and company brains, each priced against what the human alternative costs.",
   story:
-    "Nova is Latin for new. In astronomy, a nova is a star that suddenly burns thousands of times brighter than before. That's the plan: a firm that ships finished work today, and a school that turns Africa's builders into the people who run agents.",
+    "Nova is Latin for new. In astronomy, a nova is a star that suddenly burns thousands of times brighter than before. That's the plan: a firm that ships finished work today, and a school that turns builders everywhere into the people who run agents.",
   thesis: [
     "LLMs write: briefs, drafts, code, explanations.",
     "A System One model decides: route, score, approve, escalate.",
@@ -35,7 +35,7 @@ export const brand = {
     telegram: "https://t.me/defimessiah0x",
     x: "https://x.com/defimessiah1",
   },
-  locale: { home: "Lagos", timezone: "Africa/Lagos", markets: ["Nigeria", "Ghana", "Kenya", "Global"] },
+  locale: { home: "Lagos", timezone: "Africa/Lagos", markets: ["Worldwide"] },
 } as const;
 
 /** Verifiable work that already exists. Every item has a public trail. */

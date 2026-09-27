@@ -1,10 +1,162 @@
 import type { Offer } from "./types";
 
 /**
- * The directory. Services come first: they cash-flow from day one and teach us
- * what to build. Infra and APIs productize what the services prove.
+ * The directory. Agent products come first: an agent can verify an offer and pay
+ * for it in one HTTP round trip, with no procurement. Services come next: they
+ * bring the larger tickets and teach us what to productize.
  */
 export const offers: readonly Offer[] = [
+  // ─── For agents: paid per call, no account, no API key ──────────────────────
+  {
+    slug: "nova-check",
+    name: "Nova Check",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Should my agent pay this? A pre-payment check of any x402 payment request: pay, confirm with a person, or block.",
+    pitch:
+      "A pre-payment check for AI agents that pay: send the 402 payment request before signing, and get back pay, confirm or block with the reasons: a known stablecoin, the amount against your budget, a real payee, the right signing domain, the host you called, and whether the purchase serves the user's task",
+    audience: ["agents", "builders", "startup"],
+    unit: "One check of one payment request",
+    intake: [
+      "The PAYMENT-REQUIRED header, or its decoded JSON",
+      "The URL the agent called",
+      "Optional: the user's task, a budget and a payee allowlist",
+    ],
+    engine:
+      "Code checks every payment option against the x402 SDK's own token tables. Only when those pass, and a task is given, does the brain answer whether the purchase serves it. The model can lower a verdict, never raise it.",
+    rulebook: [
+      "Code checks run first; a failed code check blocks without asking a model.",
+      "Unknown tokens, testnets and mismatched signing domains always go to a person.",
+      "Anything above the caller's auto-approve limit (default $0.10) goes to a person, whatever the model says.",
+      "A model can block a payment. It can never raise a limit.",
+    ],
+    review: "Automated: every verdict lists the checks it ran and their results.",
+    delivery: "JSON: the verdict, the reasons, the chosen payment option and every check.",
+    turnaround: "Under a second without a task; a few seconds with the intent check",
+    price: {
+      label: "$0.01 per check",
+      humanAlternative: "A person approving every agent payment by hand, or no check at all",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "Agent wallet and framework builders", "x402 and MPP hackathons"],
+    split: {
+      llm: "Nothing: the verdict is structured",
+      decide: "Does the purchase serve the task; does the offer look real",
+      code: "Token, amount, budget, payee, signing-domain and host checks; the auto-approve limit",
+    },
+    tags: ["x402", "agents", "payments", "security", "trust"],
+    api: {
+      method: "POST",
+      path: "/api/v1/check",
+      priceUsd: 0.01,
+      description: "Should my agent pay this? Send an x402 PAYMENT-REQUIRED and get pay, confirm or block, with the reasons.",
+      inputExample: {
+        paymentRequired: "<the PAYMENT-REQUIRED header value>",
+        url: "https://api.example.com/v1/rates",
+        task: "Get today's USD/EUR rate for the invoice",
+        budgetUsd: 0.05,
+      },
+    },
+  },
+  {
+    slug: "nova-gate",
+    name: "Nova Gate",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Execute, confirm or escalate? An approval gate for any agent action, with one confidence bar per risk tier.",
+    pitch:
+      "An approval gate for AI agents: before an agent sends, deletes, books or pays, it asks whether to execute now, ask a person to confirm, or hand it to a person, judged against the user's request with calibrated confidence and a stricter bar for riskier actions",
+    audience: ["agents", "builders", "startup", "enterprise"],
+    unit: "One gate decision for one proposed action",
+    intake: [
+      "The action the agent is about to take",
+      "What the user asked for",
+      "The risk tier: read, write, external, money or irreversible",
+      "Optional: context from the conversation",
+    ],
+    engine:
+      "The brain answers three typed questions: does the action match the request, did the user approve it, is it riskier than stated. The policy gate decides by tier. Money and irreversible actions are prepared, never executed.",
+    rulebook: [
+      "One bar per risk tier: read .5, write .7, external .85, money .9, irreversible .95.",
+      "Money and irreversible actions are at most prepared for a person to confirm.",
+      "An action that looks riskier than stated gets the external bar.",
+      "Callers can raise the bar, never lower it.",
+    ],
+    review: "Automated: every verdict carries its confidence, threshold and reason.",
+    delivery: "JSON: the verdict, the reason, confidence, threshold, the tier applied and the decision log.",
+    turnaround: "A few seconds",
+    price: {
+      label: "$0.01 per gate",
+      humanAlternative: "A person reviewing every agent action, or an agent acting unchecked",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "Agent framework communities", "Teams deploying agents into regulated work"],
+    split: {
+      llm: "Nothing: the verdict is structured",
+      decide: "Does the action match the request; did the user approve it; is it riskier than stated",
+      code: "Tier thresholds, the prepare-only rule, the floor callers can only raise",
+    },
+    tags: ["agents", "safety", "approvals", "decisions", "jev"],
+    api: {
+      method: "POST",
+      path: "/api/v1/gate",
+      priceUsd: 0.01,
+      description: "Execute, confirm or escalate? An approval gate for one agent action, by risk tier.",
+      inputExample: {
+        action: "Email the refund confirmation to the customer",
+        request: "Refund order A-104 and let the customer know",
+        risk: "external",
+      },
+    },
+  },
+  {
+    slug: "nova-receipt",
+    name: "Nova Receipt",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Proof for every agent payment: an on-chain settlement check and a signed, normalized receipt for the books.",
+    pitch:
+      "Receipts for AI agent payments: after an x402 payment, send the transaction or the PAYMENT-RESPONSE header and get a normalized receipt (payer, payee, token, amount, time, authorization) checked against what you expected and signed so a finance team can trust it",
+    audience: ["agents", "builders", "startup", "enterprise"],
+    unit: "One verified receipt for one payment",
+    intake: ["The PAYMENT-RESPONSE header, or the network and transaction hash", "Optional: the payee, amount and payer you expected"],
+    engine:
+      "Code only: it reads the transaction from the chain, decodes the stablecoin transfer and the EIP-3009 authorization, compares them with what you expected, and signs the result.",
+    rulebook: [
+      "Only known stablecoins count as payments; other token transfers are ignored.",
+      "A reverted or missing transaction is reported as such, never as settled.",
+      "Receipts are signed over sorted-key JSON, so anyone can verify them.",
+    ],
+    review: "Automated: every expectation the caller sent comes back as matched or not.",
+    delivery: "A JSON receipt with an explorer link, signed when a receipt key is configured.",
+    turnaround: "A few seconds",
+    price: {
+      label: "$0.01 per receipt",
+      humanAlternative: "A bookkeeper matching agent payments to block explorers by hand",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "x402 sellers who want receipts for their buyers", "Finance teams of companies running paying agents"],
+    split: {
+      llm: "Nothing",
+      decide: "Nothing: receipts are exact",
+      code: "Chain reads, log decoding, matching and signing",
+    },
+    tags: ["x402", "agents", "payments", "receipts", "accounting"],
+    api: {
+      method: "POST",
+      path: "/api/v1/receipt",
+      priceUsd: 0.01,
+      description: "Proof for an agent payment: verify an x402 settlement on-chain and get a signed receipt.",
+      inputExample: {
+        network: "eip155:42220",
+        transaction: "0xf6f71df2f84279c483b138a43c8adcfcd7c1e319459f2b1b2497cdb706a38b38",
+      },
+    },
+  },
+
   // ─── Services: sell the finished work ────────────────────────────────────────
   {
     slug: "agent-ready-website",
@@ -42,6 +194,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "A receptionist or social-media handler at ₦150,000–₦250,000 a month, plus an agency redesign at ₦1M+",
       model: "retainer",
     },
+    checkout: { amountUsd: 100, label: "50% deposit on the website setup ($200)" },
     distribution: [
       "Upsell existing client sites first: farms, fashion houses, churches, foundations, restaurants",
       "A 60-second before/after demo per niche",
@@ -90,6 +243,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Management consultants charge $3,000–$10,000 for a digital transformation assessment",
       model: "per-unit",
     },
+    checkout: { amountUsd: 490, label: "One Agent Readiness Audit" },
     distribution: [
       "First five audits free for design partners, in exchange for a case study",
       "Offered at the end of every workshop and talk",
@@ -140,6 +294,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "An operations or knowledge manager at $1,000–$5,000 a month",
       model: "retainer",
     },
+    checkout: { amountUsd: 1750, label: "50% deposit on setup ($3,500)" },
     distribution: [
       "Live demo in our own workspace on every sales call",
       "Seed to Series A teams in Lagos, Nairobi and remote-first companies",
@@ -188,6 +343,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Freelance grant writers charge $1,000–$5,000 per proposal",
       model: "per-unit",
     },
+    checkout: { amountUsd: 350, label: "One grant application" },
     distribution: [
       "Builder communities and hackathon Telegram groups",
       "Free rubric score for any public application (lead magnet, via the Grant Fit API)",
@@ -235,6 +391,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Dev agencies quote $10,000–$30,000 and two to three months",
       model: "per-unit",
     },
+    checkout: { amountUsd: 1250, label: "50% deposit on one agent ($2,500)" },
     distribution: [
       "Audits convert into sprints",
       "Case-study threads with real metrics",
@@ -277,6 +434,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "SEO and PR retainers from ₦300,000 a month that never measure what AI says",
       model: "per-unit",
     },
+    checkout: { amountUsd: 150, label: "One AI Visibility Audit" },
     distribution: [
       "Run it free on a prospect and send the screenshot: here is what ChatGPT says about you today",
       "Bundle with the Agent-Ready Website",
@@ -323,6 +481,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Big-4 AI assurance engagements start at $25,000",
       model: "per-unit",
     },
+    checkout: { amountUsd: 1500, label: "50% deposit on one workflow ($3,000)" },
     distribution: [
       "Fintechs facing the CBN's automated AML requirement",
       "Startups selling agents to banks and telcos",
@@ -401,6 +560,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "A social media manager at ₦150,000–₦300,000 a month",
       model: "retainer",
     },
+    checkout: { amountUsd: 49, label: "First month: 4 packs" },
     distribution: ["Existing website clients", "DMs to brands with strong products and weak feeds", "Market and trade associations"],
     split: {
       llm: "Drafts posts, captions and scripts",
@@ -484,6 +644,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Triaging by hand: $400–$1,500 a month per support agent",
       model: "per-unit",
     },
+    checkout: { amountUsd: 250, label: "Setup" },
     distribution: ["Fintech and e-commerce operators", "Helpdesk vendors as partners", "The Triage API for agent builders"],
     split: {
       llm: "Drafts replies for the specialist routes",
@@ -521,6 +682,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Corporate training firms charge $300–$1,000 per seat for slide-deck courses",
       model: "cohort",
     },
+    checkout: { amountUsd: 2000, label: "50% deposit on a cohort of 20 ($4,000)" },
     distribution: [
       "HR and L&D leads at banks, telcos, agencies and NGOs",
       "Tech hubs and chambers of commerce",
@@ -560,6 +722,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Web3 dev shops charge $8,000–$25,000",
       model: "per-unit",
     },
+    checkout: { amountUsd: 750, label: "50% deposit ($1,500)" },
     distribution: [
       "Brands and SMEs selling to mobile-first stablecoin users",
       "Demo apps for restaurants, events and savings groups",
@@ -955,6 +1118,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Bootcamps charge $500–$5,000",
       model: "cohort",
     },
+    checkout: { amountUsd: 49, label: "One Pro cohort seat" },
     distribution: ["City chapters led by alumni", "Workshops and hackathons", "Sponsored tracks by ecosystems and employers"],
     split: {
       llm: "Explains, gives feedback, generates practice",

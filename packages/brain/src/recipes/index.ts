@@ -4,3 +4,5 @@ export * from "./grant";
 export * from "./study";
 export * from "./content";
 export * from "./teammate";
+export * from "./purchase";
+export * from "./gate";

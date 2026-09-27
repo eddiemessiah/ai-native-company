@@ -17,7 +17,7 @@ interface Result {
   decidedBy: { provider: string; model: string; latencyMs: number } | null;
 }
 
-const BUDGETS = ["Under ₦300k / $200", "₦300k–₦1.5M / $200–$1,000", "₦1.5M–₦5M / $1,000–$3,500", "Over ₦5M / $3,500+", "Not sure yet"];
+const BUDGETS = ["Under $500", "$500–$2,000", "$2,000–$10,000", "Over $10,000", "Not sure yet"];
 const TIMELINES = ["This week", "This month", "This quarter", "Just exploring"];
 
 export function IntakeForm({
@@ -79,7 +79,7 @@ export function IntakeForm({
             </p>
           ) : null}
           <p className="mt-6 max-w-xl text-dim">
-            We reply within one working day (Lagos time), usually the same day.{" "}
+            We reply within one working day, usually the same day.{" "}
             {result.route?.firstJobFree ? "This is a first-job-free offer: if you're one of our first five design partners, the first one costs nothing." : ""}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -93,14 +93,14 @@ export function IntakeForm({
                 What happens next
               </Link>
             ) : null}
-            {links.paystack ? (
-              <a href={links.paystack} target="_blank" rel="noreferrer" className="btn">
-                Pay in naira
-              </a>
-            ) : null}
             {links.stripe ? (
               <a href={links.stripe} target="_blank" rel="noreferrer" className="btn">
-                Pay in dollars
+                Pay by card
+              </a>
+            ) : null}
+            {links.paystack ? (
+              <a href={links.paystack} target="_blank" rel="noreferrer" className="btn">
+                Pay locally in Africa
               </a>
             ) : null}
           </div>
