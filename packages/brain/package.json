@@ -1,0 +1,30 @@
+{
+  "name": "@repo/brain",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "System One decision layer: typed Choice/Score/Noul decisions with calibrated confidence, provider fallbacks, policy gates and decision logs.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./env": "./src/env.ts",
+    "./providers/anthropic": "./src/providers/anthropic.ts",
+    "./providers/jev": "./src/providers/jev.ts",
+    "./recipes": "./src/recipes/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@typesafe-ai/sdk": "0.6.0",
+    "ai": "^7.0.116",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.2"
+  }
+}
