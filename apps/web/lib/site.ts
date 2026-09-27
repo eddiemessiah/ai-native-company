@@ -20,6 +20,7 @@ export const links = {
 
 export const nav = [
   { href: "/directory", label: "Directory" },
+  { href: "/gtm", label: "GTM Harness" },
   { href: "/study", label: "Study Group" },
   { href: "/agents", label: "For agents" },
   { href: "/research", label: "Research" },

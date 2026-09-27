@@ -8,6 +8,7 @@ export { tracks, chapters, type Chapter, type Track } from "./study";
 
 export const categories: readonly { id: Category; label: string; blurb: string }[] = [
   { id: "agent-api", label: "For agents", blurb: "Endpoints agents discover and pay for per call: no account, no API key." },
+  { id: "product", label: "Products", blurb: "Tools founders run themselves, with Shonin's brain inside." },
   { id: "service", label: "Services", blurb: "Finished work, priced per unit. Agents do it, people own it." },
   { id: "infra", label: "Infrastructure", blurb: "Open rails for the agent economy." },
   { id: "community", label: "Community", blurb: "Where the people who run the agents are trained." },

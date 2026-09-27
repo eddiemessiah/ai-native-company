@@ -157,6 +157,45 @@ export const offers: readonly Offer[] = [
     },
   },
 
+  // ─── Products founders run themselves ───────────────────────────────────────
+  {
+    slug: "gtm-harness",
+    name: "GTM Harness",
+    category: "product",
+    status: "beta",
+    featured: true,
+    oneLiner: "Your go-to-market, run by agents you can check: a scorecard, sources, reviewed first messages, a 7-day sprint and a folder for Claude Code.",
+    pitch:
+      "A go-to-market harness for founders: describe your product and get your ideal-customer scorecard, where those customers gather, first outreach messages checked by a reviewer that can block but never send, a seven-day launch sprint, and a folder of rules and agent prompts to keep running with Claude Code",
+    audience: ["startup", "builders"],
+    unit: "One harness for one product",
+    intake: ["Your product in one or two sentences", "Who it's for, and your goal for the month", "The channels you can use"],
+    engine:
+      "An LLM writes the plan and the drafts; the brain reviews every draft (ready, revise or blocked); code packs the folder, the pipeline and the Monday dashboard. The founder sends everything.",
+    rulebook: [
+      "The harness never sends anything; the founder does.",
+      "No invented traction, numbers, customers or quotes, in the plan or in the drafts.",
+      "The reviewer can block a draft but never ship one.",
+      "Every edit the founder makes goes in the corrections log; repeated ones become rules.",
+    ],
+    review: "Every draft carries the reviewer's verdict and fixes; the founder approves new rules each Monday.",
+    delivery: "A web run in about a minute, and a .zip harness folder: CLAUDE.md, scorecard, sources, rules, prompts, drafts, sprint and dashboard.",
+    turnaround: "About a minute",
+    price: {
+      label: "Free and open source (MIT)",
+      humanAlternative: "A GTM consultant's launch plan, or weeks of the founder's own time",
+      model: "free",
+    },
+    distribution: ["Founder communities and office hours", "Startup programs and accelerators", "X threads with a live demo"],
+    split: {
+      llm: "The plan, the sources and the first messages",
+      decide: "Whether each draft is ready, needs a revision, or is blocked",
+      code: "Validation, the scorecard math, the folder, the pipeline and the dashboard",
+    },
+    tags: ["gtm", "founders", "agents", "claude-code", "open-source"],
+    links: [{ label: "Run it", href: "/gtm" }],
+  },
+
   // ─── Services: sell the finished work ────────────────────────────────────────
   {
     slug: "agent-ready-website",
