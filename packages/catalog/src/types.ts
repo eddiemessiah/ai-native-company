@@ -4,7 +4,7 @@
  * If an offer can't fill these in, it isn't ready to sell.
  */
 
-export type Category = "service" | "infra" | "agent-api" | "community" | "research";
+export type Category = "service" | "product" | "infra" | "agent-api" | "community" | "research";
 export type Status = "live" | "beta" | "soon";
 export type Audience = "smb" | "startup" | "enterprise" | "builders" | "agents" | "learners" | "ecosystems";
 

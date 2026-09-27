@@ -17,6 +17,7 @@
     "@repo/agents": "workspace:*",
     "@repo/brain": "workspace:*",
     "@repo/catalog": "workspace:*",
+    "@repo/gtm-harness": "workspace:*",
     "@x402/core": "2.27.0",
     "@x402/evm": "2.27.0",
     "@x402/extensions": "2.27.0",

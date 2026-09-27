@@ -1,0 +1,27 @@
+{
+  "name": "@repo/gtm-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GTM Harness for founders: an ICP scorecard, sourcing plan, reviewed outreach drafts, a 7-day sprint and a harness folder their agents keep running.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./zip": "./src/zip.ts",
+    "./input": "./src/input.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@repo/brain": "workspace:*",
+    "fflate": "^0.8.3",
+    "zod": "^4.6.5"
+  }
+}

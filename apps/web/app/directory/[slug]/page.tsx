@@ -64,6 +64,10 @@ export default async function OfferPage(props: PageProps<"/directory/[slug]">) {
               <Link href={`/agents#${offer.slug}`} className="btn btn-solid mt-6 w-full justify-center">
                 Call the API <Arrow />
               </Link>
+            ) : offer.category === "product" && offer.links?.[0] ? (
+              <Link href={offer.links[0].href} className="btn btn-solid mt-6 w-full justify-center">
+                {offer.links[0].label} free <Arrow />
+              </Link>
             ) : offer.status === "soon" ? (
               <Link href={`/start?offer=${offer.slug}`} className="btn mt-6 w-full justify-center">
                 Join the waitlist <Arrow />
