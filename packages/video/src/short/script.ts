@@ -4,6 +4,8 @@
  * each quote supports its claim; a person approves the render.
  */
 
+import { sceneProblems, sceneText, type SceneVisual } from "./scene";
+
 export interface ShortClaim {
   /** The sentence of narration that states a fact. */
   readonly text: string;
@@ -16,7 +18,8 @@ export interface ShortClaim {
 export type Visual =
   | { readonly kind: "brand" }
   | { readonly kind: "stock"; readonly query: string }
-  | { readonly kind: "local"; readonly query?: string; readonly file?: string };
+  | { readonly kind: "local"; readonly query?: string; readonly file?: string }
+  | SceneVisual;
 
 export interface ShortBeat {
   /** What the voice says: one or two sentences. */
@@ -137,6 +140,23 @@ export function checkScript(script: ShortScript, sources: ReadonlyMap<string, st
     const backed = new Set(quotes.flatMap(numbersIn));
     for (const number of numbersIn(beat.narration)) {
       if (!backed.has(number)) problems.push(`Beat ${n} says ${number}, but none of its quotes contains it`);
+    }
+
+    if (beat.visual?.kind === "scene") {
+      const scene = beat.visual;
+      for (const problem of sceneProblems(scene)) problems.push(`Beat ${n}: ${scene.template} scene: ${problem}`);
+      // A figure on screen is a claim like one said aloud.
+      for (const number of sceneText(scene).flatMap(numbersIn)) {
+        if (!backed.has(number)) problems.push(`Beat ${n}: the scene shows ${number}, but none of its quotes contains it`);
+      }
+      if (scene.template === "code") {
+        const texts = [...sources.values()].map(normalizeText);
+        for (const line of scene.data.lines ?? []) {
+          if (line.trim() && !texts.some((t) => t.includes(normalizeText(line)))) {
+            problems.push(`Beat ${n}: the code line "${line.trim()}" isn't in any source; show code the sources contain`);
+          }
+        }
+      }
     }
   });
   if (!script.beats.some((b) => (b.claims ?? []).length > 0)) {

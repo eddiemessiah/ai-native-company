@@ -75,7 +75,7 @@ pnpm video short approve video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-c
 | `new` | Code | Copies the sources into the job and writes `brief.md`: word budget, rules, the sources with ids |
 | `write` | LLM | Claude returns `script.json` through structured outputs: beats of narration, on-screen text, a visual, and claims with quotes. No API key? Any writer can fill in `script.json` from `brief.md` |
 | `check` | Code, then System One | Code: 3–10 beats, length at 2.5 words a second, on-screen text ≤ 6 words, title ≤ 100 and post ≤ 280 characters, the post says the voice is AI, no narrator posing as an expert, every quote found in its source, every number backed by a quote. Brain: the content gate on the whole draft, and `claimQuestions` on each claim |
-| `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS, and writes `publish.json`: the post, the AI labels switched on for YouTube, TikTok and Meta, and every sentence with the passage it rests on |
+| `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals and scenes, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS, and writes `publish.json`: the post, the AI labels switched on for YouTube, TikTok and Meta, and every sentence with the passage it rests on |
 | `approve` | A person | Recorded by name against the exact script that was rendered. Code refuses a draft voice, a label switched off, a post without the AI disclosure or music without a licence on record. Nothing is posted by the tool |
 
 Voices (`--voice` on `new` or `render`), each optionally followed by `:<voice>`. Approval accepts only the ones marked publishable; the terms behind each are in `research/explainer-shorts.md` §6.
@@ -96,6 +96,23 @@ Music needs its licence on record: `--music bed.mp3 --music-licence "<Pixabay ce
 
 Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).
 
+**Scenes.** Any beat can be a scene instead:
+- `number`: a figure;
+- `code`: up to six lines of code;
+- `diagram`: a flow between two or three parties;
+- `headline`: one to three short lines.
+
+Each template takes an optional kicker, shown above the headline.
+- **What the writer does:** fills the template's data and nothing else, never HTML.
+- **What code checks:** every limit. A figure on screen follows the rule for one said aloud (it must appear in that beat's quotes). A line of code must appear in a source.
+- **How it renders:** HyperFrames (Apache-2.0) renders each scene frame by frame, from our own templates, in the brand fonts, fetching nothing. Code re-encodes the result to the beat's exact frame count and checks that the headline and caption zones stayed empty.
+- **Where it draws:** in the band above the headline and on the stage between headline and captions, never below the captions.
+- **Setup:** install it on the rendering machine with `npm i -g hyperframes@0.8.80`; `pnpm video doctor` shows whether it's there. Without it, scene beats get the brand background and a warning.
+- **Cost:** a scene adds about 11 s of render time.
+- **Telemetry:** always off.
+
+The checks behind it are in `research/hyperframes.md`.
+
 The pronunciation lexicon in `short.json` changes only what the voice hears (`"x402": "x four oh two"`); captions keep the written form.
 
 ## Known limits
@@ -105,3 +122,4 @@ The pronunciation lexicon in `short.json` changes only what the voice hears (`"x
 - Clips from recordings get no added B-roll or music (shorts do: stock, local footage and a ducked music bed).
 - `--demo` ranks with the lexical heuristic. That checks the machinery, but it can't tell a good clip from a greeting, or a supported claim from an unsupported one.
 - Shorts: caption timing is spread across each beat's voice by word length (the script is known, so there's no transcription); stock search takes Pexels' top portrait result.
+- Scenes need HyperFrames and a chrome-headless-shell on the rendering machine. A local render can differ from another machine's by a pixel (fonts and Chrome), so `credits.json` records the Chrome version.

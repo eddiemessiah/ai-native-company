@@ -47,6 +47,11 @@ The offer stays `soon` until it has shipped our own shorts:
 
 - 3–10 beats; the spoken length (at 2.5 words a second) inside the brief's range; on-screen text of 6 words and 40 characters at most.
 - Every quote appears word for word in its source; every number said aloud appears in that beat's quotes.
+- Scene beats (`number`, `code`, `diagram`, `headline`): the writer fills the data and never writes HTML.
+  - Code checks every limit.
+  - A figure shown on screen must appear in that beat's quotes, like one said aloud.
+  - A line of code must appear in a source, word for word.
+  - After the render, code checks that the headline and caption zones stayed empty, and `credits.json` records the result.
 - Title 100 characters at most; post 280 at most (`research/video-editing.md`, §8).
 - The post says the voice is AI ("Voiced with AI."), and no narration presents the narrator as a human expert.
 - Every render writes `renders/publish.json`: the post, YouTube's `containsSyntheticMedia`, TikTok's AI-generated label and Meta's AI info switched on, and every sentence with the passage it rests on. Approval refuses the render if a label is off, the disclosure is missing, the voice is draft-only, or the music has no licence on record.

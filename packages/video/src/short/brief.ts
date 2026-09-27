@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ShortBeat, ShortScript } from "./script";
+import { SCENE_LIMITS as L } from "./scene";
+import type { ShortBeat, ShortScript, Visual } from "./script";
 
 export interface BriefSource {
   readonly id: string;
@@ -34,6 +35,9 @@ const RULES = (s: BriefSettings) => [
     : s.visuals === "local"
       ? 'For each beat set visual to {"kind": "local", "query": "<words that match a file name in the footage folder>"}.'
       : 'For each beat set visual to {"kind": "brand", "query": ""}.',
+  `When a beat's point is a figure, a few lines of code, a flow between parties or a short statement, set its visual to a scene instead, for at most half the beats: {"kind": "scene", "template": "number" | "code" | "diagram" | "headline", "data": {…}}. Fill in the data only; never write HTML or CSS. The beat's onscreen text and the captions still sit on top.`,
+  `Scene data. number: value (${L.value} characters at most, with a digit, as the source writes it) and label (${L.label} at most). code: lines (1 to ${L.codeLines}, ${L.codeLine} characters at most each, copied from a source) and highlight (the line to mark, or 0). diagram: nodes (2 or 3 parties, ${L.node} characters at most each, left to right) and edges (one label per arrow, ${L.edge} characters at most, or []). headline: lines (1 to ${L.headlineLines}, ${L.headlineLine} characters at most each). Every scene also takes a kicker (${L.kicker} characters at most, shown above the headline, or "").`,
+  "A figure shown in a scene follows the rule for one said aloud: it must appear in that beat's quotes.",
   "title: 100 characters at most. post: 280 characters at most, for X, with the one call to action, ending with \"Voiced with AI.\"",
 ];
 
@@ -56,10 +60,33 @@ export function renderBrief(settings: BriefSettings, sources: readonly BriefSour
     '{ "title": "…", "post": "…", "beats": [ { "narration": "…", "onscreen": "…", "visual": { "kind": "brand", "query": "" }, "claims": [ { "text": "…", "source": "<source id>", "quote": "<exact words from the source>" } ] } ] }',
     "```",
     "",
+    "A scene beat's visual, for example:",
+    "",
+    "```json",
+    '{ "kind": "scene", "template": "number", "data": { "value": "$0.001", "label": "per settlement", "kicker": "" } }',
+    "```",
+    "",
     "## Sources",
     "",
     ...sources.flatMap((s) => [`### ${s.id}: ${s.title}${s.url ? ` (${s.url})` : ""}`, "", s.text.trim(), ""]),
   ].join("\n");
+}
+
+const TEXT = { type: "string" } as const;
+const LINES = { type: "array", items: TEXT } as const;
+
+/** One scene template's branch of the visual: the writer picks the template and fills its data, nothing else. */
+function scene<T extends string>(template: T, data: Record<string, unknown>) {
+  return {
+    type: "object",
+    properties: {
+      kind: { type: "string", const: "scene" },
+      template: { type: "string", const: template },
+      data: { type: "object", properties: data, required: Object.keys(data), additionalProperties: false },
+    },
+    required: ["kind", "template", "data"],
+    additionalProperties: false,
+  } as const;
 }
 
 /** Structured-output schema for the writer: every field required, nothing extra. */
@@ -76,10 +103,18 @@ export const SCRIPT_SCHEMA = {
           narration: { type: "string" },
           onscreen: { type: "string" },
           visual: {
-            type: "object",
-            properties: { kind: { type: "string", enum: ["brand", "stock", "local"] }, query: { type: "string" } },
-            required: ["kind", "query"],
-            additionalProperties: false,
+            anyOf: [
+              {
+                type: "object",
+                properties: { kind: { type: "string", enum: ["brand", "stock", "local"] }, query: { type: "string" } },
+                required: ["kind", "query"],
+                additionalProperties: false,
+              },
+              scene("headline", { lines: LINES, kicker: TEXT }),
+              scene("number", { value: TEXT, label: TEXT, kicker: TEXT }),
+              scene("code", { lines: LINES, highlight: { type: "integer" }, kicker: TEXT }),
+              scene("diagram", { nodes: LINES, edges: LINES, kicker: TEXT }),
+            ],
           },
           claims: {
             type: "array",
@@ -100,11 +135,52 @@ export const SCRIPT_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+type WrittenVisual =
+  | { kind: "brand" | "stock" | "local"; query: string }
+  | { kind: "scene"; template: "headline"; data: { lines: string[]; kicker: string } }
+  | { kind: "scene"; template: "number"; data: { value: string; label: string; kicker: string } }
+  | { kind: "scene"; template: "code"; data: { lines: string[]; highlight: number; kicker: string } }
+  | { kind: "scene"; template: "diagram"; data: { nodes: string[]; edges: string[]; kicker: string } };
+
 interface WrittenBeat {
   narration: string;
   onscreen: string;
-  visual: { kind: "brand" | "stock" | "local"; query: string };
+  visual: WrittenVisual;
   claims: { text: string; source: string; quote: string }[];
+}
+
+/** The writer fills every field; empty ones mean "none". */
+function toVisual(v: WrittenVisual): Visual {
+  const some = (key: string, value: string | undefined) => (value?.trim() ? { [key]: value } : {});
+  switch (v.kind) {
+    case "brand":
+      return { kind: "brand" };
+    case "stock":
+      return { kind: "stock", query: v.query };
+    case "local":
+      return { kind: "local", query: v.query };
+  }
+  switch (v.template) {
+    case "headline":
+      return { kind: "scene", template: "headline", data: { lines: v.data.lines, ...some("kicker", v.data.kicker) } };
+    case "number":
+      return { kind: "scene", template: "number", data: { value: v.data.value, label: v.data.label, ...some("kicker", v.data.kicker) } };
+    case "code":
+      return {
+        kind: "scene",
+        template: "code",
+        data: { lines: v.data.lines, ...(v.data.highlight > 0 ? { highlight: v.data.highlight } : {}), ...some("kicker", v.data.kicker) },
+      };
+    case "diagram":
+      return {
+        kind: "scene",
+        template: "diagram",
+        data: { nodes: v.data.nodes, ...(v.data.edges.some((e) => e.trim()) ? { edges: v.data.edges } : {}), ...some("kicker", v.data.kicker) },
+      };
+    default:
+      // Passed through as written, so the check names what's wrong instead of it turning into a brand beat.
+      return v as unknown as Visual;
+  }
 }
 
 /** Turns the writer's JSON into a script; the sources list comes from the job, never from the model. */
@@ -116,7 +192,7 @@ export function toScript(raw: unknown, sources: readonly BriefSource[]): ShortSc
   const beats: ShortBeat[] = (doc.beats as WrittenBeat[]).map((b) => ({
     narration: b.narration,
     onscreen: b.onscreen,
-    visual: b.visual.kind === "brand" ? { kind: "brand" } : b.visual.kind === "stock" ? { kind: "stock", query: b.visual.query } : { kind: "local", query: b.visual.query },
+    visual: toVisual(b.visual),
     claims: b.claims,
   }));
   return {

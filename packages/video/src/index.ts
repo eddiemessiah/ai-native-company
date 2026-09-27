@@ -26,5 +26,26 @@ export {
   type VoiceProvider,
 } from "./short/voice";
 export { packetProblems, publishPacket, type PacketBeat, type PublishPacket } from "./short/publish";
-export { ACCENTS, BRAND, brandArgs, footageArgs, stillArgs, mix, pickLocal, pickPexels, type StockClip } from "./short/visuals";
+export {
+  BANDS,
+  fitSize,
+  fontFaceCss,
+  highlightCode,
+  HYPERFRAMES_VERSION,
+  playwrightHeadlessShell,
+  RESERVED,
+  SCENE_LIMITS,
+  SCENE_TEMPLATES,
+  sceneEnv,
+  sceneFrames,
+  sceneHtml,
+  sceneProblems,
+  sceneRenderArgs,
+  sceneText,
+  zoneArgs,
+  type SceneRenderer,
+  type SceneTemplate,
+  type SceneVisual,
+} from "./short/scene";
+export { ACCENTS, BRAND, brandArgs, conformArgs, footageArgs, stillArgs, mix, pickLocal, pickPexels, type StockClip } from "./short/visuals";
 export { shortPaths, renderShortReview, type ShortSettings, type ShortCheck, type ShortStatus } from "./short/job";

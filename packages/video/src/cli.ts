@@ -44,6 +44,7 @@ import {
 } from "./job";
 import { selectClips, trailerBeats } from "./select";
 import { runShort } from "./short/cli";
+import { findSceneRenderer, HYPERFRAMES_VERSION } from "./short/scene";
 import { autoVoice, voiceLicence } from "./short/voice";
 import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
 import { nearestWord, paddedRange, parseTranscript, splitSentences } from "./transcript";
@@ -232,6 +233,14 @@ async function doctor(): Promise<void> {
   ]);
   rows.push(["shorts writer", Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), "ANTHROPIC_API_KEY for short write; without it, fill in script.json from brief.md"]);
   rows.push(["stock footage", Boolean(process.env.PEXELS_API_KEY), "optional: PEXELS_API_KEY for --visuals stock"]);
+  const scenes = await findSceneRenderer();
+  rows.push([
+    "scene renderer",
+    Boolean(scenes),
+    scenes
+      ? `HyperFrames ${scenes.version}, ${scenes.chrome}`
+      : `optional: npm i -g hyperframes@${HYPERFRAMES_VERSION} for number, code, diagram and headline scenes`,
+  ]);
   for (const [name, ok, note] of rows) console.log(`${ok ? "✓" : "✗"} ${name.padEnd(18)} ${note}`);
   const required = rows.filter(([name]) => name === "ffmpeg" || name === "ffprobe" || name.trim() === "ass filter");
   if (required.some(([, ok]) => !ok)) process.exitCode = 1;

@@ -23,6 +23,7 @@ import {
 } from "./job";
 import { checkScript, DEFAULT_LEXICON, draftText, forSpeech } from "./script";
 import { packetProblems, publishPacket, type PublishPacket } from "./publish";
+import { findSceneRenderer, HYPERFRAMES_VERSION, renderScene } from "./scene";
 import { ACCENTS, brandArgs, download, footageArgs, isImage, pickLocal, pickPexels, searchPexels, stillArgs } from "./visuals";
 import { autoVoice, parseVoice, speak, voiceLicence } from "./voice";
 
@@ -256,10 +257,18 @@ async function render(ctx: ShortContext): Promise<void> {
   const total = shortLength(beats);
   await run("ffmpeg", voiceArgs(spoken.map((s) => s.file), beats, join(p.audio, "voice.wav")));
 
-  console.log(`Building ${settings.visuals} visuals for ${shortDuration(total)}…`);
+  const sceneBeats = script.beats.filter((b) => b.visual?.kind === "scene").length;
+  console.log(`Building ${settings.visuals} visuals${sceneBeats ? ` and ${sceneBeats} scene${sceneBeats === 1 ? "" : "s"}` : ""} for ${shortDuration(total)}…`);
   const credits: Record<string, unknown>[] = [{ part: "voice", provider: voice.provider, voice: voice.voice, ...licence }];
   const footageAuthors: string[] = [];
   const localFiles = settings.localDir && existsSync(settings.localDir) ? readdirSync(settings.localDir).map((f) => join(settings.localDir!, f)).sort() : [];
+  const renderer = sceneBeats > 0 ? await findSceneRenderer() : null;
+  if (sceneBeats > 0 && !renderer) {
+    console.warn(`warning: ${sceneBeats} scene beat(s), but HyperFrames isn't installed (npm i -g hyperframes@${HYPERFRAMES_VERSION}): they get the brand background`);
+  } else if (renderer) {
+    console.log(`Scenes: HyperFrames ${renderer.version}, ${renderer.chrome}`);
+    if (renderer.version !== HYPERFRAMES_VERSION) console.warn(`note: the scene templates were tested with HyperFrames ${HYPERFRAMES_VERSION}`);
+  }
   const used = new Set<string>();
   const segments: string[] = [];
   for (const b of beats) {
@@ -267,7 +276,7 @@ async function render(ctx: ShortContext): Promise<void> {
     const name = `beat-${String(b.index + 1).padStart(2, "0")}.mp4`;
     const target = join(p.visuals, name);
     const accent = ACCENTS[b.index % ACCENTS.length]!;
-    let args = brandArgs(b.length, accent, target, b.index + 1);
+    let args: string[] | null = brandArgs(b.length, accent, target, b.index + 1);
     if (beat.visual?.kind === "stock") {
       const key = process.env.PEXELS_API_KEY;
       const clip = key ? pickPexels(await searchPexels(beat.visual.query, key), b.length) : null;
@@ -296,8 +305,34 @@ async function render(ctx: ShortContext): Promise<void> {
         args = isImage(file) ? stillArgs(file, b.length, target) : footageArgs(file, b.length, target);
         credits.push({ part: `beat ${b.index + 1}`, provider: "client", file });
       }
+    } else if (beat.visual?.kind === "scene") {
+      const part = `beat ${b.index + 1}`;
+      const template = beat.visual.template;
+      if (!renderer) {
+        credits.push({ part, provider: "brand", template, fallback: "HyperFrames isn't installed" });
+      } else {
+        try {
+          const dir = join(p.visuals, `scene-${String(b.index + 1).padStart(2, "0")}`);
+          const zones = await renderScene(beat.visual, { seconds: b.length, accent, dir, out: target, renderer });
+          args = null;
+          credits.push({
+            part,
+            provider: "hyperframes",
+            version: renderer.version,
+            chrome: renderer.chrome,
+            licence: "Apache-2.0",
+            template,
+            zones: zones.clear ? "clear" : `not clear: brightest luma ${zones.headline} in the headline zone, ${zones.caption} in the caption zone`,
+          });
+          if (!zones.clear) console.warn(`  ${part}: the ${template} scene drew into the headline or caption zone; check it before approving`);
+        } catch (error) {
+          const reason = (error instanceof Error ? error.message : String(error)).split("\n")[0]!.slice(0, 200);
+          console.warn(`  ${part}: the ${template} scene failed (${reason}); using the brand background`);
+          credits.push({ part, provider: "brand", template, fallback: `the scene failed: ${reason}` });
+        }
+      }
     }
-    await run("ffmpeg", args);
+    if (args) await run("ffmpeg", args);
     segments.push(name);
   }
   writeFileSync(join(p.visuals, "list.txt"), concatList(segments));

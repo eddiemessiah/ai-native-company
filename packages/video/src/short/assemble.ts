@@ -6,45 +6,50 @@ const FPS = 30;
 
 export interface BeatTiming {
   readonly index: number;
-  /** Where the beat starts in the short. */
+  /** Where the beat starts in the short: startFrame / 30, unrounded. */
   readonly start: number;
+  readonly startFrame: number;
   /** Seconds of voice in the beat. */
   readonly voice: number;
-  /** The beat's full length: its voice plus the pause after it, in whole frames. */
+  /** The beat's full length, its voice plus the pause after it: frames / 30, unrounded. */
   readonly length: number;
+  readonly frames: number;
 }
 
 /**
- * Lays the beats end to end. Each beat's length is rounded up to whole frames
- * and its pause absorbs the rounding, so picture and voice never drift apart
- * however many beats there are.
+ * Lays the beats end to end in whole frames. Each beat's pause absorbs the
+ * rounding, and every length is counted in frames rather than rounded seconds,
+ * so picture and voice never drift apart however many beats there are.
  */
 export function timeline(voiceSeconds: readonly number[], opts: { gap?: number; tail?: number } = {}): BeatTiming[] {
   const gap = opts.gap ?? 0.25;
   const tail = opts.tail ?? 0.8;
-  let start = 0;
+  let startFrame = 0;
   return voiceSeconds.map((voice, index) => {
     const pause = index === voiceSeconds.length - 1 ? tail : gap;
-    const length = Math.ceil((voice + pause) * FPS - 1e-6) / FPS;
-    const beat = { index, start: round3(start), voice: round3(voice), length: round3(length) };
-    start += length;
+    const frames = Math.ceil((voice + pause) * FPS - 1e-6);
+    const beat = { index, start: startFrame / FPS, startFrame, voice: round3(voice), length: frames / FPS, frames };
+    startFrame += frames;
     return beat;
   });
 }
 
 export function shortLength(beats: readonly BeatTiming[]): number {
   const last = beats[beats.length - 1];
-  return last ? round3(last.start + last.length) : 0;
+  return last ? (last.startFrame + last.frames) / FPS : 0;
 }
+
+/** Audio samples in one video frame at 48 kHz. */
+const SAMPLES_PER_FRAME = 48000 / FPS;
 
 /** Caption words for each beat, spread across its voice by length: the script is known, so no transcription. */
 export function captionWords(narrations: readonly string[], beats: readonly BeatTiming[]): Word[] {
   return beats.flatMap((b) => spread({ start: b.start, end: b.start + b.voice, text: narrations[b.index] ?? "" }));
 }
 
-/** The voice track: every beat's audio, padded with silence to its beat length, joined. */
+/** The voice track: every beat's audio (48 kHz, from tidyArgs), padded with silence to its beat's exact sample count, joined. */
 export function voiceArgs(files: readonly string[], beats: readonly BeatTiming[], out: string): string[] {
-  const pads = beats.map((b, i) => `[${i}:a]apad=whole_dur=${b.length.toFixed(3)}[p${i}]`);
+  const pads = beats.map((b, i) => `[${i}:a]apad=whole_len=${b.frames * SAMPLES_PER_FRAME}[p${i}]`);
   const join = `${beats.map((_, i) => `[p${i}]`).join("")}concat=n=${beats.length}:v=0:a=1[a]`;
   return [
     "-hide_banner",

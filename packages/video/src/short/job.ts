@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shortDuration } from "../time";
+import { sceneText } from "./scene";
 import type { ScriptReport, ShortScript } from "./script";
 import type { VoiceLicence, VoiceSpec } from "./voice";
 
@@ -142,6 +143,10 @@ export function renderShortReview(
     lines.push("## Script", "");
     script.beats.forEach((b, i) => {
       lines.push(`**${i + 1}. ${b.onscreen}**`, "", `> ${b.narration}`, "");
+      if (b.visual?.kind === "scene") {
+        const shown = b.visual.template === "code" ? b.visual.data.lines.map((l) => `\`${l}\``) : sceneText(b.visual);
+        lines.push(`Scene (${b.visual.template}): ${shown.join(" · ")}`, "");
+      }
       for (const c of b.claims ?? []) lines.push(`- "${c.quote}" (${c.source})`);
       if ((b.claims ?? []).length > 0) lines.push("");
     });

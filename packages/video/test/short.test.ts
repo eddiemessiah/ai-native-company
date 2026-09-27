@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import {
   autoVoice,
+  brandArgs,
   captionWords,
   checkScript,
   concatList,
   finalArgs,
+  footageArgs,
   forSpeech,
   mix,
   normalizeText,
@@ -18,6 +20,7 @@ import {
   renderBrief,
   speechRequest,
   shortLength,
+  stillArgs,
   timeline,
   toScript,
   voiceArgs,
@@ -250,6 +253,20 @@ describe("visuals", () => {
 });
 
 describe("assembly", () => {
+  it("counts beats in frames, so a length that rounds up in milliseconds gains no frame", () => {
+    // 6.3 s of voice + 0.25 s is 197 frames: 6.566667 s, which rounds to 6.567 and used to render 198 frames.
+    const beats = timeline([6.3, 2, 3]);
+    expect(beats[0]!.frames).toBe(197);
+    expect(beats[1]!.startFrame).toBe(197);
+    expect(beats[1]!.start).toBeCloseTo(197 / 30, 9);
+    expect(shortLength(beats) * 30).toBeCloseTo(beats.reduce((n, b) => n + b.frames, 0), 9);
+    for (const args of [brandArgs(beats[0]!.length, "#ffb000", "b.mp4", 1), footageArgs("f.mp4", beats[0]!.length, "b.mp4"), stillArgs("s.jpg", beats[0]!.length, "b.mp4")]) {
+      expect(args.slice(args.indexOf("-frames:v"), args.indexOf("-frames:v") + 2)).toEqual(["-frames:v", "197"]);
+    }
+    const voice = voiceArgs(["a.wav", "b.wav", "c.wav"], beats, "voice.wav");
+    expect(voice[voice.indexOf("-filter_complex") + 1]).toContain(`apad=whole_len=${197 * 1600}`);
+  });
+
   it("lays beats on whole frames so picture and voice never drift", () => {
     const beats = timeline([2.01, 3.337, 1.5], { gap: 0.25, tail: 0.8 });
     for (const b of beats) {
@@ -261,14 +278,15 @@ describe("assembly", () => {
     const words = captionWords(["one two", "three four five", "six"], beats);
     expect(words).toHaveLength(6);
     expect(words[2]!.start).toBeCloseTo(beats[1]!.start, 3);
-    expect(words[4]!.end).toBeLessThanOrEqual(beats[1]!.start + beats[1]!.voice + 1e-6);
+    // Word times are kept to the millisecond.
+    expect(words[4]!.end).toBeLessThanOrEqual(beats[1]!.start + beats[1]!.voice + 5e-4);
   });
 
-  it("pads each beat's voice to its length and joins them", () => {
+  it("pads each beat's voice to its exact sample count and joins them", () => {
     const beats = timeline([2, 3]);
     const args = voiceArgs(["a.wav", "b.wav"], beats, "voice.wav");
     const graph = args[args.indexOf("-filter_complex") + 1]!;
-    expect(graph).toContain(`[0:a]apad=whole_dur=${beats[0]!.length.toFixed(3)}[p0]`);
+    expect(graph).toContain(`[0:a]apad=whole_len=${beats[0]!.frames * 1600}[p0]`);
     expect(graph).toContain("[p0][p1]concat=n=2:v=0:a=1[a]");
     expect(concatList(["beat-01.mp4", "it's.mp4"])).toBe("file 'beat-01.mp4'\nfile 'it'\\''s.mp4'\n");
   });

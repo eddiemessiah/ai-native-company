@@ -29,6 +29,9 @@ export function mix(a: string, b: string, t: number): string {
 
 const hex = (color: string) => `0x${color.slice(1)}`;
 
+/** A beat's length in whole frames. Beat lengths are frames / 30, so this recovers the count exactly. */
+export const framesIn = (seconds: number) => Math.round(seconds * FPS);
+
 /** Beat segments are intermediates (the final pass re-encodes them), so: fast, and nearly lossless. */
 const ENCODE = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p", "-r", String(FPS)];
 
@@ -39,8 +42,25 @@ const ENCODE = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "
  */
 export function brandArgs(seconds: number, accent: string, out: string, seed: number): string[] {
   const tint = mix(BRAND.bg, accent, 0.24);
-  const source = `gradients=s=${W / 4}x${H / 4}:r=${FPS}:d=${seconds.toFixed(3)}:n=3:c0=${hex(BRAND.bg)}:c1=${hex(tint)}:c2=${hex(BRAND.bg)}:type=linear:speed=0.004:seed=${seed}`;
-  return ["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", source, "-vf", `scale=${W}:${H}:flags=bicubic,format=yuv420p`, ...ENCODE, out];
+  const frames = framesIn(seconds);
+  // A frame of slack in the source, then an exact cut: a duration rounded to milliseconds can gain or lose a frame.
+  const source = `gradients=s=${W / 4}x${H / 4}:r=${FPS}:d=${((frames + 1) / FPS).toFixed(4)}:n=3:c0=${hex(BRAND.bg)}:c1=${hex(tint)}:c2=${hex(BRAND.bg)}:type=linear:speed=0.004:seed=${seed}`;
+  return ["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", source, "-vf", `scale=${W}:${H}:flags=bicubic,format=yuv420p`, "-frames:v", String(frames), ...ENCODE, out];
+}
+
+/**
+ * A scene render re-encoded like every other beat and cut or padded to an exact frame count, so the concat
+ * step can copy streams. HyperFrames encodes bt709; the other beats use ffmpeg's default matrix, untagged.
+ */
+export function conformArgs(input: string, frames: number, out: string): string[] {
+  const chain = [
+    `fps=${FPS}`,
+    `scale=${W}:${H}:in_color_matrix=bt709:out_color_matrix=bt601:in_range=tv:out_range=tv`,
+    "tpad=stop_mode=clone:stop_duration=1",
+    "setparams=colorspace=unknown:color_primaries=unknown:color_trc=unknown:range=unknown",
+    "format=yuv420p",
+  ].join(",");
+  return ["-hide_banner", "-loglevel", "error", "-y", "-i", input, "-vf", chain, "-frames:v", String(frames), ...ENCODE, out];
 }
 
 /** Fill 9:16 from any footage, trim or loop it to length, and darken it so the headline reads. */
@@ -49,12 +69,13 @@ function coverChain(): string {
 }
 
 export function footageArgs(file: string, seconds: number, out: string): string[] {
-  return ["-hide_banner", "-loglevel", "error", "-y", "-stream_loop", "-1", "-t", seconds.toFixed(3), "-i", file, "-vf", coverChain(), ...ENCODE, out];
+  const frames = framesIn(seconds);
+  return ["-hide_banner", "-loglevel", "error", "-y", "-stream_loop", "-1", "-t", ((frames + 1) / FPS).toFixed(4), "-i", file, "-vf", coverChain(), "-frames:v", String(frames), ...ENCODE, out];
 }
 
 /** A slow push-in on a still image. */
 export function stillArgs(file: string, seconds: number, out: string): string[] {
-  const frames = Math.ceil(seconds * FPS);
+  const frames = framesIn(seconds);
   const zoom = `zoompan=z='min(zoom+0.0006,1.15)':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${W}x${H}:fps=${FPS}`;
   return [
     "-hide_banner",

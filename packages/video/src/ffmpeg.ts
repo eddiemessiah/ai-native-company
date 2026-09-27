@@ -23,11 +23,11 @@ export interface RunResult {
 export function run(
   cmd: string,
   args: readonly string[],
-  opts: { cwd?: string; onProgress?: (seconds: number) => void; showErrors?: boolean } = {},
+  opts: { cwd?: string; env?: NodeJS.ProcessEnv; onProgress?: (seconds: number) => void; showErrors?: boolean } = {},
 ): Promise<RunResult> {
   return new Promise((resolve, reject) => {
     // showErrors: let the command write straight to the terminal (long jobs that print their own progress).
-    const child = spawn(cmd, args, { cwd: opts.cwd, stdio: ["ignore", "pipe", opts.showErrors ? "inherit" : "pipe"] });
+    const child = spawn(cmd, args, { cwd: opts.cwd, env: opts.env, stdio: ["ignore", "pipe", opts.showErrors ? "inherit" : "pipe"] });
     let stdout = "";
     let stderr = "";
     child.stdout?.on("data", (d: Buffer) => (stdout += d.toString()));

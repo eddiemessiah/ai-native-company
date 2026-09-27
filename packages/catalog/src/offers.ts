@@ -679,10 +679,11 @@ export const offers: readonly Offer[] = [
       "Where it will run (TikTok, Reels, Shorts or X) and the one call to action",
     ],
     engine:
-      "An LLM writes the script from your sources: a hook, one idea, on-screen text, and every fact with a quote copied from its source; code checks every length, quote and number said aloud; the decision brain runs the content gate and checks each claim against its quote; code voices it with a licensed voice (Azure's Nigerian English voices by default), lays the beats on whole frames, burns in captions and headlines, adds brand visuals or licensed stock, ducks a licensed music bed, levels the audio and writes the publish packet.",
+      "An LLM writes the script from your sources: a hook, one idea, on-screen text, and every fact with a quote copied from its source; code checks every length, quote and number said aloud; the decision brain runs the content gate and checks each claim against its quote; code voices it with a licensed voice (Azure's Nigerian English voices by default), lays the beats on whole frames, burns in captions and headlines, adds brand visuals, licensed stock or animated scenes for figures, code and flows (HyperFrames, rendered frame by frame), ducks a licensed music bed, levels the audio and writes the publish packet.",
     rulebook: [
       "A script is written from the client's sources, never from a topic alone. Every factual sentence carries a quote that code finds word for word in its source.",
       "Every number said aloud appears in that beat's quotes; a miss blocks the short until a person fixes it. A person checks names against the client's glossary and listens to each one.",
+      "What's on screen follows the same rule. A figure in a scene appears in that beat's quotes, and a line of code appears in a source word for word. The writer fills a scene's data and never writes HTML.",
       "Each short ships with a claim-to-source list: every beat's narration, the passage each fact rests on, and the page or URL.",
       "The voice has a commercial licence, recorded with its provider and voice: no edge-tts or other unofficial endpoint, no ElevenLabs Free, no local model without a declared commercial licence (research/explainer-shorts.md §6).",
       "The post says the voice is AI, and the publish packet switches on YouTube's altered-or-synthetic setting, TikTok's AI-generated label and Meta's AI info label; code checks both before approval.",
