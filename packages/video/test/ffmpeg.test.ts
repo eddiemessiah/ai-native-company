@@ -5,9 +5,12 @@ import {
   clipArgs,
   cropBox,
   fitBox,
+  limitArgs,
+  limiterFilter,
   parseFfmpegVersion,
   parseLoudnorm,
   parseProbe,
+  peakExcess,
   scoreCandidates,
   tightenArgs,
   tightenGraph,
@@ -141,6 +144,21 @@ describe("render commands", () => {
     expect(parseLoudnorm(stderr)).toEqual({ input_i: "-27.61", input_tp: "-4.47", input_lra: "18.06", input_thresh: "-39.20", target_offset: "0.58" });
     expect(parseLoudnorm(stderr.replace('"-27.61"', '"-inf"'))).toBeNull();
     expect(parseLoudnorm("no json here")).toBeNull();
+  });
+
+  it("limits the peaks first when one linear gain to -14 LUFS would pass the ceiling", () => {
+    const kokoro = { input_i: "-22.70", input_tp: "-0.40", input_lra: "3.1", input_thresh: "-33.0", target_offset: "0.1" };
+    // +8.7 dB of gain would put peaks at +8.3 dBTP against a -2 dBTP ceiling: 10.3 dB too many.
+    expect(peakExcess(kokoro)).toBeCloseTo(10.3, 5);
+    // Peaks go to -0.4 - 10.3 - 1 = -11.7 dBFS, a linear 0.2600.
+    expect(limiterFilter(kokoro, peakExcess(kokoro))).toBe("alimiter=limit=0.2600:attack=2:release=80:level=false");
+    const quiet = { ...kokoro, input_i: "-20.00", input_tp: "-9.00" };
+    expect(peakExcess(quiet)).toBeLessThanOrEqual(0);
+    const args = limitArgs("short.raw.mp4", kokoro, "short.limited-1.mkv");
+    expect(args).toEqual(expect.arrayContaining(["-c:v", "copy", "-c:a", "pcm_f32le"]));
+    expect(args.at(-1)).toBe("short.limited-1.mkv");
+    // The limiter never asks for less than -24 dBFS, alimiter's floor.
+    expect(limiterFilter({ ...kokoro, input_tp: "-20" }, 10)).toContain("limit=0.0631");
   });
 });
 

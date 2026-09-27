@@ -229,7 +229,7 @@ async function doctor(): Promise<void> {
     licence.use === "publish",
     licence.use === "publish"
       ? `${voice.provider}:${voice.voice} (${licence.licence})`
-      : `${voice.provider}:${voice.voice} is for drafts only: set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION for the en-NG voices, or LOCAL_TTS_URL and LOCAL_TTS_LICENCE`,
+      : `${voice.provider}:${voice.voice} is for drafts only: set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION for the en-NG voices, or run the Kokoro server (scripts/kokoro_server.py) and set LOCAL_TTS_URL`,
   ]);
   rows.push(["shorts writer", Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), "ANTHROPIC_API_KEY for short write; without it, fill in script.json from brief.md"]);
   rows.push(["stock footage", Boolean(process.env.PEXELS_API_KEY), "optional: PEXELS_API_KEY for --visuals stock"]);

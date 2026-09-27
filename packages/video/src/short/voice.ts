@@ -12,8 +12,9 @@ export interface VoiceSpec {
 /**
  * azure: Azure AI Speech, the default for published work. Nigerian English neural voices (en-NG-EzinneNeural,
  *        en-NG-AbeoNeural) under a paid commercial contract (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION).
- * local: any OpenAI-compatible speech server you run, such as Kokoro (Apache-2.0): LOCAL_TTS_URL, and optionally
- *        LOCAL_TTS_MODEL, LOCAL_TTS_VOICE and LOCAL_TTS_KEY. Publishable once LOCAL_TTS_LICENCE declares a commercial licence.
+ * local: an OpenAI-compatible speech server you run: our Kokoro server (scripts/kokoro_server.py) or VoiceStudio.
+ *        LOCAL_TTS_URL, and optionally LOCAL_TTS_MODEL (the engine id), LOCAL_TTS_VOICE and LOCAL_TTS_KEY. Whether the
+ *        engine may publish comes from LOCAL_ENGINES below, never from the environment.
  * openai: OpenAI's speech API (OPENAI_API_KEY). elevenlabs: a voice id from your library (ELEVENLABS_API_KEY),
  *        publishable on a paid plan (ELEVENLABS_PLAN).
  * edge: the edge-tts package, which imitates Edge's read-aloud client; its maintainer says it's for personal use.
@@ -44,14 +45,49 @@ export function parseVoice(value: string): VoiceSpec {
 }
 
 export interface VoiceLicence {
-  /** publish: may ship in a published short. draft: for review and tests; approval refuses it. */
-  readonly use: "publish" | "draft";
+  /**
+   * publish: may ship in a published short. draft: for review and tests; approval refuses it.
+   * never: non-commercial weights, not even for a paid job's drafts; render refuses it.
+   */
+  readonly use: "publish" | "draft" | "never";
   /** What the job ledger records: the licence or plan the voice is used under. */
   readonly licence: string;
   readonly note?: string;
+  /** A credit the licence asks for, carried into the publish packet. */
+  readonly credit?: string;
 }
 
-const NON_COMMERCIAL = /\bNC\b|non-?commercial|personal|research|evaluation/i;
+export interface LocalEngine {
+  readonly weights: string;
+  readonly use: "publish" | "never";
+  /** It can clone a voice from reference audio, so a voice that isn't a preset needs a release (voices.ts). */
+  readonly clones: boolean;
+  readonly credit?: string;
+}
+
+/**
+ * Engines a local speech server may run, keyed by the engine id sent as the model (LOCAL_TTS_MODEL), and what their
+ * weights allow (research/voicestudio.md §3; research/explainer-shorts.md §6c). A licence decision is code that a
+ * person reviews in a pull request, never an environment variable. Anything missing here is a draft voice.
+ */
+export const LOCAL_ENGINES: Readonly<Record<string, LocalEngine>> = {
+  kokoro: { weights: "Kokoro-82M, Apache-2.0", use: "publish", clones: false },
+  kittentts: { weights: "KittenTTS, Apache-2.0", use: "publish", clones: false },
+  voxcpm2: { weights: "VoxCPM2, Apache-2.0", use: "publish", clones: true },
+  "moss-tts-v15": { weights: "MOSS-TTS v1.5, Apache-2.0", use: "publish", clones: true },
+  "moss-tts-nano": { weights: "MOSS-TTS-Nano, Apache-2.0", use: "publish", clones: true },
+  cosyvoice: { weights: "Fun-CosyVoice 3, Apache-2.0", use: "publish", clones: true },
+  "confucius4-tts": { weights: "Confucius4-TTS, Apache-2.0", use: "publish", clones: true },
+  "dots-tts": { weights: "dots.tts, Apache-2.0", use: "publish", clones: true },
+  pockettts: { weights: "Pocket TTS by Kyutai, CC-BY-4.0", use: "publish", clones: true, credit: "Voice: Pocket TTS by Kyutai (CC-BY-4.0)" },
+  omnivoice: { weights: "OmniVoice, CC-BY-NC", use: "never", clones: true },
+  "omnivoice-gguf": { weights: "OmniVoice GGUF, CC-BY-NC-4.0", use: "never", clones: true },
+  "omnivoice-subprocess": { weights: "OmniVoice, CC-BY-NC", use: "never", clones: true },
+  audiocpp: { weights: "Breeze-TTS-2, a research and non-commercial licence", use: "never", clones: true },
+};
+
+/** The engine a local server runs for us: the model id we send. */
+export const localEngineId = (env: NodeJS.ProcessEnv) => env.LOCAL_TTS_MODEL?.trim() || "kokoro";
 
 /** Whether a voice may ship, from its provider and the licence or plan declared in the environment. */
 export function voiceLicence(spec: VoiceSpec, env: NodeJS.ProcessEnv = process.env): VoiceLicence {
@@ -70,10 +106,19 @@ export function voiceLicence(spec: VoiceSpec, env: NodeJS.ProcessEnv = process.e
       };
     }
     case "local": {
-      const declared = env.LOCAL_TTS_LICENCE?.trim();
-      if (!declared) return { use: "draft", licence: "not declared", note: "set LOCAL_TTS_LICENCE to the model's and voice's licence, such as Apache-2.0 for Kokoro" };
-      if (NON_COMMERCIAL.test(declared)) return { use: "draft", licence: declared, note: "this licence doesn't allow commercial use" };
-      return { use: "publish", licence: declared };
+      const id = localEngineId(env);
+      const engine = LOCAL_ENGINES[id];
+      if (!engine) {
+        return {
+          use: "draft",
+          licence: `${id}: not in the engine allowlist`,
+          note: /^(tts-1|tts-1-hd|gpt-4o-mini-tts)/.test(id)
+            ? "OpenAI model names run whatever engine the server has active: send an engine id such as voxcpm2"
+            : "add the engine to LOCAL_ENGINES with its weights licence, through a pull request",
+        };
+      }
+      if (engine.use === "never") return { use: "never", licence: engine.weights, note: "non-commercial weights: not for client work, or a paid job's drafts" };
+      return { use: "publish", licence: engine.weights, ...(engine.credit ? { credit: engine.credit } : {}) };
     }
     case "edge":
       return { use: "draft", licence: "none: an unofficial client of Edge's read-aloud service", note: "its maintainer says it's for personal use; azure sells the same voices" };
@@ -175,7 +220,7 @@ export function speechRequest(spec: VoiceSpec, text: string, env: NodeJS.Process
         init: {
           method: "POST",
           headers: { ...(env.LOCAL_TTS_KEY ? { authorization: `Bearer ${env.LOCAL_TTS_KEY}` } : {}), "content-type": "application/json" },
-          body: JSON.stringify({ model: env.LOCAL_TTS_MODEL ?? "kokoro", voice: spec.voice, input: text, response_format: "wav" }),
+          body: JSON.stringify({ model: localEngineId(env), voice: spec.voice, input: text, response_format: "wav" }),
         },
       };
     case "openai":

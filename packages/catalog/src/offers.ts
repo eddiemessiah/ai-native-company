@@ -685,7 +685,7 @@ export const offers: readonly Offer[] = [
       "Every number said aloud appears in that beat's quotes; a miss blocks the short until a person fixes it. A person checks names against the client's glossary and listens to each one.",
       "What's on screen follows the same rule. A figure in a scene appears in that beat's quotes, and a line of code appears in a source word for word. The writer fills a scene's data and never writes HTML.",
       "Each short ships with a claim-to-source list: every beat's narration, the passage each fact rests on, and the page or URL.",
-      "The voice has a commercial licence, recorded with its provider and voice: no edge-tts or other unofficial endpoint, no ElevenLabs Free, no local model without a declared commercial licence (research/explainer-shorts.md §6).",
+      "The voice has a commercial licence, recorded with its provider and voice: no edge-tts or other unofficial endpoint, no ElevenLabs Free, no local engine outside the allowlist of commercially licensed weights, so never OmniVoice, VoiceStudio's non-commercial default (research/explainer-shorts.md §6, research/voicestudio.md §3).",
       "The post says the voice is AI, and the publish packet switches on YouTube's altered-or-synthetic setting, TikTok's AI-generated label and Meta's AI info label; code checks both before approval.",
       "An AI narrator is never presented as a human expert. Health, money, legal and political shorts name the human or institutional source and go to a person, whatever their score.",
       "Stock footage comes only from Pexels or Pixabay, logged clip by clip with provider, id, page, creator and download date. No identifiable person in a short about health, crime or debt, and no third-party logo in a stock shot.",

@@ -83,7 +83,7 @@ Voices (`--voice` on `new` or `render`), each optionally followed by `:<voice>`.
 | Voice | Needs | Publishable |
 |---|---|---|
 | `azure` (default: `en-NG-EzinneNeural`; also `en-NG-AbeoNeural`) | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Yes. Nigerian English, about $0.014 a short, and a free tier of 0.5M characters a month |
-| `local:<voice>` | `LOCAL_TTS_URL`: your own OpenAI-compatible server, such as Kokoro-FastAPI | Once `LOCAL_TTS_LICENCE` declares a commercial licence (Kokoro is Apache-2.0) |
+| `local:<voice>` | `LOCAL_TTS_URL`: an OpenAI-compatible server you run, such as our Kokoro server or VoiceStudio; `LOCAL_TTS_MODEL` names the engine | When the engine is in `LOCAL_ENGINES` with commercial weights: Kokoro, VoxCPM2 and the other Apache-2.0 engines. Never OmniVoice |
 | `openai:<voice>` | `OPENAI_API_KEY` | Yes |
 | `elevenlabs:<voice id>` | `ELEVENLABS_API_KEY`, `ELEVENLABS_PLAN` | On a paid plan only; the Free plan has no commercial licence |
 | `edge` | `pip install edge-tts` | No. It imitates Edge's read-aloud client, and its maintainer says it's for personal use. Drafts at most |
@@ -91,6 +91,21 @@ Voices (`--voice` on `new` or `render`), each optionally followed by `:<voice>`.
 | `pico`, `espeak` | Nothing (offline) | No: robotic, for tests |
 
 `auto` picks Azure, then your local server, then OpenAI, whichever is configured, and otherwise a draft voice. It never picks edge-tts. Render a draft with any voice, then the final with `render --voice azure`.
+
+**Free and offline: Kokoro.** Kokoro-82M's weights are Apache-2.0, so its voices can ship. It has American and British English and French voices, but no Nigerian English. It runs at about 1.3× real time on 4 CPU cores (our data). `scripts/kokoro_server.py` serves it with OpenAI's speech API on your machine:
+
+```bash
+pip install kokoro-onnx soundfile
+# kokoro-v1.0.int8.onnx and voices-v1.0.bin: github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
+python3 packages/video/scripts/kokoro_server.py --model kokoro-v1.0.int8.onnx --voices voices-v1.0.bin
+export LOCAL_TTS_URL=http://127.0.0.1:8880/v1
+pnpm video short render <job> --voice local:af_heart     # or bf_emma, bm_george; ff_siwis for French
+```
+
+The same `local` voice reaches VoiceStudio: set `LOCAL_TTS_MODEL` to an engine id, such as `voxcpm2`. Whether an engine can ship comes from `LOCAL_ENGINES` in `src/short/voice.ts`, which follows `research/voicestudio.md` §3:
+- Kokoro, VoxCPM2 and the other Apache-2.0 engines can ship.
+- OmniVoice, VoiceStudio's default, is refused at render.
+- Anything not listed is a draft.
 
 Music needs its licence on record: `--music bed.mp3 --music-licence "<Pixabay certificate or licence id>"`. That's what clears a Content ID claim.
 

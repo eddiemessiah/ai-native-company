@@ -21,6 +21,8 @@ export interface PublishPacket {
   readonly voice: VoiceSpec & VoiceLicence;
   /** Pexels asks for a credit when there's room; its licence doesn't require one. */
   readonly footageCredit?: string;
+  /** A credit the voice's licence requires, such as CC-BY-4.0 weights. It goes in the post or description. */
+  readonly voiceCredit?: string;
   /** Every beat's narration, and the passage and source behind each fact in it. */
   readonly claims: readonly PacketBeat[];
   readonly scriptHash: string;
@@ -38,7 +40,7 @@ export function publishPacket(
   script: ShortScript,
   voice: VoiceSpec & VoiceLicence,
   scriptHash: string,
-  opts: { footageAuthors?: readonly string[] } = {},
+  opts: { footageAuthors?: readonly string[]; voiceCredit?: string } = {},
 ): PublishPacket {
   const known = new Map(script.sources.map((s) => [s.id, s]));
   const authors = [...new Set(opts.footageAuthors ?? [])];
@@ -52,6 +54,7 @@ export function publishPacket(
     labels: { youtube: { containsSyntheticMedia: true }, tiktok: { aiGeneratedContent: true }, meta: { aiInfo: true } },
     voice,
     ...(authors.length ? { footageCredit: `Footage: ${authors.join(", ")} (Pexels)` } : {}),
+    ...(opts.voiceCredit ? { voiceCredit: opts.voiceCredit } : {}),
     claims: script.beats.map((b, i) => ({
       beat: i + 1,
       narration: b.narration,

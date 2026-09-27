@@ -26,7 +26,7 @@ The offer stays `soon` until it has shipped our own shorts:
   - No identifiable person on screen in a short about health, crime or debt, and no third-party logo in a stock shot (Pexels and Pixabay licences, §5).
   - Music only from the client's licensed library, Pixabay Music with its certificate saved, or a paid library licensed for every platform we deliver for. Never TikTok's or Meta's business libraries in a master, never commercial releases (§7). `--music` needs `--music-licence`.
 - **Voice.**
-  - Published shorts, ours included, use a voice with a commercial licence: `azure` by default (`en-NG-EzinneNeural` or `en-NG-AbeoNeural`), `openai`, `elevenlabs` on a paid plan, or a `local` model whose licence is declared in `LOCAL_TTS_LICENCE`. Approval refuses anything else.
+  - Published shorts, ours included, use a voice with a commercial licence: `azure` by default (`en-NG-EzinneNeural` or `en-NG-AbeoNeural`), `openai`, `elevenlabs` on a paid plan, or a `local` engine in the allowlist (`LOCAL_ENGINES` in `packages/video/src/short/voice.ts`: Kokoro, VoxCPM2 and the other Apache-2.0 engines). Approval refuses anything else, and render refuses non-commercial engines such as OmniVoice (`research/voicestudio.md` §3).
   - `edge`, `say`, `pico` and `espeak` are for drafts only. edge-tts imitates Edge's read-aloud client and its maintainer says it's for personal use (§6a).
   - Never clone a real person's voice without their written consent.
 

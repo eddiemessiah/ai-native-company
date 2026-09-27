@@ -36,7 +36,7 @@ LLM writes the script, code checks every count and quote, the brain checks each 
   pnpm video short write <job> [--model claude-opus-5]     Claude writes script.json from brief.md
   pnpm video short check <job> [--demo]                    code checks, content gate, one claim check per claim
   pnpm video short render <job> [--voice …] [--force]      voice, visuals, captions, music, loudness, publish packet
-  pnpm video short approve <job> --by "<name>"             needs a licensed voice: azure, openai, paid elevenlabs, declared local
+  pnpm video short approve <job> --by "<name>"             needs a licensed voice: azure, openai, paid elevenlabs, an allowlisted local engine
 
 No ANTHROPIC_API_KEY? Any writer can fill in script.json from brief.md, an agent in a Claude Code session included.`;
 
@@ -241,6 +241,7 @@ async function render(ctx: ShortContext): Promise<void> {
   const voiceSetting = str(ctx.opt.voice) ?? settings.voice;
   const voice = voiceSetting === "auto" ? await autoVoice() : parseVoice(voiceSetting);
   const licence = voiceLicence(voice);
+  if (licence.use === "never") ctx.fail(`${voice.provider}:${voice.voice} runs ${licence.licence}: ${licence.note}. Pick a licensed engine`);
   if (licence.use === "draft") {
     console.warn(`note: ${voice.provider}:${voice.voice} is a draft voice (${licence.note ?? licence.licence}). Approval will need a licensed one: --voice azure`);
   }
@@ -367,7 +368,7 @@ async function render(ctx: ShortContext): Promise<void> {
   await levelAndFinish(out, "short.raw.mp4", "short.mp4", true);
   await run("ffmpeg", frameArgs(join(out, "short.mp4"), Math.min(1.2, total / 2), join(out, "cover.jpg")));
   writeJson(join(out, "credits.json"), credits);
-  writeJson(p.publish, publishPacket(script, { ...voice, ...licence }, hash, { footageAuthors }));
+  writeJson(p.publish, publishPacket(script, { ...voice, ...licence }, hash, { footageAuthors, ...(licence.credit ? { voiceCredit: licence.credit } : {}) }));
   const loud = await measureLoudness(join(out, "short.mp4"));
 
   const next: ShortStatus = {

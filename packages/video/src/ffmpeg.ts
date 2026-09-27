@@ -447,13 +447,47 @@ export async function measureLoudness(src: string, range?: Interval, target: Lou
   return parseLoudnorm((await run("ffmpeg", measureArgs(src, range, target))).stderr);
 }
 
-/** Two-pass loudness on a finished file: measure, then rewrite its audio and copy its video. */
+/** How far past the true-peak ceiling one linear gain to the target would push, in dB. At or below 0 the gain fits. */
+export function peakExcess(m: Loudness, t: LoudnessTarget = SOCIAL_LOUDNESS): number {
+  return Number(m.input_tp) + (t.i - Number(m.input_i)) - t.tp;
+}
+
+/**
+ * Takes `excess` dB off the peaks, plus 1 dB for the peaks between samples, so the loudness pass after it can apply
+ * one linear gain. Without it loudnorm drops to its dynamic mode and lands short of the target: a Kokoro voice at
+ * -22.7 LUFS with peaks at -0.4 dBFS came out at -15 LUFS (our data, 2026-09-27).
+ */
+export function limiterFilter(m: Loudness, excess: number): string {
+  const ceiling = Math.max(-24, Number(m.input_tp) - excess - 1);
+  return `alimiter=limit=${(10 ** (ceiling / 20)).toFixed(4)}:attack=2:release=80:level=false`;
+}
+
+/** Limits a finished file's audio into a lossless intermediate and copies its video. */
+export function limitArgs(input: string, loudness: Loudness, out: string, target: LoudnessTarget = SOCIAL_LOUDNESS): string[] {
+  const filter = limiterFilter(loudness, peakExcess(loudness, target));
+  return ["-hide_banner", "-loglevel", "error", "-y", "-i", input, "-map", "0:v", "-map", "0:a", "-c:v", "copy", "-af", filter, "-c:a", "pcm_f32le", out];
+}
+
+/**
+ * Loudness on a finished file: measure; if one linear gain would clip, limit the peaks and measure again (twice at
+ * most); then rewrite the audio at the target and copy the video.
+ */
 export async function levelAndFinish(dir: string, raw: string, final: string, hasAudio: boolean): Promise<void> {
-  const loud = hasAudio ? await measureLoudness(join(dir, raw)) : null;
-  if (loud) {
-    await run("ffmpeg", normalizeArgs(raw, loud, final), { cwd: dir });
-    unlinkSync(join(dir, raw));
-  } else {
+  let loud = hasAudio ? await measureLoudness(join(dir, raw)) : null;
+  if (!loud) {
     renameSync(join(dir, raw), join(dir, final));
+    return;
   }
+  let input = raw;
+  for (let round = 1; round <= 2 && loud && peakExcess(loud) > 0; round++) {
+    const limited = `${raw.replace(/\.[^.]+$/, "")}.limited-${round}.mkv`;
+    await run("ffmpeg", limitArgs(input, loud, limited), { cwd: dir });
+    if (input !== raw) unlinkSync(join(dir, input));
+    input = limited;
+    loud = await measureLoudness(join(dir, input));
+  }
+  if (!loud) throw new Error(`Couldn't measure the loudness of ${input} after limiting`);
+  await run("ffmpeg", normalizeArgs(input, loud, final), { cwd: dir });
+  if (input !== raw) unlinkSync(join(dir, input));
+  unlinkSync(join(dir, raw));
 }

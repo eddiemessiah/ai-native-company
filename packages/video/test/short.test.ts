@@ -164,10 +164,14 @@ describe("voices", () => {
     expect(use("elevenlabs:abc")).toBe("draft");
     expect(use("elevenlabs:abc", { ELEVENLABS_PLAN: "free" })).toBe("draft");
     expect(voiceLicence(parseVoice("elevenlabs:abc"), { ELEVENLABS_PLAN: "Creator" })).toEqual({ use: "publish", licence: "ElevenLabs Creator plan" });
-    expect(use("local")).toBe("draft");
-    expect(use("local", { LOCAL_TTS_LICENCE: "Apache-2.0" })).toBe("publish");
-    expect(use("local", { LOCAL_TTS_LICENCE: "CC BY-NC-SA 4.0" })).toBe("draft");
-    expect(use("local", { LOCAL_TTS_LICENCE: "for personal use only" })).toBe("draft");
+    // Local engines: the allowlist decides, never an environment variable.
+    expect(use("local")).toBe("publish");
+    expect(use("local", { LOCAL_TTS_MODEL: "voxcpm2" })).toBe("publish");
+    expect(voiceLicence(parseVoice("local"), { LOCAL_TTS_MODEL: "pockettts" }).credit).toMatch(/Kyutai/);
+    expect(use("local", { LOCAL_TTS_MODEL: "omnivoice" })).toBe("never");
+    expect(use("local", { LOCAL_TTS_MODEL: "omnivoice-gguf" })).toBe("never");
+    expect(voiceLicence(parseVoice("local"), { LOCAL_TTS_MODEL: "tts-1" })).toMatchObject({ use: "draft", note: expect.stringMatching(/send an engine id/) });
+    expect(voiceLicence(parseVoice("local"), { LOCAL_TTS_MODEL: "xtts-v2", LOCAL_TTS_LICENCE: "Apache-2.0" })).toMatchObject({ use: "draft", note: expect.stringMatching(/allowlist|LOCAL_ENGINES/) });
   });
 
   it("picks a licensed voice when one is configured, and never edge-tts on its own", async () => {
