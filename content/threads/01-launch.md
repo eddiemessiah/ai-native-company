@@ -1,13 +1,13 @@
 # Thread 1: Launch (pin this)
 
 1/
-I'm building an AI-native firm in Lagos.
+I'm building an AI-native firm from Lagos, for businesses anywhere and the agents that work for them.
 
 Not an agency. Not a SaaS.
 
 A firm that sells finished work (audits, agents, grant applications, company brains), where agents do the work and people own the outcome.
 
-It's called Nova. Here's how it works 🧵
+It's called Shonin: in Japanese, one word for merchant, witness and approval. Here's how it works 🧵
 
 2/
 The $120k accountant vs the $10k QuickBooks problem:
@@ -46,14 +46,16 @@ A System One model answers all of those in one call, for a fraction of the cost.
 6/
 Every decision gets logged: model version, probabilities, confidence, who approved.
 
-Regulators in Ghana and Nigeria are moving from "use AI responsibly" to "show me the evidence".
+Regulators from Nigeria to the UK are moving from "use AI responsibly" to "show me the evidence".
 
 We ship the evidence with every job.
 
 7/
-Agents are customers too.
+Agents are customers too, and we sell to them first.
 
-Our decision recipes are HTTP endpoints agents pay for per call in USDC on Celo, with x402. No account. No API key. The request is the transaction.
+Before an agent pays, Shonin Check tells it whether the purchase serves the user's task: pay, confirm with a person, or block. Shonin Gate checks an action before it runs. Shonin Receipt proves a payment settled.
+
+$0.01 a call in USDC, with x402. No account. No API key.
 
 8/
 And we train the people who run the agents.
@@ -69,7 +71,7 @@ Shipped before we had a name:
 • 25+ events, 11+ workshops
 
 10/
-First 5 businesses get a free Agent Readiness Audit: every workflow mapped into what AI writes, what it decides, and what code does, with the savings in naira.
+First 5 businesses get a free Agent Readiness Audit: every workflow mapped into what AI writes, what it decides, and what code does, with the savings in your currency.
 
 Reply or DM "audit". 👇
 {link}

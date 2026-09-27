@@ -6,6 +6,7 @@ import { Glyph } from "./glyph";
 const CATEGORY_LABEL: Record<Offer["category"], string> = {
   service: "Service",
   "agent-api": "Agent API",
+  product: "Product",
   infra: "Infrastructure",
   community: "Community",
   research: "Research",

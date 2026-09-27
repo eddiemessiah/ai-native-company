@@ -6,3 +6,5 @@ export * from "./content";
 export * from "./clip";
 export * from "./claim";
 export * from "./teammate";
+export * from "./purchase";
+export * from "./gate";

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { brand, chapters, featured, offers, paidRoutes, proofs, tracks } from "@repo/catalog";
+import { brand, chapters, featured, offers, proofs, tracks } from "@repo/catalog";
+import { AgentProducts } from "@/components/agent-products";
 import { Arrow, HUMAN, Legend, SectionHead, SPLIT } from "@/components/bits";
 import { BrainDemo } from "@/components/brain-demo";
 import { Glyph } from "@/components/glyph";
@@ -7,6 +8,7 @@ import { Loom } from "@/components/loom";
 import { OfferCard } from "@/components/offer-card";
 import { Reveal } from "@/components/reveal";
 import { Ticker } from "@/components/ticker";
+import { paymentNetworks } from "@/lib/chain";
 
 const PIPELINE = [
   { k: "Unit", d: "One clearly defined thing with a finish line: an audit, an agent, an application. Never an hour." },
@@ -19,6 +21,7 @@ const PIPELINE = [
 
 export default function Home() {
   const names = Object.fromEntries(offers.map((o) => [o.slug, o.name]));
+  const apis = offers.filter((o) => o.api).map((o) => o.slug);
   const live = offers.filter((o) => o.status !== "soon").length;
 
   return (
@@ -37,7 +40,7 @@ export default function Home() {
             <Reveal>
               <p className="label flex flex-wrap items-center gap-3">
                 <span className="dot live-dot" />
-                An AI-native firm · {brand.locale.home} → everywhere
+                An AI-native firm · for agents and businesses, worldwide
               </p>
             </Reveal>
             <Reveal delay={0.08}>
@@ -49,14 +52,18 @@ export default function Home() {
             </Reveal>
             <Reveal delay={0.16}>
               <p className="mt-8 max-w-xl text-[clamp(17px,1.5vw,20px)] leading-relaxed text-dim">
-                {brand.name} sells finished work, not hours. Agents do it, a decision brain routes and checks every step,
-                and people own the outcome. Audits, agents, grant applications and company brains, priced per unit.
+                {brand.name} sells to agents and to businesses. Agents buy checks and decisions per call, with no account.
+                Businesses buy finished work (audits, agents, grant applications, company brains) priced per unit. A
+                decision brain checks every step, and people own the outcome.
               </p>
             </Reveal>
             <Reveal delay={0.24}>
               <div className="mt-9 flex flex-wrap gap-3">
-                <Link href="/start" className="btn btn-solid">
-                  Start a job <Arrow />
+                <Link href="/agents" className="btn btn-solid">
+                  Plug in your agent <Arrow />
+                </Link>
+                <Link href="/start" className="btn">
+                  Start a job
                 </Link>
                 <Link href="/directory" className="btn">
                   Browse {offers.length} offers
@@ -69,7 +76,7 @@ export default function Home() {
           </div>
           <div className="lg:col-span-5">
             <Reveal delay={0.2} y={30}>
-              <BrainDemo names={names} />
+              <BrainDemo names={names} apis={apis} />
             </Reveal>
           </div>
         </div>
@@ -77,10 +84,89 @@ export default function Home() {
 
       <Ticker />
 
-      {/* ── 01 The split ─────────────────────────────────────────────────── */}
+      {/* ── 01 For agents ────────────────────────────────────────────────── */}
       <section className="wrap py-28 md:py-36">
         <SectionHead
           n="01"
+          label="For agents, first"
+          title={
+            <>
+              The firm <span className="serif text-dim">agents can</span> hire.
+            </>
+          }
+          lede="An agent doesn't need a sales call. It reads the offer, checks it and pays per call: no account, no API key, no procurement. Three products for agents that spend money and act on someone's behalf."
+        />
+        <div className="mt-16">
+          <AgentProducts />
+        </div>
+        <div className="mt-10 grid gap-10 lg:grid-cols-12">
+          <Reveal className="lg:col-span-5">
+            <p className="label">How an agent pays us</p>
+            <ol className="mt-5 space-y-3 text-[15px] text-dim">
+              <li>
+                <span className="mr-2 font-mono text-xs text-faint">01</span>It calls the endpoint and gets a 402 with the price.
+              </li>
+              <li>
+                <span className="mr-2 font-mono text-xs text-faint">02</span>It signs a gasless stablecoin authorization. No transaction yet.
+              </li>
+              <li>
+                <span className="mr-2 font-mono text-xs text-faint">03</span>It retries with the signature, and we do the work.
+              </li>
+              <li>
+                <span className="mr-2 font-mono text-xs text-faint">04</span>The payment settles only if the call succeeds.
+              </li>
+            </ol>
+            <p className="mt-6 font-mono text-[12.5px] text-dim">x402 v2 · {paymentNetworks().join(" · ")}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/agents" className="btn btn-solid">
+                Plug in your agent <Arrow />
+              </Link>
+              <a href="/llms.txt" className="btn">
+                llms.txt
+              </a>
+              <a href="/.well-known/agent-card.json" className="btn">
+                Agent card
+              </a>
+            </div>
+          </Reveal>
+          <Reveal className="lg:col-span-7" y={30}>
+            <pre className="card overflow-x-auto p-6 font-mono text-[12px] leading-[1.75] text-dim md:p-8">
+              <code>
+                <span className="text-faint"># Before your agent pays an API, it asks Shonin Check.</span>
+                {"\n"}$ curl -X POST {"<site>"}/api/v1/check \{"\n"}
+                {"    "}-d {`'{"paymentRequired":"eyJ4NDAyVmVyc2lvbiI6Mi…",`}
+                {"\n"}
+                {"         "}
+                {`"url":"https://api.example.com/v1/rates",`}
+                {"\n"}
+                {"         "}
+                {`"task":"Get today's USD/EUR rate","budgetUsd":0.05}'`}
+                {"\n"}
+                <span className="text-human">HTTP/1.1 402 Payment Required</span> <span className="text-faint"># $0.01 per check</span>
+                {"\n"}
+                <span className="text-faint"># sign, retry</span>
+                {"\n"}
+                <span className="text-live">HTTP/1.1 200 OK</span>
+                {"\n"}
+                {`{ "verdict": "pay",`}
+                {"\n"}
+                {`  "reasons": ["passed all 10 checks",`}
+                {"\n"}
+                {`    "the purchase serves the task and the offer looks legitimate"],`}
+                {"\n"}
+                {`  "option": { "networkName": "Base", "token": "USDC",`}
+                {"\n"}
+                {`    "amountUsd": 0.002, "payTo": "0x…" } }`}
+              </code>
+            </pre>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── 02 The split ─────────────────────────────────────────────────── */}
+      <section className="wrap py-28 md:py-36">
+        <SectionHead
+          n="02"
           label="How the firm thinks"
           title={
             <>
@@ -118,11 +204,11 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* ── 02 Pipeline ──────────────────────────────────────────────────── */}
+      {/* ── 03 Pipeline ──────────────────────────────────────────────────── */}
       <section className="border-y border-line bg-bg-2/40">
         <div className="wrap py-28 md:py-36">
           <SectionHead
-            n="02"
+            n="03"
             label="How a job moves"
             title={
               <>
@@ -144,10 +230,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 03 Directory ─────────────────────────────────────────────────── */}
+      {/* ── 04 Directory ─────────────────────────────────────────────────── */}
       <section className="wrap py-28 md:py-36">
         <SectionHead
-          n="03"
+          n="04"
           label="The directory"
           title={
             <>
@@ -170,82 +256,6 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* ── 04 For agents ────────────────────────────────────────────────── */}
-      <section className="border-y border-line bg-bg-2/40">
-        <div className="wrap grid gap-14 py-28 md:py-36 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <p className="label flex items-center gap-3">
-              <span className="text-fg">04</span>
-              <span className="h-px w-8 bg-line-2" />
-              For agents
-            </p>
-            <h2 className="mt-6 text-[clamp(34px,4.6vw,64px)] font-semibold leading-[0.98]">
-              Agents are customers <span className="serif text-dim">too.</span>
-            </h2>
-            <p className="mt-6 text-lg text-dim">
-              Our decision recipes are HTTP endpoints an agent can discover, call and pay for per request in USDC with
-              x402. No account, no API key, no invoice. The request is the transaction.
-            </p>
-            <ul className="mt-8 space-y-3 font-mono text-[13px]">
-              {paidRoutes
-                .filter((r) => offers.find((o) => o.slug === r.slug)?.status !== "soon")
-                .map((r) => (
-                  <li key={r.path} className="flex items-center justify-between gap-4 border-b border-line pb-3">
-                    <span>
-                      <span className="text-decide">{r.method}</span> {r.path}
-                    </span>
-                    <span className="text-dim">${r.priceUsd.toFixed(3)}</span>
-                  </li>
-                ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/agents" className="btn btn-solid">
-                API docs <Arrow />
-              </Link>
-              <a href="/llms.txt" className="btn">
-                llms.txt
-              </a>
-            </div>
-          </div>
-          <Reveal className="lg:col-span-7" y={30}>
-            <pre className="card overflow-x-auto p-6 font-mono text-[12px] leading-[1.75] text-dim md:p-8">
-              <code>
-                <span className="text-faint"># 1. Ask. The price comes back as a 402.</span>
-                {"\n"}$ curl -i -X POST {"<site>"}/api/v1/triage \{"\n"}
-                {"    "}-d {`'{"message":"charged twice, refund pls"}'`}
-                {"\n"}
-                <span className="text-human">HTTP/1.1 402 Payment Required</span>
-                {"\n"}PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6Mi… <span className="text-faint"># base64 JSON:</span>
-                {"\n"}
-                {`{ "x402Version": 2, "accepts": [{`}
-                {"\n"}
-                {`    "scheme": "exact", "network": "eip155:42220",`}
-                {"\n"}
-                {`    "amount": "10000", "asset": "0xcebA…118C",`} <span className="text-faint"># $0.01 USDC</span>
-                {"\n"}
-                {`    "extra": { "name": "USDC", "version": "2" } }] }`}
-                {"\n\n"}
-                <span className="text-faint"># 2. Pay. Sign a gasless EIP-3009 authorization, retry.</span>
-                {"\n"}$ curl … -H {`"PAYMENT-SIGNATURE: <signed payload>"`}
-                {"\n"}
-                <span className="text-live">HTTP/1.1 200 OK</span>
-                {"\n"}PAYMENT-RESPONSE: <span className="text-faint">{"<settlement receipt>"}</span>
-                {"\n"}
-                {`{ "route": { "kind": "human",`}
-                {"\n"}
-                {`    "reason": "refund requested: a person approves" },`}
-                {"\n"}
-                {`  "decision": { "provider": "jev", "model": "jev-1.13.0",`}
-                {"\n"}
-                {`    "calibrated": true, "latencyMs": 212,`}
-                {"\n"}
-                {`    "answers": { "intent": { "choice": "billing", … } } } }`}
-              </code>
-            </pre>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ── 05 Study group ───────────────────────────────────────────────── */}
       <section className="wrap py-28 md:py-36">
         <SectionHead
@@ -256,7 +266,7 @@ export default function Home() {
               Learn to build agents. <span className="serif text-write">Get paid</span> to run them.
             </>
           }
-          lede="The firm needs people who can run agents well. So we train them, in the open, with city chapters across Africa and the diaspora. Graduates join the bench that delivers our jobs."
+          lede="The firm needs people who can run agents well. So we train them in the open, online and in city chapters, starting where we already run events. Graduates join the bench that delivers our jobs."
         />
         <div className="mt-16 grid gap-5 lg:grid-cols-3">
           <Reveal className="card p-7 lg:col-span-2">
@@ -354,7 +364,7 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={0.08} className="card relative overflow-hidden p-8">
-            <Glyph seed="nova-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
+            <Glyph seed="shonin-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
             <p className="label">{brand.agent.role}</p>
             <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">{brand.agent.name}</p>
             <p className="mt-1 font-mono text-sm text-decide">System One brain · every decision logged</p>

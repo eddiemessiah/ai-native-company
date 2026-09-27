@@ -49,7 +49,7 @@ import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
 import { nearestWord, paddedRange, parseTranscript, splitSentences } from "./transcript";
 import type { Format, Interval, Mode, Sentence, Transcript } from "./types";
 
-const HELP = `Nova Video Desk: one recording in; clips, a trailer, chapters and a tighter cut out.
+const HELP = `Shonin Video Desk: one recording in; clips, a trailer, chapters and a tighter cut out.
 Code cuts, the brain scores, a person approves. Nothing here publishes anything.
 
   pnpm video doctor

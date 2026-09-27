@@ -1,16 +1,16 @@
 const LINES: readonly { kind: "write" | "decide" | "code" | "human"; text: string }[] = [
   { kind: "decide", text: "lead.route → grant-desk · 0.91 · 184ms" },
-  { kind: "code", text: "calendar.slot 14:00 WAT ✓" },
+  { kind: "code", text: "calendar.slot 14:00 UTC ✓" },
   { kind: "decide", text: "support.triage → billing · 0.94" },
-  { kind: "human", text: "approve? refund ₦12,500 → founder" },
+  { kind: "human", text: "approve? refund $125 → founder" },
   { kind: "write", text: "draft → audit report §3 · 1.2k tok" },
   { kind: "decide", text: "brain.triage → pass · silence is fine" },
   { kind: "code", text: "x402.settle 0.01 USDC · celo" },
-  { kind: "decide", text: "study.place → T4 onchain · builder · pod africa" },
+  { kind: "decide", text: "check.pay → pay · 10/10 checks · $0.002" },
   { kind: "decide", text: "content.gate → revise · unsourced number" },
   { kind: "write", text: "draft → grant milestones v2" },
   { kind: "human", text: "approve? send proposal to client" },
-  { kind: "decide", text: "turn.gate → replace · newer request wins" },
+  { kind: "decide", text: "gate.action → confirm · external · 0.81 < 0.85" },
   { kind: "code", text: "budget.check agent-7 · $3.20 / $5.00 ✓" },
 ];
 

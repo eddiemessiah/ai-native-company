@@ -26,7 +26,7 @@ To reuse the web app's keys: `set -a; source apps/web/.env.local; set +a`.
 ## A recording, end to end
 
 ```bash
-pnpm video transcribe ~/Videos/ep12.mp4 --glossary "Celo, MiniPay, x402, Nova"
+pnpm video transcribe ~/Videos/ep12.mp4 --glossary "Celo, MiniPay, x402, Shonin"
 pnpm video ingest ~/Videos/ep12.mp4 --transcript ~/Videos/ep12.whisper.json --title "CeloIQ Sessions 12"
 pnpm video plan video-jobs/celoiq-sessions-12            # scores every moment, proposes 8 clips
 open video-jobs/celoiq-sessions-12/review.md              # frames with the 9:16 crop drawn on them

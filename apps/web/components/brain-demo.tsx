@@ -31,7 +31,7 @@ const NEXT_LABEL: Record<string, string> = {
   discard: "Discard",
 };
 
-export function BrainDemo({ names }: { names: Record<string, string> }) {
+export function BrainDemo({ names, apis = [] }: { names: Record<string, string>; apis?: readonly string[] }) {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<DemoResponse | null>(null);
@@ -178,12 +178,21 @@ export function BrainDemo({ names }: { names: Record<string, string> }) {
                 </span>
               </div>
               {result.route.offer !== "other" && result.route.next !== "discard" ? (
-                <Link
-                  href={`/start?offer=${encodeURIComponent(result.route.offer)}&m=${encodeURIComponent(text.slice(0, 600))}`}
-                  className="flex items-center gap-1.5 font-mono text-[12px] text-write hover:underline"
-                >
-                  Start this job <Arrow />
-                </Link>
+                apis.includes(result.route.offer) ? (
+                  <Link
+                    href={`/agents#${encodeURIComponent(result.route.offer)}`}
+                    className="flex items-center gap-1.5 font-mono text-[12px] text-write hover:underline"
+                  >
+                    Call the API <Arrow />
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/start?offer=${encodeURIComponent(result.route.offer)}&m=${encodeURIComponent(text.slice(0, 600))}`}
+                    className="flex items-center gap-1.5 font-mono text-[12px] text-write hover:underline"
+                  >
+                    Start this job <Arrow />
+                  </Link>
+                )
               ) : null}
             </div>
           </motion.div>

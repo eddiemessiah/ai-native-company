@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Nova design system.
+ * Shonin design system.
  * Monochrome base. Colour carries meaning, and only four meanings:
  *   write  (saffron)  an LLM generates
  *   decide (indigo)   a System One model decides
@@ -246,58 +246,58 @@
       repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 14px),
       repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 14px);
   }
-  .prose-nova {
+  .prose-shonin {
     font-size: 17px;
     line-height: 1.75;
     color: color-mix(in srgb, var(--fg) 88%, var(--bg));
   }
-  .prose-nova h2 {
+  .prose-shonin h2 {
     font-size: clamp(26px, 3vw, 34px);
     line-height: 1.15;
     margin: 2.4em 0 0.6em;
     color: var(--fg);
     font-weight: 600;
   }
-  .prose-nova h3 {
+  .prose-shonin h3 {
     font-size: 21px;
     margin: 2em 0 0.5em;
     color: var(--fg);
     font-weight: 600;
   }
-  .prose-nova p,
-  .prose-nova ul,
-  .prose-nova ol,
-  .prose-nova pre,
-  .prose-nova blockquote,
-  .prose-nova table {
+  .prose-shonin p,
+  .prose-shonin ul,
+  .prose-shonin ol,
+  .prose-shonin pre,
+  .prose-shonin blockquote,
+  .prose-shonin table {
     margin: 1.1em 0;
   }
-  .prose-nova ul {
+  .prose-shonin ul {
     list-style: disc;
     padding-left: 1.3em;
   }
-  .prose-nova ol {
+  .prose-shonin ol {
     list-style: decimal;
     padding-left: 1.3em;
   }
-  .prose-nova li {
+  .prose-shonin li {
     margin: 0.35em 0;
   }
-  .prose-nova a {
+  .prose-shonin a {
     color: var(--fg);
     text-decoration: underline;
     text-decoration-color: var(--decide);
     text-underline-offset: 3px;
   }
-  .prose-nova strong {
+  .prose-shonin strong {
     color: var(--fg);
     font-weight: 650;
   }
-  .prose-nova p,
-  .prose-nova li {
+  .prose-shonin p,
+  .prose-shonin li {
     overflow-wrap: break-word;
   }
-  .prose-nova code {
+  .prose-shonin code {
     overflow-wrap: anywhere;
     font-family: var(--font-mono);
     font-size: 0.86em;
@@ -306,7 +306,7 @@
     padding: 0.1em 0.35em;
     border-radius: 6px;
   }
-  .prose-nova pre {
+  .prose-shonin pre {
     background: var(--bg-2);
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -315,12 +315,12 @@
     font-size: 13.5px;
     line-height: 1.6;
   }
-  .prose-nova pre code {
+  .prose-shonin pre code {
     background: none;
     border: 0;
     padding: 0;
   }
-  .prose-nova blockquote {
+  .prose-shonin blockquote {
     border-left: 2px solid var(--write);
     padding-left: 1em;
     color: var(--dim);
@@ -328,28 +328,28 @@
     font-style: italic;
     font-size: 1.2em;
   }
-  .prose-nova table {
+  .prose-shonin table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
     display: block;
     overflow-x: auto;
   }
-  .prose-nova th,
-  .prose-nova td {
+  .prose-shonin th,
+  .prose-shonin td {
     border-bottom: 1px solid var(--line);
     padding: 8px 10px;
     text-align: left;
     vertical-align: top;
   }
-  .prose-nova th {
+  .prose-shonin th {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--faint);
   }
-  .prose-nova hr {
+  .prose-shonin hr {
     border-color: var(--line);
     margin: 2.5em 0;
   }

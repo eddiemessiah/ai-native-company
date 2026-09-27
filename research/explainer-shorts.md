@@ -1,6 +1,6 @@
 # Explainer Shorts: human prices, tool prices, platform rules, licences and voices
 
-*Compiled 2026-09-27 for Nova's Explainer Shorts line (Edidiong Umana). Sources dated 2023–2026, with the most weight on 2025–2026.*
+*Compiled 2026-09-27 for Shonin's Explainer Shorts line (Edidiong Umana). Sources dated 2023–2026, with the most weight on 2025–2026.*
 
 **Method.** The egress proxy blocked most hosts again:
 - **Blocked when tried:**
@@ -33,7 +33,7 @@ Naira conversions use the CBN rate of **₦1,329.5 per US$1 on 2026-09-25** ([Na
 
 ## 0. TL;DR
 
-1. **MoneyPrinterTurbo had 126.2k GitHub stars on 2026-09-27, so the "125k+" tweet holds** [PAGE]. It is MIT-licensed. The first commit is dated 2024-03-11, the first release (v1.1.0) 2024-04-11 and the latest (v1.3.7) 2026-09-13 [PAGE]. It turns a topic into a script, stock footage, a TTS voice, captions and music in one pass. It lacks what Nova sells (§1):
+1. **MoneyPrinterTurbo had 126.2k GitHub stars on 2026-09-27, so the "125k+" tweet holds** [PAGE]. It is MIT-licensed. The first commit is dated 2024-03-11, the first release (v1.1.0) 2024-04-11 and the latest (v1.3.7) 2026-09-13 [PAGE]. It turns a topic into a script, stock footage, a TTS voice, captions and music in one pass. It lacks what Shonin sells (§1):
    - it writes from the topic alone, with no source;
    - it deletes anything in brackets or parentheses, so citations vanish;
    - it shuffles 5-second stock clips at random;
@@ -81,7 +81,7 @@ Naira conversions use the CBN rate of **₦1,329.5 per US$1 on 2026-09-25** ([Na
 
 All [PAGE], from `app/services/` in the local clone.
 
-| Step | Where | What the code does | What it means for Nova |
+| Step | Where | What the code does | What it means for Shonin |
 |---|---|---|---|
 | 1. Script | `llm.py`, `generate_script` | Prompts an LLM with the topic, a paragraph count (default 1) and optional extra instructions. There is no source-document input. The cleaner then deletes `*`, `#` and everything inside `[...]` and `(...)` | The script rests on the model's memory. An inline citation such as "(WHO, 2025)" would be deleted |
 | 2. Search terms | `llm.py`, `generate_terms` | Asks for 5 English stock-footage terms of 1–3 words. With `match_materials_to_script` on (off by default), it asks for 8 terms in script order | Footage is picked by keyword, not by what each sentence says |
@@ -90,7 +90,7 @@ All [PAGE], from `app/services/` in the local clone.
 | 5. Footage | `material.py` | For each term it searches Pexels (the default), Pixabay or Coverr, and keeps only clips in the output's orientation. Pexels clips must match the output size exactly; Pixabay clips must be at least as wide. By default it shuffles the clips at random and uses 5-second pieces. Searches are cached for 24 hours. It records the provider, asset ID, source page and creator of every clip. It can also buy AI-generated clips (Seedance, MiniMax, WaveSpeed, OFox, MuAPI) | The per-clip record is the start of a licence ledger. The random order is why footage drifts from the script |
 | 6. Music | `video.py`, `bgm.py` | Picks one of 29 bundled MP3s (56 MB) at random, at volume 0.2 with a 3-second fade-out, or generates music (Sonilo, ElevenLabs) | The README says: "The current project includes some default music from YouTube videos. If there are copyright issues, please delete them." |
 | 7. Render | `video.py`, `generate_video` | MoviePy and FFmpeg: libx264, AAC at 192k, 30 fps. The default caption font is `STHeitiMedium.ttc`; `resource/fonts` also holds Microsoft YaHei, and the repo carries no licence for either | Use fonts whose licence we hold |
-| 8. Post | `task.py` `_run_cross_post`; `upload_post.py` | Optional cross-posting to TikTok, Instagram and YouTube through Upload-Post, off by default (`upload_post_enabled = false`). An LLM writes the title, caption and hashtags. YouTube uploads send `containsSyntheticMedia = true`; nothing sets an AI label for TikTok or Instagram | Nova never posts. Copy the YouTube flag into our delivery packet |
+| 8. Post | `task.py` `_run_cross_post`; `upload_post.py` | Optional cross-posting to TikTok, Instagram and YouTube through Upload-Post, off by default (`upload_post_enabled = false`). An LLM writes the title, caption and hashtags. YouTube uploads send `containsSyntheticMedia = true`; nothing sets an AI label for TikTok or Instagram | Shonin never posts. Copy the YouTube flag into our delivery packet |
 
 ### 1c. What reviewers and users criticise
 
@@ -225,7 +225,7 @@ All [SEARCH]. Vendor pages were blocked, so each row cites the official-domain s
 | **CapCut**, script-to-video | The web tool is marketed as free. CapCut Pro costs $19.99 a month or $179.99 a year | About 200 AI credits a month on Pro (third party, June 2026) | Not metered by the minute | [CapCut tool page](https://www.capcut.com/tools/script-to-video-maker), official domain; [eesel 2026](https://www.eesel.ai/blog/capcut-pricing) |
 | **ShortsFaceless**, faceless-shorts software | $19 a month for 30 videos; $29 for 60 | Script, AI voices, captions | $0.48–$0.63 | [AI Tools Police](https://aitoolspolice.com/reviews/shortsfaceless/) |
 
-**Read.** In software, one short costs $0.15–$5.80. The tools make the video, but the buyer still writes or checks the script, confirms each fact, picks shots that fit and signs off. That work is what Nova sells, and the software is our cost of goods.
+**Read.** In software, one short costs $0.15–$5.80. The tools make the video, but the buyer still writes or checks the script, confirms each fact, picks shots that fit and signs off. That work is what Shonin sells, and the software is our cost of goods.
 
 ---
 

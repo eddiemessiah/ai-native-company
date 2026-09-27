@@ -13,7 +13,7 @@ export function Footer() {
           </div>
           <p className="mt-5 max-w-sm text-dim">{brand.story}</p>
           <p className="mt-6 font-mono text-xs text-faint">
-            Built by agents. Owned by people. {brand.locale.home} → everywhere.
+            Built by agents. Owned by people. Worldwide, from {brand.locale.home}.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-7">

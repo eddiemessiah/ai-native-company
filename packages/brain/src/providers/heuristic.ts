@@ -42,15 +42,25 @@ const OTHER_KEYS = new Set(["other", "none", "unknown", "unclear", "none_of_the_
 
 function choose(q: ChoiceQuestion<string>, tokens: ReadonlySet<string>): Answer {
   const keys = Object.keys(q.criteria);
-  const logits = keys.map((key) => {
+  const docs = keys.map((key) => ({
+    keyTokens: tokenize(key.replace(/[_-]+/g, " ")),
+    descTokens: new Set(tokenize(q.criteria[key] ?? "")),
+  }));
+  // A word most options share says little about which one fits: weight each
+  // word by how few options use it (1 when unique, lower when common).
+  const df = new Map<string, number>();
+  for (const d of docs) for (const t of new Set([...d.keyTokens, ...d.descTokens])) df.set(t, (df.get(t) ?? 0) + 1);
+  const norm = Math.log(1 + keys.length);
+  const weight = (t: string) => Math.log(1 + keys.length / (df.get(t) ?? 1)) / norm;
+
+  const logits = keys.map((key, i) => {
     if (OTHER_KEYS.has(key.toLowerCase())) return 0.9;
-    const keyTokens = tokenize(key.replace(/[_-]+/g, " "));
-    const descTokens = tokenize(q.criteria[key] ?? "");
+    const { keyTokens, descTokens } = docs[i]!;
     const vocab = new Set([...keyTokens, ...descTokens]);
     let hits = 0;
-    for (const t of keyTokens) if (tokens.has(t)) hits += 2;
-    for (const t of new Set(descTokens)) if (tokens.has(t)) hits += 1;
-    return (2.2 * hits) / Math.sqrt(Math.max(1, vocab.size) / 4 + 1);
+    for (const t of keyTokens) if (tokens.has(t)) hits += 2 * weight(t);
+    for (const t of descTokens) if (tokens.has(t)) hits += weight(t);
+    return (3.2 * hits) / Math.sqrt(Math.max(1, vocab.size) / 4 + 1);
   });
   const probs = softmax(logits, 1);
   const best = argmax(probs);

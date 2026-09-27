@@ -7,7 +7,7 @@ import { getPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
   title: "Research",
-  description: "Griot: sourced field notes on AI in Africa, AI-native services, System One models and agent payments.",
+  description: "Griot: sourced field notes on the agent economy: AI-native services, System One models, agent payments, and AI in emerging markets.",
 };
 
 export const dynamic = "force-static";
@@ -18,7 +18,7 @@ export default function ResearchPage() {
     <div className="wrap pb-10 pt-32">
       <p className="label">Griot · the research desk</p>
       <h1 className="mt-5 max-w-5xl text-[clamp(44px,7.5vw,112px)] font-semibold leading-[0.9] tracking-[-0.055em]">
-        Field notes <span className="serif text-dim">on</span> AI in Africa.
+        Field notes <span className="serif text-dim">on</span> the agent economy.
       </h1>
       <p className="mt-8 max-w-2xl text-lg text-dim">
         A griot keeps a people&apos;s record. Ours keeps the builders&apos;: what&apos;s shipping, what it costs, and what

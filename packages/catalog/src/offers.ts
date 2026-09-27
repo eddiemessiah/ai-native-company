@@ -1,10 +1,201 @@
 import type { Offer } from "./types";
 
 /**
- * The directory. Services come first: they cash-flow from day one and teach us
- * what to build. Infra and APIs productize what the services prove.
+ * The directory. Agent products come first: an agent can verify an offer and pay
+ * for it in one HTTP round trip, with no procurement. Services come next: they
+ * bring the larger tickets and teach us what to productize.
  */
 export const offers: readonly Offer[] = [
+  // ─── For agents: paid per call, no account, no API key ──────────────────────
+  {
+    slug: "shonin-check",
+    name: "Shonin Check",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Should my agent pay this? A pre-payment check of any x402 payment request: pay, confirm with a person, or block.",
+    pitch:
+      "A pre-payment check for AI agents that pay: send the 402 payment request before signing, and get back pay, confirm or block with the reasons: a known stablecoin, the amount against your budget, a real payee, the right signing domain, the host you called, and whether the purchase serves the user's task",
+    audience: ["agents", "builders", "startup"],
+    unit: "One check of one payment request",
+    intake: [
+      "The PAYMENT-REQUIRED header, or its decoded JSON",
+      "The URL the agent called",
+      "Optional: the user's task, a budget and a payee allowlist",
+    ],
+    engine:
+      "Code checks every payment option against the x402 SDK's own token tables. Only when those pass, and a task is given, does the brain answer whether the purchase serves it. The model can lower a verdict, never raise it.",
+    rulebook: [
+      "Code checks run first; a failed code check blocks without asking a model.",
+      "Unknown tokens, testnets and mismatched signing domains always go to a person.",
+      "Anything above the caller's auto-approve limit (default $0.10) goes to a person, whatever the model says.",
+      "A model can block a payment. It can never raise a limit.",
+    ],
+    review: "Automated: every verdict lists the checks it ran and their results.",
+    delivery: "JSON: the verdict, the reasons, the chosen payment option and every check.",
+    turnaround: "Under a second without a task; a few seconds with the intent check",
+    price: {
+      label: "$0.01 per check",
+      humanAlternative: "A person approving every agent payment by hand, or no check at all",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "Agent wallet and framework builders", "x402 and MPP hackathons"],
+    split: {
+      llm: "Nothing: the verdict is structured",
+      decide: "Does the purchase serve the task; does the offer look real",
+      code: "Token, amount, budget, payee, signing-domain and host checks; the auto-approve limit",
+    },
+    tags: ["x402", "agents", "payments", "security", "trust"],
+    api: {
+      method: "POST",
+      path: "/api/v1/check",
+      priceUsd: 0.01,
+      description: "Should my agent pay this? Send an x402 PAYMENT-REQUIRED and get pay, confirm or block, with the reasons.",
+      inputExample: {
+        paymentRequired: "<the PAYMENT-REQUIRED header value>",
+        url: "https://api.example.com/v1/rates",
+        task: "Get today's USD/EUR rate for the invoice",
+        budgetUsd: 0.05,
+      },
+    },
+  },
+  {
+    slug: "shonin-gate",
+    name: "Shonin Gate",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Execute, confirm or escalate? An approval gate for any agent action, with one confidence bar per risk tier.",
+    pitch:
+      "An approval gate for AI agents: before an agent sends, deletes, books or pays, it asks whether to execute now, ask a person to confirm, or hand it to a person, judged against the user's request with calibrated confidence and a stricter bar for riskier actions",
+    audience: ["agents", "builders", "startup", "enterprise"],
+    unit: "One gate decision for one proposed action",
+    intake: [
+      "The action the agent is about to take",
+      "What the user asked for",
+      "The risk tier: read, write, external, money or irreversible",
+      "Optional: context from the conversation",
+    ],
+    engine:
+      "The brain answers three typed questions: does the action match the request, did the user approve it, is it riskier than stated. The policy gate decides by tier. Money and irreversible actions are prepared, never executed.",
+    rulebook: [
+      "One bar per risk tier: read .5, write .7, external .85, money .9, irreversible .95.",
+      "Money and irreversible actions are at most prepared for a person to confirm.",
+      "An action that looks riskier than stated gets the external bar.",
+      "Callers can raise the bar, never lower it.",
+    ],
+    review: "Automated: every verdict carries its confidence, threshold and reason.",
+    delivery: "JSON: the verdict, the reason, confidence, threshold, the tier applied and the decision log.",
+    turnaround: "A few seconds",
+    price: {
+      label: "$0.01 per gate",
+      humanAlternative: "A person reviewing every agent action, or an agent acting unchecked",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "Agent framework communities", "Teams deploying agents into regulated work"],
+    split: {
+      llm: "Nothing: the verdict is structured",
+      decide: "Does the action match the request; did the user approve it; is it riskier than stated",
+      code: "Tier thresholds, the prepare-only rule, the floor callers can only raise",
+    },
+    tags: ["agents", "safety", "approvals", "decisions", "jev"],
+    api: {
+      method: "POST",
+      path: "/api/v1/gate",
+      priceUsd: 0.01,
+      description: "Execute, confirm or escalate? An approval gate for one agent action, by risk tier.",
+      inputExample: {
+        action: "Email the refund confirmation to the customer",
+        request: "Refund order A-104 and let the customer know",
+        risk: "external",
+      },
+    },
+  },
+  {
+    slug: "shonin-receipt",
+    name: "Shonin Receipt",
+    category: "agent-api",
+    status: "beta",
+    featured: true,
+    oneLiner: "Proof for every agent payment: an on-chain settlement check and a signed, normalized receipt for the books.",
+    pitch:
+      "Receipts for AI agent payments: after an x402 payment, send the transaction or the PAYMENT-RESPONSE header and get a normalized receipt (payer, payee, token, amount, time, authorization) checked against what you expected and signed so a finance team can trust it",
+    audience: ["agents", "builders", "startup", "enterprise"],
+    unit: "One verified receipt for one payment",
+    intake: ["The PAYMENT-RESPONSE header, or the network and transaction hash", "Optional: the payee, amount and payer you expected"],
+    engine:
+      "Code only: it reads the transaction from the chain, decodes the stablecoin transfer and the EIP-3009 authorization, compares them with what you expected, and signs the result.",
+    rulebook: [
+      "Only known stablecoins count as payments; other token transfers are ignored.",
+      "A reverted or missing transaction is reported as such, never as settled.",
+      "Receipts are signed over sorted-key JSON, so anyone can verify them.",
+    ],
+    review: "Automated: every expectation the caller sent comes back as matched or not.",
+    delivery: "A JSON receipt with an explorer link, signed when a receipt key is configured.",
+    turnaround: "A few seconds",
+    price: {
+      label: "$0.01 per receipt",
+      humanAlternative: "A bookkeeper matching agent payments to block explorers by hand",
+      model: "per-call",
+    },
+    distribution: ["x402 Bazaar, llms.txt and the agent card", "MCP registries", "x402 sellers who want receipts for their buyers", "Finance teams of companies running paying agents"],
+    split: {
+      llm: "Nothing",
+      decide: "Nothing: receipts are exact",
+      code: "Chain reads, log decoding, matching and signing",
+    },
+    tags: ["x402", "agents", "payments", "receipts", "accounting"],
+    api: {
+      method: "POST",
+      path: "/api/v1/receipt",
+      priceUsd: 0.01,
+      description: "Proof for an agent payment: verify an x402 settlement on-chain and get a signed receipt.",
+      inputExample: {
+        network: "eip155:42220",
+        transaction: "0xf6f71df2f84279c483b138a43c8adcfcd7c1e319459f2b1b2497cdb706a38b38",
+      },
+    },
+  },
+
+  // ─── Products founders run themselves ───────────────────────────────────────
+  {
+    slug: "gtm-harness",
+    name: "GTM Harness",
+    category: "product",
+    status: "beta",
+    featured: true,
+    oneLiner: "Your go-to-market, run by agents you can check: a scorecard, sources, reviewed first messages, a 7-day sprint and a folder for Claude Code.",
+    pitch:
+      "A go-to-market harness for founders: describe your product and get your ideal-customer scorecard, where those customers gather, first outreach messages checked by a reviewer that can block but never send, a seven-day launch sprint, and a folder of rules and agent prompts to keep running with Claude Code",
+    audience: ["startup", "builders"],
+    unit: "One harness for one product",
+    intake: ["Your product in one or two sentences", "Who it's for, and your goal for the month", "The channels you can use"],
+    engine:
+      "An LLM writes the plan and the drafts; the brain reviews every draft (ready, revise or blocked); code packs the folder, the pipeline and the Monday dashboard. The founder sends everything.",
+    rulebook: [
+      "The harness never sends anything; the founder does.",
+      "No invented traction, numbers, customers or quotes, in the plan or in the drafts.",
+      "The reviewer can block a draft but never ship one.",
+      "Every edit the founder makes goes in the corrections log; repeated ones become rules.",
+    ],
+    review: "Every draft carries the reviewer's verdict and fixes; the founder approves new rules each Monday.",
+    delivery: "A web run in about a minute, and a .zip harness folder: CLAUDE.md, scorecard, sources, rules, prompts, drafts, sprint and dashboard.",
+    turnaround: "About a minute",
+    price: {
+      label: "Free and open source (MIT)",
+      humanAlternative: "A GTM consultant's launch plan, or weeks of the founder's own time",
+      model: "free",
+    },
+    distribution: ["Founder communities and office hours", "Startup programs and accelerators", "X threads with a live demo"],
+    split: {
+      llm: "The plan, the sources and the first messages",
+      decide: "Whether each draft is ready, needs a revision, or is blocked",
+      code: "Validation, the scorecard math, the folder, the pipeline and the dashboard",
+    },
+    tags: ["gtm", "founders", "agents", "claude-code", "open-source"],
+    links: [{ label: "Run it", href: "/gtm" }],
+  },
+
   // ─── Services: sell the finished work ────────────────────────────────────────
   {
     slug: "agent-ready-website",
@@ -42,6 +233,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "A receptionist or social-media handler at ₦150,000–₦250,000 a month, plus an agency redesign at ₦1M+",
       model: "retainer",
     },
+    checkout: { amountUsd: 100, label: "50% deposit on the website setup ($200)" },
     distribution: [
       "Upsell existing client sites first: farms, fashion houses, churches, foundations, restaurants",
       "A 60-second before/after demo per niche",
@@ -90,6 +282,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Management consultants charge $3,000–$10,000 for a digital transformation assessment",
       model: "per-unit",
     },
+    checkout: { amountUsd: 490, label: "One Agent Readiness Audit" },
     distribution: [
       "First five audits free for design partners, in exchange for a case study",
       "Offered at the end of every workshop and talk",
@@ -140,6 +333,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "An operations or knowledge manager at $1,000–$5,000 a month",
       model: "retainer",
     },
+    checkout: { amountUsd: 1750, label: "50% deposit on setup ($3,500)" },
     distribution: [
       "Live demo in our own workspace on every sales call",
       "Seed to Series A teams in Lagos, Nairobi and remote-first companies",
@@ -188,6 +382,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Freelance grant writers charge $1,000–$5,000 per proposal",
       model: "per-unit",
     },
+    checkout: { amountUsd: 350, label: "One grant application" },
     distribution: [
       "Builder communities and hackathon Telegram groups",
       "Free rubric score for any public application (lead magnet, via the Grant Fit API)",
@@ -235,6 +430,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Dev agencies quote $10,000–$30,000 and two to three months",
       model: "per-unit",
     },
+    checkout: { amountUsd: 1250, label: "50% deposit on one agent ($2,500)" },
     distribution: [
       "Audits convert into sprints",
       "Case-study threads with real metrics",
@@ -277,6 +473,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "SEO and PR retainers from ₦300,000 a month that never measure what AI says",
       model: "per-unit",
     },
+    checkout: { amountUsd: 150, label: "One AI Visibility Audit" },
     distribution: [
       "Run it free on a prospect and send the screenshot: here is what ChatGPT says about you today",
       "Bundle with the Agent-Ready Website",
@@ -304,7 +501,7 @@ export const offers: readonly Offer[] = [
       "Sandbox access to the agent",
       "The workflow and what can go wrong",
       "Real or synthetic test cases",
-      "Rules that apply: NDPA, CBN circulars, Ghana's data protection drafts",
+      "Rules that apply: NDPA and CBN circulars, Ghana's data protection drafts, the EU AI Act, FCA or RBI guidance",
     ],
     engine:
       "A harness modelled on Princeton's agent-reliability work: repeated runs, reworded prompts, simulated tool outages, prompt-injection suites, leak and destructive-action checks. The brain grades every trace.",
@@ -323,6 +520,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Big-4 AI assurance engagements start at $25,000",
       model: "per-unit",
     },
+    checkout: { amountUsd: 1500, label: "50% deposit on one workflow ($3,000)" },
     distribution: [
       "Fintechs facing the CBN's automated AML requirement",
       "Startups selling agents to banks and telcos",
@@ -401,6 +599,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "A social media manager at ₦150,000–₦300,000 a month",
       model: "retainer",
     },
+    checkout: { amountUsd: 49, label: "First month: 4 packs" },
     distribution: ["Existing website clients", "DMs to brands with strong products and weak feeds", "Market and trade associations"],
     split: {
       llm: "Drafts posts, captions and scripts",
@@ -507,7 +706,7 @@ export const offers: readonly Offer[] = [
       model: "per-unit",
     },
     distribution: [
-      "Our own channel first: one short from each Nova research post, 5 before the offer opens",
+      "Our own channel first: one short from each Shonin research post, 5 before the offer opens",
       "Ecosystem teams and startups that ship docs, changelogs and launches every month",
       "A free short made from one of the prospect's public posts, sent to them as the sample",
     ],
@@ -593,6 +792,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Triaging by hand: $400–$1,500 a month per support agent",
       model: "per-unit",
     },
+    checkout: { amountUsd: 250, label: "Setup" },
     distribution: ["Fintech and e-commerce operators", "Helpdesk vendors as partners", "The Triage API for agent builders"],
     split: {
       llm: "Drafts replies for the specialist routes",
@@ -630,6 +830,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Corporate training firms charge $300–$1,000 per seat for slide-deck courses",
       model: "cohort",
     },
+    checkout: { amountUsd: 2000, label: "50% deposit on a cohort of 20 ($4,000)" },
     distribution: [
       "HR and L&D leads at banks, telcos, agencies and NGOs",
       "Tech hubs and chambers of commerce",
@@ -669,6 +870,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Web3 dev shops charge $8,000–$25,000",
       model: "per-unit",
     },
+    checkout: { amountUsd: 750, label: "50% deposit ($1,500)" },
     distribution: [
       "Brands and SMEs selling to mobile-first stablecoin users",
       "Demo apps for restaurants, events and savings groups",
@@ -750,6 +952,109 @@ export const offers: readonly Offer[] = [
       code: "Field comparison, expiry dates, tier rules",
     },
     tags: ["kyc", "compliance", "fintech"],
+  },
+
+  // Acquirers: the picks and shovels of AI roll-ups (see research/ai-rollups.md)
+  {
+    slug: "acquisition-automation-map",
+    name: "Acquisition Automation Map",
+    category: "service",
+    status: "beta",
+    oneLiner: "Before you sign the LOI: every task in the target firm mapped to what agents can take over, with the margin model.",
+    pitch:
+      "Due diligence before buying or acquiring a services business such as an accounting, bookkeeping, payroll, insurance, property management or IT managed services firm: from 20–50 anonymized work samples, a map of every task the target does, which tasks AI agents can take over after the acquisition, and the margin model, for searchers, holdcos and private equity buyers before they sign the letter of intent (LOI)",
+    audience: ["acquirers"],
+    unit: "One target firm mapped from 20–50 anonymized work samples, with the margin model",
+    intake: [
+      "20–50 anonymized completed jobs from the target, across its main services",
+      "Monthly volume per service and headcount by role, from the seller or the CIM",
+      "Two years of P&L",
+      "Your deal terms: price, financing and the margin you need",
+      "An NDA with the seller, and the seller's consent to share samples",
+    ],
+    engine:
+      "Agents extract every task from the samples: trigger, inputs, steps, output, minutes and monthly volume. The brain scores each task's checkability and risk and classes it: automate now, automate with human review, assist only, or keep human. Code builds the margin model from the target's own volumes and costs.",
+    rulebook: [
+      "Every task cites the work samples it came from; nothing is inferred from the broker's summary alone.",
+      "Minutes and volumes come from the target's own records; where there are none, the map says 'estimate' and shows the range.",
+      "Anything that files, signs, pays or goes out in a client's name is at most 'automate with human review', at any confidence.",
+      "The margin model runs on the target's own numbers, holds revenue flat and shows every formula; peers' self-reported results never go in.",
+      "Every map names the tasks and client relationships that depend on one person, the owner above all.",
+      "Samples arrive anonymized or under NDA; client names and personal data are stripped before a model sees them.",
+      "We never bid for a firm we mapped for a client, and nothing learned in a client's diligence feeds our own deals.",
+    ],
+    review: "The founder reviews every map line by line; every 'automate now' call is checked by hand against its samples.",
+    delivery:
+      "A report page and a spreadsheet: one row per task with its class, the margin model with every formula, the risks to price in, and a 30-minute walkthrough.",
+    turnaround: "5 working days after the samples arrive",
+    price: {
+      label: "$2,500 per target",
+      humanAlternative: "Operational due diligence from a consulting firm at $10,000–$30,000",
+      model: "per-unit",
+    },
+    checkout: { amountUsd: 1250, label: "50% deposit on one target ($2,500)" },
+    distribution: [
+      "Search-fund and ETA communities, with an anonymized sample map as the screenshot",
+      "Business brokers, deal lawyers and quality-of-earnings accountants who already serve buyers",
+      "Holdco and roll-up operators on X and LinkedIn",
+    ],
+    split: {
+      llm: "Extracts tasks from the work samples and writes the map",
+      decide: "Scores checkability and risk; classes each task: automate now, with review, assist or keep human",
+      code: "Minutes, volumes, cost per task and the margin model",
+    },
+    tags: ["acquisitions", "due-diligence", "roll-ups", "automation-map", "margins"],
+  },
+  {
+    slug: "agent-integration-100",
+    name: "100-Day Agent Integration",
+    category: "service",
+    status: "beta",
+    oneLiner: "After the close: agents take over the back office in 100 days, and the clients and key staff stay.",
+    pitch:
+      "Post-acquisition integration for buyers who just acquired or closed on a services business such as an accounting, bookkeeping, payroll, insurance, property management or IT managed services firm: a 100-day plan to integrate AI agents into its back office without losing clients or key staff, with shadow mode first, a rulebook written with senior staff, a preparer agent and a separate reviewer, a weekly corrections log, and a Monday dashboard of margin and retention",
+    audience: ["acquirers"],
+    unit: "One acquired firm integrated over 100 days, then monthly agent operations",
+    intake: [
+      "The Acquisition Automation Map, or 20–50 anonymized work samples to build one",
+      "Read-only access to the firm's practice software, email and document store",
+      "Two hours with each senior staff member for the rulebook interviews",
+      "The former owner's time for the announcement and the handoff",
+      "Who approves what: filings, payments and anything sent in a client's name",
+    ],
+    engine:
+      "Days 1–30 change nothing clients see: agents run in shadow mode while senior staff write the rulebook. Days 31–60 move intake, document collection and the highest-volume, lowest-risk task to a preparer agent, with every draft reviewed. Days 61–100 add the next two tasks and a client-comms agent for routine status updates only. A separate reviewer agent can block but never ship; the preparer ships nothing on its own.",
+    rulebook: [
+      "Days 1–30 change nothing clients see: shadow mode only, and the deal is announced together with the former owner.",
+      "No rule is active until the senior staff member it came from approves it; every approved rule becomes a test case.",
+      "The preparer and the reviewer are separate agents: the reviewer can block but never ship, and the preparer ships nothing on its own.",
+      "Filings, payments and anything sent in a client's name wait for a person's approval at any confidence.",
+      "Every week, agent drafts are compared with the approved versions; each change is classed as a factual error, client preference, missing information or style, and a repeated correction becomes a proposed rule.",
+      "Client and key-person retention are reported next to margin every Monday; if margin rises while client retention falls, automation stops expanding.",
+      "The client-comms agent sends routine status updates only; advice, fees and bad news go to a person.",
+    ],
+    review:
+      "The firm's own staff review every agent draft; Shonin reads the decision and corrections logs weekly and runs a monthly corrections review with senior staff.",
+    delivery:
+      "Agents live in the firm's own tools, the rulebook and corrections log in its own folder, and the Monday dashboard (margin, client retention, key-person retention, human minutes per job, corrections per job); a runbook at day 100, then monthly agent operations.",
+    turnaround: "100 days, then monthly",
+    price: {
+      label: "From $12,000 per firm + $1,500/month agent ops",
+      humanAlternative: "An operating partner or integration team at $150,000+ a year",
+      model: "retainer",
+    },
+    checkout: { amountUsd: 6000, label: "50% deposit on one firm ($12,000)" },
+    distribution: [
+      "Acquisition Automation Map clients whose deals close",
+      "Buyers who just closed, through their brokers, deal lawyers and lenders",
+      "Case studies with the Monday numbers, published with the owner's consent",
+    ],
+    split: {
+      llm: "Drafts the firm's work and routine client updates; turns staff interviews into draft rules",
+      decide: "Routes each job, reviews each draft (block or pass), proposes rules from repeated corrections",
+      code: "Deadlines, volumes, minutes per job, permissions and the Monday dashboard",
+    },
+    tags: ["acquisitions", "integration", "roll-ups", "rulebook", "back-office"],
   },
 
   // ─── Agent APIs: agents pay per call with x402 ───────────────────────────────
@@ -1064,6 +1369,7 @@ export const offers: readonly Offer[] = [
       humanAlternative: "Bootcamps charge $500–$5,000",
       model: "cohort",
     },
+    checkout: { amountUsd: 49, label: "One Pro cohort seat" },
     distribution: ["City chapters led by alumni", "Workshops and hackathons", "Sponsored tracks by ecosystems and employers"],
     split: {
       llm: "Explains, gives feedback, generates practice",
@@ -1073,8 +1379,8 @@ export const offers: readonly Offer[] = [
     tags: ["education", "community", "certificates", "celo"],
   },
   {
-    slug: "nova-bench",
-    name: "Nova Bench",
+    slug: "shonin-bench",
+    name: "Shonin Bench",
     category: "community",
     status: "soon",
     oneLiner: "Vetted AI builders from the Study Group, available for contract work and forward-deployed roles.",

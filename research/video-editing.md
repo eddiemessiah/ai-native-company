@@ -1,6 +1,6 @@
 # Video Desk: editing prices, platform specs and transcription costs
 
-*Compiled 2026-09-27 for Nova's Video Desk (Edidiong Umana). Sources dated 2016–2026, with the most weight on 2025–2026.*
+*Compiled 2026-09-27 for Shonin's Video Desk (Edidiong Umana). Sources dated 2016–2026, with the most weight on 2025–2026.*
 
 **Method.** The egress proxy blocked nearly every host this brief needed:
 - **Blocked:**

@@ -129,7 +129,7 @@ export function buildAss(
   const hl = assColor(style.highlight);
   const header = [
     "[Script Info]",
-    "; Nova Video Desk",
+    "; Shonin Video Desk",
     "ScriptType: v4.00+",
     `PlayResX: ${style.width}`,
     `PlayResY: ${style.height}`,

@@ -12,7 +12,7 @@
 
 The offer stays `soon` until it has shipped our own shorts:
 
-1. Turn each Nova research post (`content/posts`) and each launch explainer into one short, with the post itself as the source.
+1. Turn each Shonin research post (`content/posts`) and each launch explainer into one short, with the post itself as the source.
 2. Ship 5 shorts from our own posts, with Edidiong approving each one.
 3. Log every correction in `ops/rulebook-log.md`: script rewrites, claims cut, pronunciation fixes, visual swaps.
 4. Time each short from brief to approval. That time is the real cost of the unit.
