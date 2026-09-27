@@ -33,7 +33,7 @@ export function buildHarness(input: GtmInput, plan: GtmPlan, reviews: readonly (
 
   files["README.md"] = `# ${p}: GTM harness
 
-Built by Nova's GTM Harness on ${date}. This folder is your go-to-market, run by agents you can check.
+Built by Shonin's GTM Harness on ${date}. This folder is your go-to-market, run by agents you can check.
 
 - **target-customers.md** decides who you talk to.
 - **rules/** decide whether a draft can go out.

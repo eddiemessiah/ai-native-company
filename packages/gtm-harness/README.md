@@ -6,7 +6,7 @@ A founder describes their product and gets:
 - three first messages, each checked by a reviewer that can block a draft but never send one;
 - a folder their own agents keep running in Claude Code.
 
-It runs at `/gtm` on Nova's site. The split:
+It runs at `/gtm` on Shonin's site. The split:
 
 - **An LLM writes** the plan (`src/plan.ts`, Claude with structured outputs). With no model key, templates write it instead.
 - **The brain reviews** every draft: ready, revise or blocked (`src/review.ts`).
@@ -29,4 +29,4 @@ The MIT licence in `LICENSE` covers:
 - this package;
 - the page, component and API route marked `SPDX-License-Identifier: MIT` in `apps/web`: `app/gtm/page.tsx`, `components/gtm-harness.tsx` and `app/api/gtm/run/route.ts`.
 
-The draft reviewer runs on `@repo/brain`, Nova's decision layer, which this licence doesn't cover. Your plan, your drafts and the folder you download are yours.
+The draft reviewer runs on `@repo/brain`, Shonin's decision layer, which this licence doesn't cover. Your plan, your drafts and the folder you download are yours.
