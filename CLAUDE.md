@@ -49,6 +49,8 @@ pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, 
 pnpm video short                  # Explainer shorts: topic + sources → a sourced 30–60 s vertical video
 ```
 
+CI (`.github/workflows/check.yml`) runs a frozen `pnpm install` and `pnpm check` on every pull request and every push to main. A lockfile out of step with a `package.json`, or a test that needs the network, fails it.
+
 Video Desk jobs follow `company/ops/playbooks/video-desk.md`: `pnpm video` ingests a recording, scores it, renders drafts, records who approved each clip, and cuts trailers and tighter long-form edits. Explainer shorts follow `company/ops/playbooks/explainer-shorts.md`: every factual sentence quotes a source, code verifies each quote and number, the brain checks each claim, a person approves. Both need ffmpeg with libass on the PATH.
 
 Env vars are documented in `apps/web/.env.example`.

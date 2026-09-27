@@ -122,7 +122,7 @@ The cost that decides the margin is review time, so Phase 0 measures it.
 
 **Every code change:**
 - `pnpm check`: typecheck, plus unit tests with no network. Today: brain 77, video 91, agents 17, gtm-harness 10, mcp 5, catalog 5, web 12.
-- **CI: there is none yet.** First action: run `pnpm check` on every pull request (workflow below).
+- **CI** (`.github/workflows/check.yml`, added 2026-09-27): a frozen `pnpm install` and `pnpm check` on every pull request and every push to main. Its actions are pinned to commit SHAs. It needs no secrets, because the tests never touch the network.
 - **A nightly render test** on a fixture short: draft voice, demo brain, no keys. It asserts:
   - frame counts match the timeline;
   - no decode errors;
@@ -163,17 +163,16 @@ The cost that decides the margin is review time, so Phase 0 measures it.
 ## Decisions for Edidiong
 
 1. **A name for the line.** In the tradition of `brand/names.md`: **Dùndún**, the Yoruba talking drum that carries a message from village to village, or **Akụkọ**, Igbo for story. Run the name checks first.
-2. **CI:** add the workflow below now?
-3. **Dubs:** commission the price research for French and Swahili dubbing before listing the offer.
-4. **The GPU for cloned voices:** rent per batch, or wait until a client asks.
-5. **Ads:** go or no-go once the ads rulebook research is in.
-6. **Retention:** we propose deleting client footage 30 days after delivery unless the contract says otherwise.
+2. **Dubs:** commission the price research for French and Swahili dubbing before listing the offer.
+3. **The GPU for cloned voices:** rent per batch, or wait until a client asks.
+4. **Ads:** go or no-go once the ads rulebook research is in.
+5. **Retention:** we propose deleting client footage 30 days after delivery unless the contract says otherwise.
 
 ## The next ten actions
 
 | # | Action | Owner | Done when |
 |---|---|---|---|
-| 1 | Add CI: `pnpm check` on every pull request | Video line; Edidiong approves | Green on PR #3 |
+| 1 | Add CI: `pnpm check` on every pull request | Video line | Done 2026-09-27: `.github/workflows/check.yml`, first run on PR #3 |
 | 2 | Merge PR #3 | Edidiong | Merged |
 | 3 | Set up the rendering machine: Kokoro server, HyperFrames, ffmpeg | Edidiong, with an agent | `pnpm video doctor` shows a publishable voice and scenes on |
 | 4 | An Azure Speech key for the Nigerian English voices | Edidiong | A short rendered with `en-NG-EzinneNeural` |
@@ -183,29 +182,3 @@ The cost that decides the margin is review time, so Phase 0 measures it.
 | 8 | Dub price research | Research line | `research/dubbing.md` with sourced rates |
 | 9 | Review page spec: watch, approve, ask for changes | Web line | Spec agreed |
 | 10 | A release template for cloned voices, reviewed by a lawyer | Edidiong | Signed template on file |
-
-## Proposed CI workflow
-
-`.github/workflows/check.yml`:
-
-```yaml
-name: check
-on:
-  pull_request:
-  push:
-    branches: [main]
-jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-```
-
-No secrets are needed: the tests never touch the network.
