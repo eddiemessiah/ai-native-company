@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { renameSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 import { round3 } from "./time";
 import type { Format, Interval, Mode, SourceInfo } from "./types";
 
@@ -438,4 +440,20 @@ export function freezeArgs(src: string, minSec = 0.3): string[] {
 export function frameArgs(src: string, t: number, out: string, box?: { x: number; y: number; w: number; h: number }): string[] {
   const draw = box ? `drawbox=x=${box.x}:y=${box.y}:w=${box.w}:h=${box.h}:color=0xFFB000@0.9:t=8,` : "";
   return ["-hide_banner", "-loglevel", "error", "-y", "-ss", fmt(t), "-i", src, "-frames:v", "1", "-vf", `${draw}scale=640:-2`, "-q:v", "3", out];
+}
+
+/** Loudness of a file (or a stretch of it), measured by loudnorm's first pass. */
+export async function measureLoudness(src: string, range?: Interval, target: LoudnessTarget = SOCIAL_LOUDNESS): Promise<Loudness | null> {
+  return parseLoudnorm((await run("ffmpeg", measureArgs(src, range, target))).stderr);
+}
+
+/** Two-pass loudness on a finished file: measure, then rewrite its audio and copy its video. */
+export async function levelAndFinish(dir: string, raw: string, final: string, hasAudio: boolean): Promise<void> {
+  const loud = hasAudio ? await measureLoudness(join(dir, raw)) : null;
+  if (loud) {
+    await run("ffmpeg", normalizeArgs(raw, loud, final), { cwd: dir });
+    unlinkSync(join(dir, raw));
+  } else {
+    renameSync(join(dir, raw), join(dir, final));
+  }
 }

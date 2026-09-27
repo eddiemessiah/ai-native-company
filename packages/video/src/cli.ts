@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -15,10 +15,9 @@ import {
   frameArgs,
   frameLength,
   freezeArgs,
-  measureArgs,
-  normalizeArgs,
+  levelAndFinish,
+  measureLoudness,
   parseFfmpegVersion,
-  parseLoudnorm,
   parseRate,
   probe,
   run,
@@ -44,6 +43,7 @@ import {
   type PlannedClip,
 } from "./job";
 import { selectClips, trailerBeats } from "./select";
+import { runShort } from "./short/cli";
 import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
 import { nearestWord, paddedRange, parseTranscript, splitSentences } from "./transcript";
 import type { Format, Interval, Mode, Sentence, Transcript } from "./types";
@@ -63,6 +63,7 @@ Code cuts, the brain scores, a person approves. Nothing here publishes anything.
   pnpm video trailer <job> [--seconds 45] [--format 16x9|9x16|1x1] [--title "…"]
   pnpm video tighten <job> [--mode talk|screen] [--max-pause 0.6] [--keep-fillers]
   pnpm video chapters <job> <chapters.txt|json> [--tightened]
+  pnpm video short …                      topic + sources → a sourced explainer short (pnpm video short for its commands)
 
 Jobs default to video-jobs/<title> (ignored by git). Paths are relative to where you run pnpm.
 --demo ranks with the lexical heuristic when no decision model key is set: fine for a dry run, never for a client.`;
@@ -119,6 +120,13 @@ const OPTIONS = {
   tightened: { type: "boolean" },
   exact: { type: "boolean" },
   force: { type: "boolean" },
+  source: { type: "string", multiple: true },
+  voice: { type: "string" },
+  visuals: { type: "string" },
+  local: { type: "string" },
+  music: { type: "string" },
+  cta: { type: "string" },
+  audience: { type: "string" },
   help: { type: "boolean", short: "h" },
 } as const;
 
@@ -157,20 +165,6 @@ function saveReview(dir: string, job: Job, plan: Plan): void {
 const progress = (label: string) => (done: number, total: number) =>
   process.stderr.write(`\r${label} ${done}/${total}${done === total ? "\n" : ""}`);
 
-async function measure(src: string, range?: Interval) {
-  return parseLoudnorm((await run("ffmpeg", measureArgs(src, range))).stderr);
-}
-
-/** Two-pass loudness on a finished file: measure, then rewrite its audio and copy its video. */
-async function levelAndFinish(dir: string, raw: string, final: string, hasAudio: boolean): Promise<void> {
-  const loud = hasAudio ? await measure(join(dir, raw)) : null;
-  if (loud) {
-    await run("ffmpeg", normalizeArgs(raw, loud, final), { cwd: dir });
-    unlinkSync(join(dir, raw));
-  } else {
-    renameSync(join(dir, raw), join(dir, final));
-  }
-}
 
 async function grabFrame(job: Job, clip: PlannedClip, dir: string): Promise<void> {
   const frames = ensureDir(jobPaths(dir).frames);
@@ -530,7 +524,7 @@ async function render(): Promise<void> {
     writeFileSync(join(out, `${clipName(c.n)}.srt`), buildSrt(chunkWords(words, SUBTITLE_CHUNKS)));
     const ass = opt["no-captions"] ? undefined : `${name}.ass`;
     if (ass) writeFileSync(join(out, ass), buildAss(chunkWords(words, SOCIAL_CHUNKS), captionStyle(format)));
-    const loudness = job.info.hasAudio ? await measure(job.source, range) : null;
+    const loudness = job.info.hasAudio ? await measureLoudness(job.source, range) : null;
     await run(
       "ffmpeg",
       clipArgs({
@@ -705,6 +699,7 @@ const commands: Record<string, () => void | Promise<void>> = {
   trailer,
   tighten,
   chapters,
+  short: () => runShort({ positionals, opt, abs, rel, fail }),
 };
 
 const command = positionals[0];

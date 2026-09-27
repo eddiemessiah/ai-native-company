@@ -57,9 +57,37 @@ Paths are relative to the directory you run pnpm from. Jobs go to `video-jobs/`,
 - `fit` puts the whole frame over a blurred copy. `plan` picks it for `how_to` moments from landscape sources, since screen demos need the whole screen.
 - Captions use the brand face, Bricolage Grotesque (OFL-1.1, shipped as a dependency), with the spoken word in saffron.
 
+## Explainer shorts: a topic and its sources in, a finished short out
+
+Modelled on [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) (MIT): script, voice, captions, visuals and music, assembled automatically. Ours adds the parts that stop it becoming slop: every factual sentence quotes a source, code verifies each quote word for word and each number said aloud, the brain checks each claim against its quote, and a person approves before anything is posted.
+
+```bash
+pnpm video short new "x402 on Celo: your API gets paid per call" \
+  --source content/posts/x402-on-celo.md --seconds 30-50 --voice edge:en-NG-EzinneNeural
+pnpm video short write video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call   # Claude writes script.json from brief.md
+pnpm video short check video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call   # code checks + content gate + claim checks
+pnpm video short render video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call
+pnpm video short approve video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call --by "Edidiong"
+```
+
+| Step | Who | What happens |
+|---|---|---|
+| `new` | Code | Copies the sources into the job and writes `brief.md`: word budget, rules, the sources with ids |
+| `write` | LLM | Claude returns `script.json` through structured outputs: beats of narration, on-screen text, a visual, and claims with quotes. No API key? Any writer can fill in `script.json` from `brief.md` |
+| `check` | Code, then System One | Code: 3–10 beats, length at 2.5 words a second, on-screen text ≤ 6 words, title ≤ 100 and post ≤ 280 characters, every quote found in its source, every number backed by a quote. Brain: the content gate on the whole draft, and `claimQuestions` on each claim |
+| `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS |
+| `approve` | A person | Recorded by name against the exact script that was rendered. Nothing is posted by the tool |
+
+Voices (`--voice`): `edge` (the edge-tts package; free, online, with Nigerian English voices `en-NG-EzinneNeural` and `en-NG-AbeoNeural`), `openai[:voice]` (`OPENAI_API_KEY`), `say` (macOS), `pico` and `espeak` (offline and robotic, for drafts). `auto` picks the best one installed.
+
+Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).
+
+The pronunciation lexicon in `short.json` changes only what the voice hears (`"x402": "x four oh two"`); captions keep the written form.
+
 ## Known limits
 
 - No face tracking. The crop centre is set once per clip, from its frame.
 - No speaker labels, and no multi-camera switching.
-- It doesn't add B-roll or music.
-- `--demo` ranks with the lexical heuristic. That checks the machinery, but it can't tell a good clip from a greeting.
+- Clips from recordings get no added B-roll or music (shorts do: stock, local footage and a ducked music bed).
+- `--demo` ranks with the lexical heuristic. That checks the machinery, but it can't tell a good clip from a greeting, or a supported claim from an unsupported one.
+- Shorts: caption timing is spread across each beat's voice by word length (the script is known, so there's no transcription); stock search takes Pexels' top portrait result.

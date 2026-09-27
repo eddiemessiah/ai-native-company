@@ -108,10 +108,22 @@ function escapeAss(text: string): string {
  * An ASS subtitle file with one event per spoken word: the whole chunk on
  * screen, the current word in the highlight colour.
  */
+export interface Headline {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+  /** #rrggbb; defaults to the caption colour. */
+  readonly color?: string;
+}
+
 export function buildAss(
   chunks: readonly CaptionChunk[],
   style: CaptionStyle,
-  extra: { title?: { text: string; start: number; end: number } } = {},
+  extra: {
+    title?: { text: string; start: number; end: number };
+    /** Big on-screen text for explainer shorts, one per beat: it pops in at the beat's start. */
+    headlines?: readonly Headline[];
+  } = {},
 ): string {
   const fg = assColor(style.color);
   const hl = assColor(style.highlight);
@@ -129,6 +141,7 @@ export function buildAss(
     "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
     `Style: Caption,${style.font},${style.size},&H00${fg},&H00${hl},&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${style.outline},0,2,60,60,${style.marginV},1`,
     `Style: Title,${style.font},${Math.round(style.size * 0.85)},&H00${fg},&H00${hl},&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${style.outline},0,8,80,80,${Math.round(style.height * 0.12)},1`,
+    `Style: Headline,${style.font},${Math.round(style.size * 1.25)},&H00${fg},&H00${hl},&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,${style.outline},0,8,70,70,${Math.round(style.height * 0.24)},1`,
     "",
     "[Events]",
     "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -136,6 +149,11 @@ export function buildAss(
   const events: string[] = [];
   if (extra.title) {
     events.push(`Dialogue: 1,${assTime(extra.title.start)},${assTime(extra.title.end)},Title,,0,0,0,,${escapeAss(extra.title.text)}`);
+  }
+  for (const h of extra.headlines ?? []) {
+    const color = assColor(h.color ?? style.color);
+    const pop = `{\\fad(120,80)\\fscx86\\fscy86\\t(0,200,\\fscx100\\fscy100)\\1c&H${color}&}`;
+    events.push(`Dialogue: 1,${assTime(h.start)},${assTime(h.end)},Headline,,0,0,0,,${pop}${escapeAss(h.text)}`);
   }
   for (const c of chunks) {
     c.words.forEach((w, k) => {
