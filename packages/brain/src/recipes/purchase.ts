@@ -4,7 +4,7 @@ import { Noul } from "../questions";
 import type { AnswersFor, State } from "../types";
 
 /**
- * The decision half of Nova Check: does a purchase an agent is about to make
+ * The decision half of Shonin Check: does a purchase an agent is about to make
  * serve the user's task, and does the offer look like a real paid service?
  * Code does the rest (tokens, amounts, budgets, addresses) before this runs.
  *

@@ -1,14 +1,14 @@
 # CLAUDE.md: operating manual
 
-This repo is **Nova**, an AI-native firm for agents and businesses worldwide. Agents come first: they buy checks, gates and receipts per call over x402, with no account. Businesses buy finished work (audits, agents in production, grant applications, company brains) priced per unit. Agents do the work; a person owns the outcome. Read this before changing anything.
+This repo is **Shonin**, an AI-native firm for agents and businesses worldwide. Agents come first: they buy checks, gates and receipts per call over x402, with no account. Businesses buy finished work (audits, agents in production, grant applications, company brains) priced per unit. Agents do the work; a person owns the outcome. Read this before changing anything.
 
 ## Who decides what
 
-The firm is led by a person, Edidiong Umana, and an agent, Nova One (the decision brain in `packages/brain`).
+The firm is led by a person, Edidiong Umana, and an agent, Shonin One (the decision brain in `packages/brain`).
 
 | Decision | Owner |
 |---|---|
-| Routing, scoring, triage, drafts, research, first-pass review | Nova One, logged with its confidence |
+| Routing, scoring, triage, drafts, research, first-pass review | Shonin One, logged with its confidence |
 | Anything below its confidence gate | Escalates to Edidiong |
 | Prices, new offers, what we won't do | Edidiong |
 | Money, contracts, signatures, submissions, anything sent in a client's name | Edidiong approves each one; agents only prepare |
@@ -17,12 +17,12 @@ The firm is led by a person, Edidiong Umana, and an agent, Nova One (the decisio
 ## Layout
 
 ```
-packages/brain      @repo/brain: the System One decision layer. Choice/Score/Noul questions, providers
+packages/brain      @repo/brain (proprietary): the System One decision layer. Choice/Score/Noul questions, providers
                     (Jev, then Claude, then a heuristic for free demos), confidence gates, decision log, recipes
 packages/catalog    @repo/catalog: the single source of truth for brand, offers, prices, APIs, study tracks, chapters
-packages/agents     @repo/agents: what agents buy. Nova Check (pre-payment checks of x402 requests) and
-                    Nova Receipt (on-chain settlement receipts); Nova Gate's recipe lives in brain
-packages/mcp        @repo/mcp: nova-mcp, the MCP server that exposes the agent products to any MCP client
+packages/agents     @repo/agents: what agents buy. Shonin Check (pre-payment checks of x402 requests) and
+                    Shonin Receipt (on-chain settlement receipts); Shonin Gate's recipe lives in brain
+packages/mcp        @repo/mcp: shonin-mcp, the MCP server that exposes the agent products to any MCP client
 apps/web            Next.js 16 site: home, directory, intake, study group, agents, research, company pages;
                     agent-payable x402 API under app/api/v1; Stripe Checkout under app/api/checkout
 content/posts       research blog (markdown + frontmatter), rendered at /research
@@ -40,7 +40,7 @@ pnpm dev                          # site on :3000; with no keys the demo uses th
 pnpm check                        # typecheck + tests in every package; run before each commit
 pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL for a custom domain
 pnpm --filter @repo/brain test
-pnpm --filter @repo/mcp build     # build the nova-mcp CLI into packages/mcp/dist
+pnpm --filter @repo/mcp build     # build the shonin-mcp CLI into packages/mcp/dist
 pnpm worktree <line>              # open a product line in its own worktree (see below)
 ```
 
@@ -100,8 +100,9 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 ## Never
 
 - Send, pay, sign, submit or publish on a client's behalf without a person approving that specific action.
+- Copy `@repo/brain` code into MIT-licensed files, or publish it. The brain is proprietary; only the GTM Harness is MIT.
 - Let a paid route fall back to the heuristic provider, or answer 2xx when it couldn't do the work.
-- Let a model raise a spending limit, an auto-approve limit or a verdict. Nova Check and Nova Gate can only lower a verdict.
+- Let a model raise a spending limit, an auto-approve limit or a verdict. Shonin Check and Shonin Gate can only lower a verdict.
 - Charge before the work is done, or serve paid content without settling.
 - Pay our own wallets to inflate volume or reputation.
 - Resell raw Jev decisions (`decide-api`) before TypeSafe confirms in writing that its terms allow it.

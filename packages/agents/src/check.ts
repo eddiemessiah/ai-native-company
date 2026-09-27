@@ -3,7 +3,7 @@ import { decidePurchase, type PurchaseRoute } from "@repo/brain/recipes";
 import { findToken, isAddress, resolveNetwork, toUnits, ZERO_ADDRESS, type NetworkInfo, type TokenInfo } from "./networks";
 
 /**
- * Nova Check: "should my agent pay this?"
+ * Shonin Check: "should my agent pay this?"
  *
  * Code checks every payment option in an x402 PAYMENT-REQUIRED (token, amount,
  * budget, payee, signing domain, host). Only when those pass, and the caller

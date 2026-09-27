@@ -132,7 +132,7 @@ export default function Home() {
           <Reveal className="lg:col-span-7" y={30}>
             <pre className="card overflow-x-auto p-6 font-mono text-[12px] leading-[1.75] text-dim md:p-8">
               <code>
-                <span className="text-faint"># Before your agent pays an API, it asks Nova Check.</span>
+                <span className="text-faint"># Before your agent pays an API, it asks Shonin Check.</span>
                 {"\n"}$ curl -X POST {"<site>"}/api/v1/check \{"\n"}
                 {"    "}-d {`'{"paymentRequired":"eyJ4NDAyVmVyc2lvbiI6Mi…",`}
                 {"\n"}
@@ -364,7 +364,7 @@ export default function Home() {
             </div>
           </Reveal>
           <Reveal delay={0.08} className="card relative overflow-hidden p-8">
-            <Glyph seed="nova-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
+            <Glyph seed="shonin-one" size={120} className="absolute -right-6 -top-6 text-fg opacity-20" />
             <p className="label">{brand.agent.role}</p>
             <p className="mt-5 text-3xl font-semibold tracking-[-0.03em]">{brand.agent.name}</p>
             <p className="mt-1 font-mono text-sm text-decide">System One brain · every decision logged</p>

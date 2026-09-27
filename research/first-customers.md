@@ -1,6 +1,6 @@
-# First customers for Nova: where agents buy, who pays first, and how to reach them
+# First customers for Shonin: where agents buy, who pays first, and how to reach them
 
-*As of 2026-09-27. Prepared for Edidiong Umana. Scope: global and agent-first. The priority is Nova Check, Nova Gate and Nova Receipt at $0.01 per call over x402 (USDC on Celo, with the Base leg already wired in code); human services come second. Read this with `research/agent-payments.md`.*
+*As of 2026-09-27. Prepared for Edidiong Umana. Scope: global and agent-first. The priority is Shonin Check, Shonin Gate and Shonin Receipt at $0.01 per call over x402 (USDC on Celo, with the Base leg already wired in code); human services come second. Read this with `research/agent-payments.md`.*
 
 ## How to read the evidence tags
 
@@ -39,7 +39,7 @@
   - x402scan's code indexes Base, Solana, Polygon, Optimism, Sei and Avalanche, but not Celo [src].
   - Before any listing push, set `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET` to turn on the Base leg (`apps/web/lib/chain.ts`). The Bazaar is also what AWS AgentCore agents search [web].
 - **The first agent-side dollars will most likely come through someone else's wallet, not through a listing.**
-  - Small open-source tools that pay arbitrary x402 sellers can add Nova Check as an opt-in step within days: Run402's CLI, opencrowd, tryx402, ArisPay and AgentCash.
+  - Small open-source tools that pay arbitrary x402 sellers can add Shonin Check as an opt-in step within days: Run402's CLI, opencrowd, tryx402, ArisPay and AgentCash.
   - Virtuals ACP is the one venue with subsidized demand: up to $1M a month for agents that sell there [web].
   - Our estimate for month one is cents to tens of dollars.
 - **The first real cash will be human-side.**
@@ -51,19 +51,19 @@
 
 ## 2. Where agents buy today
 
-| Venue | What's sold | Evidence agents pay | Can Nova list there? | Source |
+| Venue | What's sold | Evidence agents pay | Can Shonin list there? | Source |
 |---|---|---|---|---|
 | **Coinbase x402 Bazaar** (the CDP discovery index) | 17,606 resources on 2,029 hosts: data enrichment, LLM inference, search, crypto data | $10,722 declared in 30 days by 2,010 routes with 3+ payers. The top 5 hosts take 72%. stableenrich.dev's four people-data wrappers took about $875, at $0.15–0.28 a call [src: census] | Yes. A listing appears automatically after the first paid call settles through CDP on Base, so it needs the Base leg. Don't trigger it by paying from our own wallet (CLAUDE.md, "Never") | `savecharlie/x402-census`: `WHAT_SELLS.md`, `discovery_20260926.json.gz` |
 | **x402 on Base, on-chain** (all facilitators) | The same, plus sellers not in the index | About 73,000 payments a day, scaled from a 0.35% sample. Recurring payees take 63.9% of payments but 1.0% of dollars. The busiest payee grosses about $1,078 a month. From month to month about 58% of heavy sellers persist, against about 6% of heavy buyers [src: census]. The buyer SDK `@x402/fetch` has 448k downloads a month [npm] | n/a (this is the rail) | census `README.md` |
 | **x402scan** (Merit Systems) | Explorer and registry of x402 resources | 3.69M transactions and $1.11M in a 30-day window, date not shown [web]. Caution: the x402.org "last 30 days" counter showed the same numbers from March to September [web] | Yes, free. Three routes in: an OpenAPI file with `x-payment-info`, a `/.well-known/x402` file, or a URL that returns a valid 402. Celo is not in its chain list | `Merit-Systems/x402scan` `docs/DISCOVERY.md` [src] |
-| **MPP services directory** (mpp.dev) and MPPScan | 142 curated services, including OpenAI, Anthropic, Exa, Firecrawl, Browserbase and seven Merit "stable*" APIs | No volumes published [unverified] | Yes, if Nova answers MPP. `mppx` serves MPP and x402 `exact` on one route, and the Celo facilitator settles MPP. List by PR to `schemas/services.ts` (curated; duplicates are declined) or by registering on MPPScan. No Celo service is listed today | `tempoxyz/mpp` [src] |
+| **MPP services directory** (mpp.dev) and MPPScan | 142 curated services, including OpenAI, Anthropic, Exa, Firecrawl, Browserbase and seven Merit "stable*" APIs | No volumes published [unverified] | Yes, if Shonin answers MPP. `mppx` serves MPP and x402 `exact` on one route, and the Celo facilitator settles MPP. List by PR to `schemas/services.ts` (curated; duplicates are declined) or by registering on MPPScan. No Celo service is listed today | `tempoxyz/mpp` [src] |
 | **Olas Mech Marketplace** | AI task results, sold per request. The main buyers are Olas Predict trader agents buying probability estimates | 11.99M requests, $109,611 gross paid and $812 in protocol fees, cumulative to 25 Sep 2026, across 7 chains [web] | Possible, but it means running a Mech (Open Autonomy, Python), and the demand is for forecasts, not payment checks. The README lists Celo among its chains | olas.network via search snippet (the page was blocked); `valory-xyz/mech` [src] |
 | **Virtuals ACP** | Agent-to-agent jobs with escrow and an optional external evaluator | 1.77M completed jobs and "$479M aGDP" by Feb 2026; this is token-denominated, so treat it as a ceiling [web]. Since 12 Feb 2026 the Revenue Network has offered selling agents up to $1M a month; actual payouts are not published [web] | Yes: register at app.virtuals.io/acp/join and build with `acp-node-v2` (v1 is deprecated). Graduation needs 10 successful sandbox jobs. Base, USDC by default, and an 80/20 fee split [src, web] | `Virtual-Protocol/acp-node` [src]; bex.co and the ACP whitepaper [web] |
 | **Fetch.ai Agentverse** | Agent services for ASI:One personal AIs | Agent-to-agent payments have been live since Dec 2025 in USDC, FET and Visa, with Stripe and Skyfire integrations. No volume published [web] | Yes, agent registration is open [unverified]. No x402 support found | fetch.ai blog, cryptobriefing [web] |
 | **AWS Bedrock AgentCore Payments** | Managed x402 payments for Bedrock agents, built with Coinbase and Stripe | Previewed in spring 2026 (April–May) and now generally available. It ships the Bazaar MCP server (10,000+ endpoints) through AgentCore Gateway, with spending guardrails built in [web] | Indirectly: be in the Bazaar (Base leg) | AWS and Coinbase blogs [web] |
 | **Agent wallet platforms**: CDP Agentic Wallets, Crossmint, Skyfire, Payman, Catena Labs, Nevermined | Wallets, cards, know-your-agent checks, facilitation | Limits and approvals are built in: CDP has session caps, limits and KYT (11 Feb 2026); Crossmint has limits, allowlists and human approval above thresholds. Skyfire left beta in Dec 2025, Catena raised $30M (May 2026), and Nevermined self-reports 1.38M transactions since May 2025. None publishes per-service volumes [web] | There is no store to list in; integration only. They build these controls in-house, so they are channels at best, not first customers | [web], URLs in §6 |
 | **Catalogs inside wallets**: AgentCash, Locus, Agent402, ArisPay, tryx402 | Curated paid APIs inside the wallet the agent already uses | Locus's proxy (`*.paywithlocus.com`) hosts 53 Bazaar routes with 123 payer-slots in 30 days [data]. Agent402 routes to third-party sellers and pays them on the agent's behalf [src] | Through an integration or a partnership. Agent402's router only routes to sellers with proven on-chain settlement [src] | READMEs [src]; Bazaar [data] |
-| **MCP registries**: official, Smithery, Glama, mcp.so | Tools; the paid ones mostly charge through x402 | The official registry lists 186 x402-related servers [data]. Glama has about 20k servers, mcp.so about 19k and Smithery about 6k. Fewer than 5% of MCP servers earn anything [web, secondary] | Yes, free. This repo now has `packages/mcp` (nova-mcp) ready to publish | registry API [data]; dev.to, thinkneo [web] |
+| **MCP registries**: official, Smithery, Glama, mcp.so | Tools; the paid ones mostly charge through x402 | The official registry lists 186 x402-related servers [data]. Glama has about 20k servers, mcp.so about 19k and Smithery about 6k. Fewer than 5% of MCP servers earn anything [web, secondary] | Yes, free. This repo now has `packages/mcp` (shonin-mcp) ready to publish | registry API [data]; dev.to, thinkneo [web] |
 | **OpenClaw / ClawHub** | Skills and plugins for a large agent runtime (`openclaw` has about 13.5M npm downloads a month) | Payments run through plugins: Tempo's `openclaw-mpp`, and ClawRouter wallets paying per call over x402 [src, web]. There is no native x402 yet [web, unverified]. 341 malicious skills were found in Feb 2026 [web] | Yes: publish a skill. `twzrd-trust` already lists a payment-trust skill there [src] | `tempoxyz/mpp` `openclaw.mdx` [src]; npm |
 | **Frameworks**: ElizaOS, LangChain, CrewAI, Mastra | Plugins | `@elizaos/plugin-x402` has about 1.2k downloads a month [npm]. We found no first-party LangChain, CrewAI or Mastra x402 package; they reach paid tools through MCP [npm] | Through an MCP server | npm |
 | **Celo stack**: hosted facilitator, 8004scan, AskBots | Settlement, identity, and a review marketplace paying $0.10 USDT per accepted review | The facilitator has no catalog [src]. For Celo counts, see the Bazaar row [data] | Omni402 already has an ERC-8004 identity (agent #9765). Selling through Celo channels is off-limits under the conflict rules | `research/agent-payments.md` [src] |
@@ -79,7 +79,7 @@
 - **Operators with finance teams, for Receipt.** Receipts are becoming standard, though:
   - Haven feeds Fortnox, tryx402 signs Ed25519 receipts, and Run402 emits `x402-commerce-result.v1`.
   - The x402 spec has its own Signed Offers & Receipts extension [src].
-  - Nova Receipt's opening is checking Celo settlements and producing one normalized format across wallets. It should verify the spec's signed receipts rather than invent another format.
+  - Shonin Receipt's opening is checking Celo settlements and producing one normalized format across wallets. It should verify the spec's signed receipts rather than invent another format.
 - **Competitors already in the niche** (price and pitch against them):
   - Free or $0.001 preflights such as `twzrd-x402-gate`.
   - Agent402's paid seller checks [src]: seller-trust ($0.005), seller-dossier ($0.05) and seller-payability ($0.10), which also checks the EIP-712 domain.
@@ -90,9 +90,9 @@
 
 ## 3. First-customer candidates
 
-Confidence is our judgment of the odds that this party pays Nova within 60 days: **H** high, **M** medium, **L** low. "Region: unknown" means no source said where they are.
+Confidence is our judgment of the odds that this party pays Shonin within 60 days: **H** high, **M** medium, **L** low. "Region: unknown" means no source said where they are.
 
-| # | Name | Type | Region | Why now | Nova product | Channel | Source | Conf. |
+| # | Name | Type | Region | Why now | Shonin product | Channel | Source | Conf. |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Existing website clients and warm SMEs | human | Nigeria | Sprint plan: pitch 10 clients, close 3 [src] | AI Visibility Audit, then Agent-Ready Website | WhatsApp | `company/seven-day-sprint.md`, `company/gtm/outbound.md` §1 | H |
 | 2 | Funded startups in the founder's network | human | Lagos, Nairobi, remote | Sprint plan: pitch 10, close 1 [src] | Agent Launch Sprint, Company Brain | X, WhatsApp | `company/strategy.md`, `outbound.md` §3 | M |
@@ -112,7 +112,7 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 | 16 | thirdweb | agent | Unknown | Runs an x402 facilitator and client on 170+ chains, including Celo. Its Permit path uses a non-standard `primaryType: "Permit"` [src], which is where a domain check catches mismatches | Check | Email, X | `research/agent-payments.md` §3.3 | L |
 | 17 | AsterPay | agent | EU | Converts USDC and EURC to EUR over SEPA Instant for agents and APIs, and says it is MiCA-compliant [src]. EU sellers need their books in EUR | Receipt, as one EUR line per settlement | Email | coinbase/x402 ecosystem data | L |
 | 18 | AEON | agent | Southeast Asia, LatAm, Africa | Lets agents pay real-world merchants through x402 and stablecoins [src]. Spending at merchants can't be reversed | Check | Email | ecosystem data [src] | L |
-| 19 | Open Agent Hackathon teams | agent | Online | Registration closes Oct 5 and the build runs Oct 15–20. Teams need paid tools while they build [src] | Check or Gate, free credits first, then $0.01 | Hackathon Discord (first confirm Nova has no judging role) | `research/funding.md` | L |
+| 19 | Open Agent Hackathon teams | agent | Online | Registration closes Oct 5 and the build runs Oct 15–20. Teams need paid tools while they build [src] | Check or Gate, free credits first, then $0.01 | Hackathon Discord (first confirm Shonin has no judging role) | `research/funding.md` | L |
 | 20 | Celo agent teams outside the founder's programs (e.g., walcert.globalscoreagent.com) | agent | Unknown | One of 3 hosts accepting Celo in the Bazaar [data]. Celo USDC signs as "USDC"/"2" while Base USDC signs as "USD Coin"/"2", which is a common bug [src] | Check, Receipt | Direct only, not through Celo channels | Bazaar [data]; `agent-payments.md` | L (check conflicts first) |
 | 21 | Olas Mech buyers (Predict traders) | agent | Gnosis, Base, Celo and others | $109.6k paid across 11.99M requests [web], but the demand is for forecasts | Decision recipes (Score) as a Mech tool | Mech Hub | [web]; `valory-xyz/mech` [src] | L |
 | 22 | x402 sellers with repeat buyers: stableenrich, BlockRun, twit.sh, Otto AI | human | Global | "Five Attacks on x402" (arXiv 2605.11781) reports attacks on live endpoints that end in unpaid service or in a buyer paying without receiving it [web]. These hosts have the most paying buyers [data] | Agent Reliability Audit of the payment path | Email or X, with a free Check report | arXiv via search [web]; Bazaar [data] | L |
@@ -132,7 +132,7 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 | Rank | Channel | First dollar in | First ticket | Effort | Why this rank |
 |---|---|---|---|---|---|
 | 1 | **Warm-network DMs for human services**: existing clients, founders, NBW contacts | Days | $150 to $1,750 deposits | Low | The scripts already exist (`company/gtm/outbound.md` §1–4). The week-one target is $3–4k [src] |
-| 2 | **"Show them their own data"**: run a free Nova Check report on a target's live 402 or wallet flow, then offer an integration or an Agent Reliability Audit | 1–2 weeks | $0.01 calls; $3,000+ audits | Medium | It is the firm's own lead magnet [src], and each report doubles as proof for content |
+| 2 | **"Show them their own data"**: run a free Shonin Check report on a target's live 402 or wallet flow, then offer an integration or an Agent Reliability Audit | 1–2 weeks | $0.01 calls; $3,000+ audits | Medium | It is the firm's own lead magnet [src], and each report doubles as proof for content |
 | 3 | **Integration PRs into open-source buyer tools**: Run402, opencrowd, tryx402, ArisPay, x402-proxy, three.ws | 1–3 weeks to the first paid call | Cents a day, compounding | Medium | A vendor pitched a $0.03 paid check through ClawRouter's wallet this way on 25 Sep [web: ClawRouter #396]. Merged code keeps paying |
 | 4 | **Virtuals ACP**, as a provider and an evaluator | 2–3 weeks | Unknown; subsidized | Medium–high (`acp-node-v2` on Base) | The only venue with paid demand plus a subsidy [web] |
 | 5 | **Machine discovery with a Base leg**: Bazaar, x402scan, the MCP registry, llms.txt, the agent card, ERC-8004 | Hours to set up; the first call is uncertain | Cents | Low | A prerequisite for rows 2–4 rather than a source of demand: 74% of Bazaar entries got one payer or none in 30 days [data] |
@@ -154,13 +154,13 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 
 ## 5. A 14-day outreach plan
 
-**Days 1–2: make Nova findable and demo-able before sending anything.**
+**Days 1–2: make Shonin findable and demo-able before sending anything.**
 
 - Turn on the Base leg (`CDP_API_KEY_ID`, `CDP_API_KEY_SECRET`). Confirm that `/api/v1/check`, `/gate` and `/receipt` answer 402 with both a Base and a Celo accept.
 - Register the three routes on x402scan, through an OpenAPI file with `x-payment-info` or a `/.well-known/x402` file.
-- Publish `packages/mcp` (nova-mcp: `nova_check`, `nova_gate`, `nova_receipt`) to the official MCP registry and to Smithery.
-- Build the lead magnet: a script that runs Nova Check against any public 402 and prints a one-page result. Run it on each agent-side target's own routes before writing to them.
-- Make three sample Nova Receipts from public Base and Celo settlements.
+- Publish `packages/mcp` (shonin-mcp: `shonin_check`, `shonin_gate`, `shonin_receipt`) to the official MCP registry and to Smithery.
+- Build the lead magnet: a script that runs Shonin Check against any public 402 and prints a one-page result. Run it on each agent-side target's own routes before writing to them.
+- Make three sample Shonin Receipts from public Base and Celo settlements.
 
 **Days 1–3:** cash from the warm network (targets 1–2). This continues the existing sprint.
 
@@ -169,7 +169,7 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 - Send one message to each, with their own check result attached.
 - Open a PR only where the repo accepts outside contributions.
 
-**Days 5–10:** register a Nova Gate provider and evaluator on Virtuals ACP with `acp-node-v2`, and pass the 10 sandbox jobs using test buyers.
+**Days 5–10:** register a Shonin Gate provider and evaluator on Virtuals ACP with `acp-node-v2`, and pass the 10 sandbox jobs using test buyers.
 
 **Days 8–10:** regulated buyers (targets 9–10).
 
@@ -177,7 +177,7 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 
 - Follow up once per target, each time with one new fact.
 - Publish a sourced post on what agents actually pay for, using the census numbers and our own check results.
-- Count cash collected, paid calls from wallets Nova doesn't control, PRs merged, and ACP graduation.
+- Count cash collected, paid calls from wallets Shonin doesn't control, PRs merged, and ACP graduation.
 - Log every correction in `company/ops/rulebook-log.md`.
 
 **Day-14 targets** (targets, not promises): one paid human engagement, one integration merged or agreed, the first paid call from a wallet we don't control, and ACP graduation.
@@ -186,12 +186,12 @@ Confidence is our judgment of the odds that this party pays Nova within 60 days:
 |---|---|---|---|---|---|
 | 1 | Existing website clients (Lagos) | AI Visibility Audit, then Agent-Ready Website | WhatsApp | 1 | "I asked ChatGPT '{buyer question}' and it gave {business}'s old price [screenshot]. Want the full 25-question check this week?" |
 | 2 | Funded founders in the network | Agent Launch Sprint or Company Brain | X, WhatsApp | 2 | "Congrats on {specific}. I put one agent into production for one workflow in 10 days, with approvals and a decision log. 20 minutes this week?" |
-| 3 | Run402 | Nova Check | GitHub issue | 3 | "`run402` pays any x402 seller up to a $0.10 default ceiling. Nova Check reads the 402 before signing (token contract, EIP-712 domain, amount, payTo, resource URL) and returns pay, confirm or block for $0.01. Would you take a PR that adds it behind an opt-in flag?" |
-| 4 | opencrowd | Nova Check | GitHub issue | 3 | "OpenCrowd already checks reputation and asks for approval before it pays. Nova Check adds a verdict on whether the purchase serves the user's task, with 'confirm with a person' as the middle answer, for $0.01. Can I open a PR that adds it as an optional step?" |
-| 5 | Merit Systems (AgentCash) | Nova Receipt | Email, X | 4 | "Your stableenrich buyers make 21 to 78 calls each (CDP index, 26 Sep). Nova Receipt turns each settlement into one signed line for the buyer's books. Want three samples built from public Base settlements?" |
-| 6 | tryx402 | Nova Check | GitHub, email | 4 | "tryx402 caps budgets, dedupes calls and signs receipts. Nova Check covers the step before that: is this 402 what it claims, and does the purchase fit the task? Can I run it across your verified-tools catalogue and send you the results?" |
-| 7 | ArisPay | Nova Check | Email | 5 | "ArisPay Signal tells an agent whether a paid probe settled and delivered. Nova Check answers the question before it: does this purchase fit the task and budget, or should a person confirm it? Worth 20 minutes on returning both in one `pay` result?" |
-| 8 | Agent402 | Nova Check on Celo; Gate as a routable seller | GitHub, email | 5 | "598 of the 600 Celo-accepting entries in the CDP index are yours (26 Sep). Nova Check knows Celo's token domains: USDC signs as 'USDC'/'2', USD₮ as 'Tether USD'/'1'. Want it as a second opinion before `route/execute` pays a seller on Celo?" |
+| 3 | Run402 | Shonin Check | GitHub issue | 3 | "`run402` pays any x402 seller up to a $0.10 default ceiling. Shonin Check reads the 402 before signing (token contract, EIP-712 domain, amount, payTo, resource URL) and returns pay, confirm or block for $0.01. Would you take a PR that adds it behind an opt-in flag?" |
+| 4 | opencrowd | Shonin Check | GitHub issue | 3 | "OpenCrowd already checks reputation and asks for approval before it pays. Shonin Check adds a verdict on whether the purchase serves the user's task, with 'confirm with a person' as the middle answer, for $0.01. Can I open a PR that adds it as an optional step?" |
+| 5 | Merit Systems (AgentCash) | Shonin Receipt | Email, X | 4 | "Your stableenrich buyers make 21 to 78 calls each (CDP index, 26 Sep). Shonin Receipt turns each settlement into one signed line for the buyer's books. Want three samples built from public Base settlements?" |
+| 6 | tryx402 | Shonin Check | GitHub, email | 4 | "tryx402 caps budgets, dedupes calls and signs receipts. Shonin Check covers the step before that: is this 402 what it claims, and does the purchase fit the task? Can I run it across your verified-tools catalogue and send you the results?" |
+| 7 | ArisPay | Shonin Check | Email | 5 | "ArisPay Signal tells an agent whether a paid probe settled and delivered. Shonin Check answers the question before it: does this purchase fit the task and budget, or should a person confirm it? Worth 20 minutes on returning both in one `pay` result?" |
+| 8 | Agent402 | Shonin Check on Celo; Gate as a routable seller | GitHub, email | 5 | "598 of the 600 Celo-accepting entries in the CDP index are yours (26 Sep). Shonin Check knows Celo's token domains: USDC signs as 'USDC'/'2', USD₮ as 'Tether USD'/'1'. Want it as a second opinion before `route/execute` pays a seller on Celo?" |
 | 9 | Coadjute (FCA AI Live Testing) | Agent Reliability Audit | LinkedIn, email | 8 | "You're stress-testing an AI AML platform for property in the FCA's AI Live Testing until year-end. I measure one workflow's consistency, robustness and calibration and hand over reproducible traces. Is a 20-minute call useful before the FCA's Q1 2027 report?" |
 | 10 | A Nigerian mobile money operator or money transfer operator's compliance lead (warm, via NBW) | Agent Reliability Audit; AML Alert Triage pilot | LinkedIn, WhatsApp | 9 | "The CBN's automated-AML standard gives you 18 to 24 months. Send 200 of last month's anonymized alerts and I'll show you, free, how often an AI triage agrees with your analysts. Can we start this week?" |
 
@@ -328,4 +328,4 @@ Before each send, check the target against `company/ops/conflicts-of-interest.md
 
 - `research/agent-payments.md`, `research/africa-ai.md`, `research/funding.md`
 - `company/strategy.md`, `company/seven-day-sprint.md`, `company/gtm/outbound.md`, `company/ops/conflicts-of-interest.md`
-- `packages/catalog/src/offers.ts` (Nova Check, Gate and Receipt, the audits), `apps/web/lib/chain.ts` (the Base leg switch)
+- `packages/catalog/src/offers.ts` (Shonin Check, Gate and Receipt, the audits), `apps/web/lib/chain.ts` (the Base leg switch)

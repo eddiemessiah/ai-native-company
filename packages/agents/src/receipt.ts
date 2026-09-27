@@ -3,7 +3,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { findToken, resolveNetwork, toUnits, type NetworkInfo, type TokenInfo } from "./networks";
 
 /**
- * Nova Receipt: proof for every agent payment. Reads the settlement transaction
+ * Shonin Receipt: proof for every agent payment. Reads the settlement transaction
  * from the chain (code only, no model), finds the stablecoin transfer and the
  * EIP-3009 authorization behind it, checks it against what the caller expected,
  * and returns one normalized receipt, signed when a key is configured.

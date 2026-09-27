@@ -7,9 +7,9 @@ type Tone = "go" | "ask" | "stop";
 
 /** Where each product sits in an agent's loop, and the verdicts it can return. */
 const STAGES: Readonly<Record<string, { step: string; verdicts: readonly (readonly [string, Tone])[] }>> = {
-  "nova-check": { step: "Before paying", verdicts: [["pay", "go"], ["confirm", "ask"], ["block", "stop"]] },
-  "nova-gate": { step: "Before acting", verdicts: [["execute", "go"], ["confirm", "ask"], ["escalate", "stop"]] },
-  "nova-receipt": { step: "After paying", verdicts: [["settled", "go"], ["signed", "go"], ["no payment found", "stop"]] },
+  "shonin-check": { step: "Before paying", verdicts: [["pay", "go"], ["confirm", "ask"], ["block", "stop"]] },
+  "shonin-gate": { step: "Before acting", verdicts: [["execute", "go"], ["confirm", "ask"], ["escalate", "stop"]] },
+  "shonin-receipt": { step: "After paying", verdicts: [["settled", "go"], ["signed", "go"], ["no payment found", "stop"]] },
 };
 
 const TONE: Record<Tone, string> = {

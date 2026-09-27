@@ -25,7 +25,7 @@ describe("agent recipes: questions", () => {
   });
 });
 
-describe("Nova Gate routing", () => {
+describe("Shonin Gate routing", () => {
   const input = { action: "look up order A-104", request: "where is my order?", risk: "read" as const };
 
   it("executes a read the user asked for", () => {
@@ -69,7 +69,7 @@ describe("Nova Gate routing", () => {
   });
 });
 
-describe("Nova Check purchase routing", () => {
+describe("Shonin Check purchase routing", () => {
   it("pays when the purchase serves the task and the offer looks real", () => {
     expect(routePurchase(purchase(0.9, 0.9), calibrated).verdict).toBe("pay");
   });

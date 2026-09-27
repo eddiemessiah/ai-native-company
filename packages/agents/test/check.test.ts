@@ -5,7 +5,7 @@ import { checkPayment, CheckInputError, decodePaymentRequired, inspectPayment, N
 const CELO_USDC = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
 const BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const PAY_TO = "0x1111111111111111111111111111111111111111";
-const URL = "https://nova.example/api/v1/triage";
+const URL = "https://shonin.example/api/v1/triage";
 
 const accept = (over: Record<string, unknown> = {}) => ({
   scheme: "exact",

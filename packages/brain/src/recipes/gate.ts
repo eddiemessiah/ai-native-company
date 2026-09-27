@@ -4,7 +4,7 @@ import { Noul } from "../questions";
 import type { AnswersFor, State } from "../types";
 
 /**
- * Nova Gate: should an agent execute an action now, ask a person to confirm it,
+ * Shonin Gate: should an agent execute an action now, ask a person to confirm it,
  * or hand it to a person? The caller states the risk tier (code owns that); the
  * brain answers typed questions about the action; the policy gate decides by tier.
  * A model can only lower the verdict. It never raises a limit.

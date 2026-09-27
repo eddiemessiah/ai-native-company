@@ -7,7 +7,7 @@
 export const DEMO_EXAMPLES = [
   {
     message: "I need my agent to check a 402 payment request before it pays.",
-    offer: "nova-check",
+    offer: "shonin-check",
   },
   {
     message: "We run 3 restaurants in Lisbon and need a WhatsApp assistant to take orders before December.",
@@ -31,6 +31,6 @@ export const DEMO_EXAMPLES = [
   },
   {
     message: "We need receipts for every payment our agents make, for accounting.",
-    offer: "nova-receipt",
+    offer: "shonin-receipt",
   },
 ] as const satisfies readonly { message: string; offer: string }[];

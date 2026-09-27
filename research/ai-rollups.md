@@ -1,6 +1,6 @@
 # AI roll-ups: buying services firms and rebuilding delivery with agents
 
-Compiled 2026-09-27 for Edidiong Umana ("DeFi Messiah"). Source: Greg Isenberg's guide "$5T opportunity: AI Roll Ups" (late September 2026, gregisenberg.com). Purpose: decide how Nova plays the AI roll-up wave, and what to sell to the people doing it.
+Compiled 2026-09-27 for Edidiong Umana ("DeFi Messiah"). Source: Greg Isenberg's guide "$5T opportunity: AI Roll Ups" (late September 2026, gregisenberg.com). Purpose: decide how Shonin plays the AI roll-up wave, and what to sell to the people doing it.
 
 **Evidence tags**
 
@@ -8,7 +8,7 @@ Compiled 2026-09-27 for Edidiong Umana ("DeFi Messiah"). Source: Greg Isenberg's
 |---|---|
 | **[G]** | From Greg's guide, as the founder pasted it. Not checked against Greg's own sources. |
 | **[SR]** | A company's result, quoted in the guide. **Self-reported.** Greg's own caution: these are young companies raising money, and none has been tested by a recession. |
-| **[N]** | Nova's reading, decision or arithmetic: our data, not Greg's. |
+| **[N]** | Shonin's reading, decision or arithmetic: our data, not Greg's. |
 | **[A]** | A planning anchor. Validate it in the first five sales calls before relying on it. |
 
 **Method and limits.** One source: the key content of the guide, pasted by the founder into the session on 2026-09-27. I did not fetch gregisenberg.com, the McKinsey figures, or any company's own announcement. Every company number below is that company's claim, repeated by Greg. Read each one as a claim, not a benchmark.
@@ -21,8 +21,8 @@ Compiled 2026-09-27 for Edidiong Umana ("DeFi Messiah"). Source: Greg Isenberg's
 - **An AI roll-up buys a services firm at a services price and rebuilds delivery with agents.** Clients and revenue stay; the cost per unit of work drops. Greg's thesis: from the ~5–10% EBITDA margins of a traditional services firm to 30–40%. [G]
 - **The evidence is early and self-reported.** Larson Gross, a ~200-person accounting firm, says AI processed 7,000 returns this tax season and saved its accountants 31% of their time on average. Long Lake, Crescendo, Dwelly and Titan MSP report doubled, tripled (a target) or 4x margins. [SR]
 - **Individuals can win.** Funds need big deals and ignore the ~$2M-revenue firms that make up most of the market. The tools are the same (Claude Code, Codex), and a solo owner-operator *is* the integration. [G]
-- **The operating model is the one Nova already runs.** Greg's three files (`target-criteria.md`, `rules/`, `corrections-log.md`), the preparer kept apart from the reviewer, and a weekly dashboard map onto our catalog rulebooks, the rulebook log, Nova Gate and our decision logs. The automation map he calls "the most valuable document in the deal" is our Agent Readiness Audit, pointed at a target. [N]
-- **Nova's play: picks and shovels now, acquire later.** Sell acquirers an **Acquisition Automation Map** ($2,500 per target) and a **100-Day Agent Integration** (from $12,000 per firm + $1,500/month). Buy one small services firm ourselves only after services cash flows and a rulebook is proven in that line of work (H3 in `company/strategy.md`). [N]
+- **The operating model is the one Shonin already runs.** Greg's three files (`target-criteria.md`, `rules/`, `corrections-log.md`), the preparer kept apart from the reviewer, and a weekly dashboard map onto our catalog rulebooks, the rulebook log, Shonin Gate and our decision logs. The automation map he calls "the most valuable document in the deal" is our Agent Readiness Audit, pointed at a target. [N]
+- **Shonin's play: picks and shovels now, acquire later.** Sell acquirers an **Acquisition Automation Map** ($2,500 per target) and a **100-Day Agent Integration** (from $12,000 per firm + $1,500/month). Buy one small services firm ourselves only after services cash flows and a rulebook is proven in that line of work (H3 in `company/strategy.md`). [N]
 
 ---
 
@@ -171,23 +171,23 @@ What they share [N]: recurring clients, document-heavy back offices, and a check
 
 ---
 
-## 7. What it means for Nova [N]
+## 7. What it means for Shonin [N]
 
 ### 7.1 We already run this operating model
 
-| Greg's piece | Nova today | Where |
+| Greg's piece | Shonin today | Where |
 |---|---|---|
 | `rules/`: can the agents be trusted? | A rulebook on every offer; a playbook per delivered service | `packages/catalog/src/offers.ts`, `company/ops/playbooks/` |
 | `corrections-log.md` | The rulebook log, with a weekly review that promotes repeats to rules | `company/ops/rulebook-log.md` |
-| Preparer kept apart from reviewer | Nova Gate: execute, confirm or escalate by risk tier; money and irreversible actions are prepare-only. Nova Check and the Spend Firewall: "A model can block a payment. It can never raise a limit." The content gate blocks drafts; it never publishes. | `packages/brain` policy gate, `/api/v1/gate`, `/api/v1/check`, `/api/v1/content-gate` |
+| Preparer kept apart from reviewer | Shonin Gate: execute, confirm or escalate by risk tier; money and irreversible actions are prepare-only. Shonin Check and the Spend Firewall: "A model can block a payment. It can never raise a limit." The content gate blocks drafts; it never publishes. | `packages/brain` policy gate, `/api/v1/gate`, `/api/v1/check`, `/api/v1/content-gate` |
 | The automation map | The Agent Readiness Audit: each step classed as LLM, System One decision, code or a person, and costed on the client's own volumes | `company/ops/playbooks/agent-readiness-audit.md` |
 | Minutes of human attention; trust per task | Decision logs with model version, probabilities and confidence | `packages/brain` decision log |
-| Staff who prepare become reviewers | The study group trains the review layer and the bench | AI Study Group, Nova Bench |
+| Staff who prepare become reviewers | The study group trains the review layer and the bench | AI Study Group, Shonin Bench |
 | `target-criteria.md` and the scorecard | Not built. It would be a brain recipe: each criterion a `Score`, the total and the 60%/80% bands computed in code | `packages/brain/src/recipes/` (the brain line) |
 
 Greg's four classes map onto our split:
 
-| Greg's class | In Nova's terms |
+| Greg's class | In Shonin's terms |
 |---|---|
 | Automate now | Code, or a System One decision that clears its confidence gate |
 | Automate with human review | An LLM draft or a decision in the confirm band; a person approves before it ships |

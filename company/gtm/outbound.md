@@ -98,13 +98,13 @@ Both lists are in `research/first-customers.md` §3.
 
 **Before you send:**
 
-- Run Nova Check on their live 402 and paste the real result. The screenshot is the pitch.
+- Run Shonin Check on their live 402 and paste the real result. The screenshot is the pitch.
 - Send by GitHub issue, email or X. Never through Celo channels, and never to builders you support in a Celo role (`ops/conflicts-of-interest.md`).
-- An issue or PR on someone else's repo is public and in Nova's name. Edidiong approves each one before it goes out.
+- An issue or PR on someone else's repo is public and in Shonin's name. Edidiong approves each one before it goes out.
 
 **Wallets and routers.** The ask is an opt-in flag.
 
-> Hi {name}, I ran {tool}'s buy flow against {a live seller} through Nova Check. Result: {verdict}, flagged on {the check that warned, e.g. "the EIP-712 domain: Celo USDC signs as 'USDC', not 'USD Coin'"}. Full report: {link}.
+> Hi {name}, I ran {tool}'s buy flow against {a live seller} through Shonin Check. Result: {verdict}, flagged on {the check that warned, e.g. "the EIP-712 domain: Celo USDC signs as 'USDC', not 'USD Coin'"}. Full report: {link}.
 >
 > {tool} already caps spend and keeps receipts. What it can't tell is whether a purchase serves the user's task. Check answers pay, confirm with a person, or block, for $0.01 a call over x402. The ten request checks run in code, without a model.
 >
@@ -112,7 +112,7 @@ Both lists are in `research/first-customers.md` §3.
 
 **Sellers and facilitators.** The ask is a free report, then the audit. Read the paper before you cite it: our note has it from a search result only.
 
-> Hi {name}, {host} has more repeat buyers than almost anyone on the Bazaar, so its payment path is the one attackers will try first. "Five Attacks on x402" (arXiv 2605.11781) reports attacks on live endpoints that end in unpaid service. I ran Nova Check on your 402: {one-line result}. Report: {link}.
+> Hi {name}, {host} has more repeat buyers than almost anyone on the Bazaar, so its payment path is the one attackers will try first. "Five Attacks on x402" (arXiv 2605.11781) reports attacks on live endpoints that end in unpaid service. I ran Shonin Check on your 402: {one-line result}. Report: {link}.
 >
 > The Agent Reliability Audit goes further, in a sandbox. It covers repeated runs, malformed payments, facilitator and upstream outages, and whether a failed call is ever charged. Every finding comes with a saved trace. From $3,000 per workflow.
 >

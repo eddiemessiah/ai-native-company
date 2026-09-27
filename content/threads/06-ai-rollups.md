@@ -5,7 +5,7 @@ About $5 trillion of US businesses will change hands by 2035, many from retiring
 
 (McKinsey's estimate, quoted in Greg Isenberg's new guide to AI roll-ups.)
 
-A new kind of buyer wants those firms. Here's the model, and where Nova fits 🧵
+A new kind of buyer wants those firms. Here's the model, and where Shonin fits 🧵
 
 2/
 An AI roll-up buys a services firm at a services price: an accounting practice, an IT support shop, a property manager.
@@ -46,7 +46,7 @@ The operating model fits in three files:
 And one line for the agents: "the reviewer can block but never ship, and the preparer can ship nothing on its own."
 
 7/
-That's how Nova already runs.
+That's how Shonin already runs.
 
 Every offer has a rulebook. Every correction goes into a log, and repeats become rules. Every agent decision is logged with its confidence. Anything with money or a client's name on it waits for a person.
 

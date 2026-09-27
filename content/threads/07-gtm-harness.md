@@ -7,7 +7,7 @@ Post it with a 60-second screen recording of a real run, and pin it for launch w
 
 That's what a founder gets from GTM Harness in about a minute: a go-to-market plan, three reviewed first messages, and a folder their own agents keep running in Claude Code.
 
-It's free. Here's what's inside 🧵
+It's free and open source (MIT). Here's what's inside 🧵
 
 2/
 You fill in one form: the product, who it's for, your goal for the month, and the channels you can use.
@@ -48,6 +48,8 @@ Every run uses the same split:
 • a decision model reviews them
 • code does the math and packs the folder
 • a person sends
+
+The code is MIT-licensed: github.com/eddiemessiah/ai-native-company/tree/main/packages/gtm-harness
 
 7/
 Free. No account, no sales emails.
