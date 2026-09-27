@@ -2,10 +2,10 @@
   "name": "@repo/mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "Nova's MCP server: Nova Check, Gate and Receipt as tools for any MCP client, paid per call over x402 with the operator's wallet.",
+  "description": "Shonin's MCP server: Shonin Check, Gate and Receipt as tools for any MCP client, paid per call over x402 with the operator's wallet.",
   "type": "module",
   "bin": {
-    "nova-mcp": "dist/cli.js"
+    "shonin-mcp": "dist/cli.js"
   },
   "exports": {
     ".": "./src/server.ts"

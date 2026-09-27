@@ -2,7 +2,7 @@
   "name": "@repo/agents",
   "version": "0.1.0",
   "private": true,
-  "description": "What Nova sells to agents: pre-payment checks of x402 requests (Nova Check), action gates (Nova Gate) and on-chain settlement receipts (Nova Receipt).",
+  "description": "What Shonin sells to agents: pre-payment checks of x402 requests (Shonin Check), action gates (Shonin Gate) and on-chain settlement receipts (Shonin Receipt).",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

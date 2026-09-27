@@ -8,8 +8,8 @@ import type { Offer } from "./types";
 export const offers: readonly Offer[] = [
   // ─── For agents: paid per call, no account, no API key ──────────────────────
   {
-    slug: "nova-check",
-    name: "Nova Check",
+    slug: "shonin-check",
+    name: "Shonin Check",
     category: "agent-api",
     status: "beta",
     featured: true,
@@ -60,8 +60,8 @@ export const offers: readonly Offer[] = [
     },
   },
   {
-    slug: "nova-gate",
-    name: "Nova Gate",
+    slug: "shonin-gate",
+    name: "Shonin Gate",
     category: "agent-api",
     status: "beta",
     featured: true,
@@ -112,8 +112,8 @@ export const offers: readonly Offer[] = [
     },
   },
   {
-    slug: "nova-receipt",
-    name: "Nova Receipt",
+    slug: "shonin-receipt",
+    name: "Shonin Receipt",
     category: "agent-api",
     status: "beta",
     featured: true,
@@ -886,7 +886,7 @@ export const offers: readonly Offer[] = [
       "The client-comms agent sends routine status updates only; advice, fees and bad news go to a person.",
     ],
     review:
-      "The firm's own staff review every agent draft; Nova reads the decision and corrections logs weekly and runs a monthly corrections review with senior staff.",
+      "The firm's own staff review every agent draft; Shonin reads the decision and corrections logs weekly and runs a monthly corrections review with senior staff.",
     delivery:
       "Agents live in the firm's own tools, the rulebook and corrections log in its own folder, and the Monday dashboard (margin, client retention, key-person retention, human minutes per job, corrections per job); a runbook at day 100, then monthly agent operations.",
     turnaround: "100 days, then monthly",
@@ -1231,8 +1231,8 @@ export const offers: readonly Offer[] = [
     tags: ["education", "community", "certificates", "celo"],
   },
   {
-    slug: "nova-bench",
-    name: "Nova Bench",
+    slug: "shonin-bench",
+    name: "Shonin Bench",
     category: "community",
     status: "soon",
     oneLiner: "Vetted AI builders from the Study Group, available for contract work and forward-deployed roles.",

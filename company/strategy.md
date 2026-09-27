@@ -25,16 +25,16 @@ Agents are the quickest buyers to close: no procurement, no meetings. An agent b
 
 | Product | What the agent gets | Price |
 |---|---|---|
-| **Nova Check** | Before it pays a 402: ten checks on the request (scheme, network, token, amount, budget, payee, domain, timeout, resource, host) and, given the user's task, a verdict on whether the purchase serves it: pay, confirm with a person, or block | $0.01 |
-| **Nova Gate** | Before it acts: does the action match the request and the approval, and is it riskier than stated? Execute, confirm or escalate, by risk tier | $0.01 |
-| **Nova Receipt** | After it pays: the settlement read from the chain, matched to the payment and signed | $0.01 |
+| **Shonin Check** | Before it pays a 402: ten checks on the request (scheme, network, token, amount, budget, payee, domain, timeout, resource, host) and, given the user's task, a verdict on whether the purchase serves it: pay, confirm with a person, or block | $0.01 |
+| **Shonin Gate** | Before it acts: does the action match the request and the approval, and is it riskier than stated? Execute, confirm or escalate, by risk tier | $0.01 |
+| **Shonin Receipt** | After it pays: the settlement read from the chain, matched to the payment and signed | $0.01 |
 
 What the research says (`research/first-customers.md`), and what we do about it:
 
 1. **The niche is crowded, and almost nobody in it is paid yet.** 907 Bazaar entries on 102 hosts sell trust checks, preflights, receipts or spend control; the 31 with three or more paying buyers earned about $15 combined in 30 days (our count). Wallets already ship budgets and receipts. **We lead with what they lack:** the task-fit verdict, "confirm with a person" as an outcome, and the decision log.
 2. **Celo alone is invisible to buying agents.** 598 of the 600 Bazaar entries that accept Celo belong to one gateway, and x402scan doesn't index Celo. **The Base leg goes on (CDP keys) before any listing push.**
 3. **The first agent dollars come through someone else's wallet.** Opt-in integrations into buyer tools that already pay arbitrary sellers (Run402, opencrowd, tryx402, ArisPay, AgentCash), and Virtuals ACP as a provider and evaluator. A listing is a prerequisite, not demand: 74% of Bazaar entries got one payer or none in 30 days.
-4. **The first cash is human.** Our estimate for month one on the agent side is cents to tens of dollars. Warm-network services pay in weeks 1–2. After that comes the Agent Reliability Audit (from $3,000) for teams whose agents move money, opened with a free Nova Check report on their own live 402.
+4. **The first cash is human.** Our estimate for month one on the agent side is cents to tens of dollars. Warm-network services pay in weeks 1–2. After that comes the Agent Reliability Audit (from $3,000) for teams whose agents move money, opened with a free Shonin Check report on their own live 402.
 
 Selling through Celo channels stays off-limits (`ops/conflicts-of-interest.md`, rules 1–2).
 
@@ -64,7 +64,7 @@ The operating model in the guide is the one we already run:
 
 - a rulebook of what "correct" means (catalog rulebooks and playbooks);
 - a corrections log that improves it every week (`ops/rulebook-log.md`);
-- a preparer kept apart from a reviewer that can block but never ship (Nova Gate, the content gate);
+- a preparer kept apart from a reviewer that can block but never ship (Shonin Gate, the content gate);
 - decision logs with confidence;
 - the automation map, which is our Agent Readiness Audit pointed at a target.
 
@@ -90,7 +90,7 @@ Each map teaches us one industry's rulebook before we own anything in it.
 
 | Horizon | When | Goal | What we sell |
 |---|---|---|---|
-| **H1: cash, and agents calling** | Weeks 0–4 | First paying customers from our network; first paid calls from agents we don't control; the GTM Harness launched (free) | Nova Check, Gate and Receipt on x402 (Celo, then Base); Agent-Ready Website, AI Visibility Audit, Agent Readiness Audit, Grant Desk, Pro cohort presale, 1 Agent Launch Sprint or Company Brain |
+| **H1: cash, and agents calling** | Weeks 0–4 | First paying customers from our network; first paid calls from agents we don't control; the GTM Harness launched (free) | Shonin Check, Gate and Receipt on x402 (Celo, then Base); Agent-Ready Website, AI Visibility Audit, Agent Readiness Audit, Grant Desk, Pro cohort presale, 1 Agent Launch Sprint or Company Brain |
 | **H2: productize** | Months 1–3 | Repeatable delivery through playbooks, agent products inside the wallets that pay, grants in, first acquirer clients | The same services with written playbooks; Check, Gate and Receipt integrated into agent wallets and listed on Virtuals ACP; recipe APIs on x402; the Prezenti Frontier grant for Omni402; team upskilling; Acquisition Automation Map and 100-Day Agent Integration for acquirers |
 | **H3: infrastructure, regulated B2B, first acquisition** | Months 3–12 | Infrastructure revenue and regulated buyers; one small services firm bought, only once the six conditions under "AI roll-ups" hold | Agent Reliability Audit, AML Alert Triage and NDPA work for fintechs; Agent Spend Firewall; AfroEval; chapters across Africa; the acquired firm's own services, delivered by our agents |
 
@@ -98,19 +98,19 @@ Each map teaches us one industry's rulebook before we own anything in it.
 
 | Segment | Pain | Lead offer | Where we find them |
 |---|---|---|---|
-| **Agents, and the wallets and marketplaces they buy through** | Paying a 402 they can't vet; acting beyond what the user asked; no receipt their operator's books accept | Nova Check, Nova Gate, Nova Receipt ($0.01 a call) | Integrations into buyer wallets (Run402, opencrowd, tryx402, ArisPay, AgentCash), Virtuals ACP, the CDP Bazaar and x402scan, the MCP registry, llms.txt, the agent card |
+| **Agents, and the wallets and marketplaces they buy through** | Paying a 402 they can't vet; acting beyond what the user asked; no receipt their operator's books accept | Shonin Check, Shonin Gate, Shonin Receipt ($0.01 a call) | Integrations into buyer wallets (Run402, opencrowd, tryx402, ArisPay, AgentCash), Virtuals ACP, the CDP Bazaar and x402scan, the MCP registry, llms.txt, the agent card |
 | **SMEs, anywhere (our existing clients first)** | Customers on WhatsApp, no staff to answer; AI assistants get their prices wrong | Agent-Ready Website + AI Visibility Audit | Current clients, trade associations, Instagram, WhatsApp |
 | **Funded startups** (worldwide; Lagos, Nairobi and remote teams first) | Ops overload; LLM bills | Company Brain, Agent Launch Sprint, Decision Router Retrofit | Founder networks, accelerators, X |
 | **Fintechs and banks** | Regulators want evidence of control: the CBN's automated-AML standard, the FCA's AI Live Testing, the RBI's FREE-AI | Agent Reliability Audit, AML Alert Triage | Compliance leads, fintech events, regulatory sandboxes, LinkedIn |
 | **NGOs, foundations, ecosystems** | Grant writing, reporting, training their people | Grant Desk, Team AI Upskilling, Ecosystem Intelligence | Development-sector networks, ecosystem teams |
-| **Agent builders and x402 sellers** | Need typed decisions and paid data without accounts; payment paths attackers probe ("Five Attacks on x402", arXiv 2605.11781) | Recipe APIs, Omni402, Agent Reliability Audit, Spend Firewall | llms.txt, agent card, x402 discovery, hackathons outside Celo, a free Nova Check report on their own 402 |
+| **Agent builders and x402 sellers** | Need typed decisions and paid data without accounts; payment paths attackers probe ("Five Attacks on x402", arXiv 2605.11781) | Recipe APIs, Omni402, Agent Reliability Audit, Spend Firewall | llms.txt, agent card, x402 discovery, hackathons outside Celo, a free Shonin Check report on their own 402 |
 | **Acquirers** (searchers, ETA buyers, small holdcos, PE-backed roll-ups; worldwide) | Buying a services firm at a services price: need to know before the LOI how much of the work agents can take over, then to rebuild delivery without losing clients or key staff | Acquisition Automation Map, then 100-Day Agent Integration | Search-fund and ETA communities, business brokers, deal lawyers and quality-of-earnings accountants, holdco operators on X and LinkedIn |
 
 ## Unit economics (planning numbers)
 
 | Offer | Price | Delivery cost | Gross margin (target) |
 |---|---|---|---|
-| Nova Check, Gate, Receipt | $0.01 per call | The ten checks and the receipt are code plus one chain read; the task verdict and the gate are one decision call (~$0.0002 on Jev); $0.001 settlement | ~88–90% on Jev or code alone; 0–40% on the Claude fallback |
+| Shonin Check, Gate, Receipt | $0.01 per call | The ten checks and the receipt are code plus one chain read; the task verdict and the gate are one decision call (~$0.0002 on Jev); $0.001 settlement | ~88–90% on Jev or code alone; 0–40% on the Claude fallback |
 | AI Visibility Audit | $150 (₦60,000 in Nigeria) | ~1.5 h of review + a few dollars of model calls | 80%+ |
 | Agent-Ready Website | From $200 + $25/mo (₦300,000 + ₦35,000/mo in Nigeria) | ~2 days of work + ₦5–10k/mo to run | 60–70% setup; 75%+ care |
 | Agent Readiness Audit | $490 (₦150k for SMEs) | ~4 h of review | 70%+ |

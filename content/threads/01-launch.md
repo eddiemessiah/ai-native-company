@@ -7,7 +7,7 @@ Not an agency. Not a SaaS.
 
 A firm that sells finished work (audits, agents, grant applications, company brains), where agents do the work and people own the outcome.
 
-It's called Nova. Here's how it works 🧵
+It's called Shonin: in Japanese, one word for merchant, witness and approval. Here's how it works 🧵
 
 2/
 The $120k accountant vs the $10k QuickBooks problem:
@@ -53,7 +53,7 @@ We ship the evidence with every job.
 7/
 Agents are customers too, and we sell to them first.
 
-Before an agent pays, Nova Check tells it whether the purchase serves the user's task: pay, confirm with a person, or block. Nova Gate checks an action before it runs. Nova Receipt proves a payment settled.
+Before an agent pays, Shonin Check tells it whether the purchase serves the user's task: pay, confirm with a person, or block. Shonin Gate checks an action before it runs. Shonin Receipt proves a payment settled.
 
 $0.01 a call in USDC, with x402. No account. No API key.
 

@@ -13,7 +13,7 @@ const CASES = [
     offer: "agent-ready-website",
   },
   { message: "Our agents pay for APIs with x402. We need to stop them paying the wrong endpoints.", offer: "agent-spend-firewall" },
-  { message: "Our agent sends emails and refunds. We want it to ask a human before risky actions.", offer: "nova-gate" },
+  { message: "Our agent sends emails and refunds. We want it to ask a human before risky actions.", offer: "shonin-gate" },
   { message: "I need Instagram posts and reel scripts for my restaurant every week.", offer: "creative-packs" },
   { message: "Our support inbox is overwhelmed with tickets.", offer: "support-triage" },
 ];

@@ -3,18 +3,18 @@
 **Goal: by day 7,**
 
 - **real money in the account from people who already know you;**
-- **agents calling Nova Check from wallets we don't control;**
+- **agents calling Shonin Check from wallets we don't control;**
 - **the GTM Harness launched (Tue) and demoed to founders (Thu).**
 
 People pay first; agents get pushed hardest. The fastest money is still finished work sold to your network. The agent products need a week of groundwork before they can earn (the Base leg, listings, integrations into wallets that already pay), so that groundwork starts now (`strategy.md`, "Agents first; people pay first").
 
-Everything below uses what exists today: the site, the brain, Nova Check, Gate and Receipt, `nova-mcp`, Omni402, the GTM Harness and your track record.
+Everything below uses what exists today: the site, the brain, Shonin Check, Gate and Receipt, `shonin-mcp`, Omni402, the GTM Harness and your track record.
 
 ## Targets (targets, not promises)
 
 | Offer | Pitch to | Close | Cash this week |
 |---|---|---|---|
-| Nova Check, Gate and Receipt ($0.01 a call) | Base leg on; `nova-mcp` in the MCP registry; 5 free Check reports sent; 2 integration asks | The first paid call from a wallet we don't control | Cents: this week is groundwork |
+| Shonin Check, Gate and Receipt ($0.01 a call) | Base leg on; `shonin-mcp` in the MCP registry; 5 free Check reports sent; 2 integration asks | The first paid call from a wallet we don't control | Cents: this week is groundwork |
 | Agent-Ready Website ($200 setup; ₦300k in Nigeria) | 10 existing website clients | 3 | 50% deposits: $300 (₦450,000 at Nigerian prices) |
 | AI Visibility Audit ($150; ₦60k in Nigeria) | 20 free "screenshot" audits sent | 5 | $750 (₦300,000 at Nigerian prices) |
 | Grant Desk ($350) | 15 builders and NGOs (no programs where you have a role) | 2 | $700 |
@@ -29,7 +29,7 @@ Everything below uses what exists today: the site, the brain, Nova Check, Gate a
 
 ## Day 0 · Saturday 26 Sep: set up (evening)
 
-- [ ] Run the name checks for **Nova** (domains, trademark class 42, CAC, handles) before buying a domain: `company/brand/names.md`.
+- [ ] Register `shonin.ai` (available on 27 Sep). Then run the trademark, CAC and handle checks for **Shonin**: `company/brand/names.md`.
 - [ ] Write the list of 100:
   - existing clients;
   - founders from your network, anywhere;
@@ -59,11 +59,11 @@ Everything below uses what exists today: the site, the brain, Nova Check, Gate a
 
 - [ ] Make a first paid call possible:
   - check that `/api/v1/check` answers 402 with both a Celo and a Base option;
-  - publish `nova-mcp` to npm and the official MCP registry (`packages/mcp/README.md`);
+  - publish `shonin-mcp` to npm and the official MCP registry (`packages/mcp/README.md`);
   - register the paid routes on x402scan (a URL that returns a valid 402 is enough).
 
   Never pay from our own wallets to trigger a listing or show volume.
-- [ ] Run Nova Check on 5 live 402s from `research/first-customers.md` §3 and send the reports (`gtm/outbound.md` §10):
+- [ ] Run Shonin Check on 5 live 402s from `research/first-customers.md` §3 and send the reports (`gtm/outbound.md` §10):
   - Run402 and opencrowd get the opt-in-flag ask;
   - three sellers or facilitators get the audit ask.
 
@@ -110,7 +110,7 @@ Everything below uses what exists today: the site, the brain, Nova Check, Gate a
 
 - [ ] Log every correction founders sent after the demo. Turn repeats into rules in the harness (`gtm/gtm-harness-launch.md`, "After the demo").
 - [ ] If the entity is registered, apply for the credit stack: Anthropic, Cloudflare, Microsoft, Google and AWS (`research/funding.md` §4.3).
-- [ ] Register for the Open Agent Hackathon (the deadline is Oct 5). First confirm Nova has no judging role there. Then offer teams free Nova Check calls while they build.
+- [ ] Register for the Open Agent Hackathon (the deadline is Oct 5). First confirm Shonin has no judging role there. Then offer teams free Shonin Check calls while they build.
 - [ ] Deliver the grant drafts to clients for review. Hand over the first website previews.
 
 ## Day 7 · Saturday 3 Oct: review and publish the numbers

@@ -52,7 +52,7 @@ export const tracks: readonly Track[] = [
     title: "Forward-deployed AI engineering",
     role: "Forward-Deployed Engineer",
     status: "soon",
-    blurb: "Sit with a customer, find the workflow, ship the agent, prove it with evals. The job Nova does every week.",
+    blurb: "Sit with a customer, find the workflow, ship the agent, prove it with evals. The job Shonin does every week.",
     topics: ["discovery", "evals", "decision layers", "approvals", "handover"],
   },
   {

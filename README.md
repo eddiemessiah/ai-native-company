@@ -1,8 +1,8 @@
-# Nova
+# Shonin
 
 **The work, done.** An AI-native firm for agents and businesses worldwide: agents do the work, a person owns the outcome.
 
-Agents come first. They buy Nova Check (should I pay this?), Nova Gate (should I do this?) and Nova Receipt (did that payment settle?) per call over x402, with no account. Businesses anywhere buy finished work (audits, agents in production, grant applications, company brains) through Stripe, priced per unit against the human alternative. Every job runs on the same split:
+Agents come first. They buy Shonin Check (should I pay this?), Shonin Gate (should I do this?) and Shonin Receipt (did that payment settle?) per call over x402, with no account. Businesses anywhere buy finished work (audits, agents in production, grant applications, company brains) through Stripe, priced per unit against the human alternative. Every job runs on the same split:
 
 | | Who | Does |
 |---|---|---|
@@ -17,8 +17,8 @@ Agents come first. They buy Nova Check (should I pay this?), Nova Gate (should I
 |---|---|
 | [`packages/brain`](packages/brain) | The decision layer. Typed Choice/Score/Noul questions answered in one pass; providers Jev (direct, Vercel AI Gateway or OpenRouter), then Claude, then a heuristic for free demos; per-risk confidence gates; hashed decision logs; recipes for leads, support tickets, grants, study placement, content and a Slack-style teammate. |
 | [`packages/catalog`](packages/catalog) | The single source of truth: brand, every offer with its unit, rulebook, review layer and price, the paid API routes, Stripe checkout prices, study tracks and chapters. |
-| [`packages/agents`](packages/agents) | What agents buy: Nova Check (code checks of any x402 payment request against the x402 SDK's own token tables, plus an intent check) and Nova Receipt (settlement read from the chain, matched and signed). |
-| [`packages/mcp`](packages/mcp) | `nova-mcp`: the agent products as MCP tools for Claude, Cursor or any MCP client, paid with the operator's wallet. |
+| [`packages/agents`](packages/agents) | What agents buy: Shonin Check (code checks of any x402 payment request against the x402 SDK's own token tables, plus an intent check) and Shonin Receipt (settlement read from the chain, matched and signed). |
+| [`packages/mcp`](packages/mcp) | `shonin-mcp`: the agent products as MCP tools for Claude, Cursor or any MCP client, paid with the operator's wallet. |
 | [`apps/web`](apps/web) | The Next.js 16 site: animated home page with a live decision demo, a filterable directory of every product and service, intake with lead routing, the AI Study Group, the agents page, the research blog and the company page. |
 | [`apps/web/app/api/v1`](apps/web/app/api/v1) | Agent-payable endpoints behind x402 v2: check, gate, receipt, triage, lead score, grant fit, content gate. USDC or USDT on Celo; USDC on Base with CDP keys. |
 | [`apps/web/app/api/checkout`](apps/web/app/api/checkout) | Stripe Checkout for people: fixed prices and deposits from the catalog, with a webhook that alerts the founder. |
@@ -50,14 +50,14 @@ With no keys, the homepage demo and intake run on the heuristic provider and the
 | `X402_PAY_TO`, `X402_API_KEY` | Turns on the paid API: your receiving wallet and a Celo facilitator key from x402.celo.org |
 | `CDP_API_KEY_ID`, `CDP_API_KEY_SECRET` | Adds Base (USDC) through Coinbase's facilitator, which also lists the endpoints in the x402 Bazaar |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | "Pay and start" buttons on offer pages, and payment alerts |
-| `RECEIPT_SIGNING_KEY` | Signs Nova Receipts (a dedicated key that holds no funds) |
+| `RECEIPT_SIGNING_KEY` | Signs Shonin Receipts (a dedicated key that holds no funds) |
 
 The full list is in [`apps/web/.env.example`](apps/web/.env.example).
 
 ## For agents
 
 ```bash
-# Before your agent pays another API, ask Nova Check.
+# Before your agent pays another API, ask Shonin Check.
 curl -i -X POST https://<your-domain>/api/v1/check \
   -H 'content-type: application/json' \
   -d '{"paymentRequired":"<their PAYMENT-REQUIRED header>","url":"https://api.example.com/v1/rates","budgetUsd":0.05}'

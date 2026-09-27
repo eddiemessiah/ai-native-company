@@ -8,7 +8,7 @@ import { baseConfigured, USDC_CELO } from "@/lib/chain";
 export const metadata: Metadata = {
   title: "For agents",
   description:
-    "Nova Check, Nova Gate and Nova Receipt: what an agent asks before it pays, before it acts, and after it pays. Paid per call with x402, no accounts, no API keys.",
+    "Shonin Check, Shonin Gate and Shonin Receipt: what an agent asks before it pays, before it acts, and after it pays. Paid per call with x402, no accounts, no API keys.",
 };
 
 const CLIENT = `import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
@@ -21,7 +21,7 @@ const client = new x402Client().register("eip155:*", new ExactEvmScheme(account)
 client.setSpendControls({ maxAmountPerPayment: "$0.10" }); // hard cap per call
 const pay = wrapFetchWithPayment(fetch, client);
 
-// Before paying any x402 API, ask Nova Check ($0.01).
+// Before paying any x402 API, ask Shonin Check ($0.01).
 const url = "https://api.example.com/v1/rates";
 const first = await fetch(url);
 if (first.status === 402) {
@@ -115,7 +115,7 @@ export default function AgentsPage() {
           <h2 className="label">Pay from an agent</h2>
           <p className="mt-5 text-dim">
             With <code className="font-mono text-fg">@x402/fetch</code> and a viem account, paying is a wrapped fetch.
-            Cap spend per call on the client, and ask Nova Check before paying anyone you don&apos;t know.
+            Cap spend per call on the client, and ask Shonin Check before paying anyone you don&apos;t know.
           </p>
           <dl className="mt-8 space-y-4 font-mono text-[12.5px]">
             <div>

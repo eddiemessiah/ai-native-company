@@ -49,7 +49,7 @@ If the model is slow or down, the page falls back to templates and says so. Clic
 
 **Rules for the demo** (`ops/conflicts-of-interest.md`):
 
-- Say it plainly: "I built this with my firm, Nova. It's free and MIT-licensed, and it stays that way."
+- Say it plainly: "I built this with my firm, Shonin. It's free and MIT-licensed, and it stays that way."
 - No pitch for paid services, no prices, and no links to the directory.
 - Emails from the form are for replies about the tool, never for sales.
 - If the room shares one network, raise `GTM_RUNS_PER_HOUR` for the day. The default is 6 runs per IP per hour.

@@ -1,6 +1,6 @@
 # Company Brain (supermemoryai/company-brain): source-level teardown
 
-Prepared 2026-09-26 for Nova (Edidiong Umana / DeFi Messiah). Purpose: decide how to deploy, customize and sell Supermemory's open-sourced Company Brain as a "Company Brain setup-as-a-service" offer for Nigerian and African businesses, with TypeSafe's Jev (System One) replacing the small-LLM classifier calls.
+Prepared 2026-09-26 for Shonin (Edidiong Umana / DeFi Messiah). Purpose: decide how to deploy, customize and sell Supermemory's open-sourced Company Brain as a "Company Brain setup-as-a-service" offer for Nigerian and African businesses, with TypeSafe's Jev (System One) replacing the small-LLM classifier calls.
 
 | | |
 |---|---|
@@ -24,7 +24,7 @@ Prepared 2026-09-26 for Nova (Edidiong Umana / DeFi Messiah). Purpose: decide ho
 8. **Salvage is deterministic** (no model call): terminal `finish_turn` proposal, then model text, then the longest publishable assistant draft in the transcript (`salvaged=true`), then a canned apology (`turn/finalization/output.ts:L36-64`). **Step budget:** 60 initial / 30 approval-resume / 12 live-update; warning injected at `limit-3`; at `used >= limit-1` every tool except `finish_turn` is removed from `activeTools` (`turn/loop.ts:L27-38, L122-128`). **Progressive disclosure:** only `sandbox` and `scheduler` families are lazy (`enable_tool_family`); connected apps go through Code Mode (`discover_app_methods` + `run_app_code`).
 9. **Memory tags:** writes go to exactly one of `sm_org_shared` (public), `slack_channel_{channelId}` (private channel / group DM), `user_{userId}` (DM); reads are shared + own tag, and a DM also reads every private channel the asker belongs to. Tags are **global inside one Supermemory account**: every customer needs its own Supermemory account/key or memories mix.
 10. **Model roles:** main `grok-4.5` (high effort), triage `claude-haiku-4.5` (low), active-turn gate hard-coded `claude-haiku-4.5`, approval classifier = org triage model, `fastModel()` background calls = `claude-haiku-4.5`, entity resolution `grok-4.5` + xAI web search, fallback candidate `claude-sonnet-5` (or `gpt-5.6` for Anthropic mains) **only when an AI Gateway is configured**. With a single non-Anthropic key, every "cheap" call silently runs on that provider's flagship (`gpt-5.6` at $5/$30 per M) - the biggest cost trap in the repo.
-11. **Jev fit is excellent** for triage, the active-turn gate and the approval classifier (typed decisions, all bounded outputs). Replace three function bodies, keep their signatures, route low confidence to the existing LLM code. Triage cost drops from ~$0.005 to ~$0.0002 per call (~25x) and latency from ~1-3 s to ~0.2-0.5 s typical (vendor claims 70-500 ms; community measurements 0.2-1.4 s). Direct TypeSafe API access is waitlisted, so the provider must also speak OpenRouter's or Vercel AI Gateway's Jev endpoints (see `research/jev-typesafe.md`). Draft question sets and a deterministic evaluator (which re-introduces the blog's 0-100 dimensions per proactivity mode) compile against Nova's `@repo/brain`.
+11. **Jev fit is excellent** for triage, the active-turn gate and the approval classifier (typed decisions, all bounded outputs). Replace three function bodies, keep their signatures, route low confidence to the existing LLM code. Triage cost drops from ~$0.005 to ~$0.0002 per call (~25x) and latency from ~1-3 s to ~0.2-0.5 s typical (vendor claims 70-500 ms; community measurements 0.2-1.4 s). Direct TypeSafe API access is waitlisted, so the provider must also speak OpenRouter's or Vercel AI Gateway's Jev endpoints (see `research/jev-typesafe.md`). Draft question sets and a deterministic evaluator (which re-introduces the blog's 0-100 dimensions per proactivity mode) compile against Shonin's `@repo/brain`.
 12. **Slack coupling is deep:** 21.7k of ~60k brain LOC live in `src/brain/slack/`, and 59 other files import Slack modules; sign-in, setup and identity are Slack-only. The clean seam is `computeTurn()` plus `TurnProgress`. A WhatsApp DM-first adapter is ~2-3 engineer-weeks, Telegram (groups + topics map well to channels/threads) ~1.5-2 weeks, both to production ~4-7 weeks.
 13. **Unit economics (30-person org, default models):** ~$200-320/month all-in (Cloudflare ~$5-10, main model ~$110, triage ~$50, background ~$20, Supermemory ~$19-99 verify); ~$150-270 with Jev. Suggested pricing: Nigerian SME setup ₦750k-₦1.2M + ₦250k-₦400k/month care (usage capped); funded startup $3,500-$7,500 setup + $900-$2,000/month.
 14. **Top risks:** upstream is a one-author dump of a discontinued product (we own the fork), hard dependency on Supermemory's hosted API, NDPA 2023 / GAID 2025 cross-border and employee-monitoring exposure (it ingests whole public channels), a setup-takeover window before first sign-in, and platform policy (Slack API terms; Meta's 2026 rules on general-purpose AI assistants on WhatsApp).
@@ -456,7 +456,7 @@ Slack actors use personal connections only (`personalConnectionsOnly`), automati
 
 ### 4.1 What Jev is, as the code sees it
 
-Verified from `@typesafe-ai/sdk@0.6.0` (MIT, published 2026-09-15, zero dependencies, recognizes the `Cloudflare-Workers` runtime): `POST https://api.typesafe.ai/v1/systemone` with `{ model = "jev-latest", state, questions }`. Questions: `choice {instructions, criteria: {label: description}}` (≤255 options), `score {instructions, criteria: [level0, level1, …]}` (2-10 ordered levels), `noul {instructions, criteria?: {true, false}}`. Answers: choice `{choice, confidence, probabilities}`, score `{score (fractional), confidence, legend, probabilities keyed "0".."n"}`, noul `{noul}` = P(yes). Usage `{input_tokens, output_tokens}`. Price per the brief and `packages/brain/src/cost.ts`: **$0.042 per M input tokens**, ~70-500 ms. `@ai-sdk/typesafe-ai@3.0.8` exists but targets AI SDK v7 (`experimental_evaluate`), and this repo pins v6: use `@typesafe-ai/sdk` directly, wrapped in Nova's `@repo/brain` `DecisionProvider` so fallbacks, lint, gates and decision logs come for free. Note `packages/brain/src/providers/anthropic.ts` says Jev early access is waitlisted, so keep the LLM path alive.
+Verified from `@typesafe-ai/sdk@0.6.0` (MIT, published 2026-09-15, zero dependencies, recognizes the `Cloudflare-Workers` runtime): `POST https://api.typesafe.ai/v1/systemone` with `{ model = "jev-latest", state, questions }`. Questions: `choice {instructions, criteria: {label: description}}` (≤255 options), `score {instructions, criteria: [level0, level1, …]}` (2-10 ordered levels), `noul {instructions, criteria?: {true, false}}`. Answers: choice `{choice, confidence, probabilities}`, score `{score (fractional), confidence, legend, probabilities keyed "0".."n"}`, noul `{noul}` = P(yes). Usage `{input_tokens, output_tokens}`. Price per the brief and `packages/brain/src/cost.ts`: **$0.042 per M input tokens**, ~70-500 ms. `@ai-sdk/typesafe-ai@3.0.8` exists but targets AI SDK v7 (`experimental_evaluate`), and this repo pins v6: use `@typesafe-ai/sdk` directly, wrapped in Shonin's `@repo/brain` `DecisionProvider` so fallbacks, lint, gates and decision logs come for free. Note `packages/brain/src/providers/anthropic.ts` says Jev early access is waitlisted, so keep the LLM path alive.
 
 Consistency notes from the parallel Jev research (`research/jev-typesafe.md`, sections 0, 5 and 7), which this plan adopts:
 
@@ -829,13 +829,13 @@ Modified:
 
 ## 6. Deploy and productization playbook
 
-### 6.1 Offer shape (in Nova catalog terms)
+### 6.1 Offer shape (in Shonin catalog terms)
 
 | Field | Proposal |
 |---|---|
 | Unit | One company brain for one organization (one Cloudflare deployment, one Slack workspace or Telegram group set, optional WhatsApp number) |
 | Intake | Cloudflare access, Slack admin, list of tools, staff roster (for WhatsApp/Telegram), 1-hour discovery call, DPA |
-| Engine | Hardened Nova fork of company-brain + Jev decisions + our skills/prompt library |
+| Engine | Hardened Shonin fork of company-brain + Jev decisions + our skills/prompt library |
 | Rulebook | proactivity defaults per channel type, approval rules, memory hygiene, what never to ingest |
 | Review | weekly triage/cost review in month 1, then monthly |
 | Delivery | live in Slack (and WhatsApp/Telegram) plus a written runbook |
@@ -844,7 +844,7 @@ Modified:
 
 ### 6.2 What the customer must provide
 
-1. **Cloudflare account** on Workers Paid ($5/mo, their card) with Nova invited as an administrator member, 2FA on. (Alternative: Nova-hosted per-customer worker; simpler for us but makes us the data processor and payer.)
+1. **Cloudflare account** on Workers Paid ($5/mo, their card) with Shonin invited as an administrator member, 2FA on. (Alternative: Shonin-hosted per-customer worker; simpler for us but makes us the data processor and payer.)
 2. **Slack workspace admin/owner** who can create an app from a manifest and approve installs (Slack Pro recommended; a free workspace sees only 90 days of history).
 3. **Supermemory account and API key, one per customer.** Container tags (`sm_org_shared`, `user_*`, `slack_channel_*`) are global inside an account, so sharing a key across customers mixes their memories.
 4. **Model keys:** ideally Anthropic (triage, gate, fallback) and xAI (main + entity web search), or put them behind a Cloudflare AI Gateway (BYOK, spend visibility, enables the cross-provider fallback). A single OpenAI/Google/xAI key works but inflates small-call costs (section 1.7).
@@ -853,10 +853,10 @@ Modified:
 
 ### 6.3 Step-by-step deploy (about 60-120 minutes hands-on)
 
-1. **Fork once, deploy many:** maintain `nova/company-brain` (rebranded prompts/manifest/UI, Jev, metering, security fixes). Deploy per customer with a per-customer wrangler environment (worker `brain-<slug>`, its own D1 and KV) from our CI, or via the Deploy button pointed at our fork.
+1. **Fork once, deploy many:** maintain `shonin/company-brain` (rebranded prompts/manifest/UI, Jev, metering, security fixes). Deploy per customer with a per-customer wrangler environment (worker `brain-<slug>`, its own D1 and KV) from our CI, or via the Deploy button pointed at our fork.
 2. **Provision:** `wrangler d1 create`, `wrangler kv namespace create`, put ids in the customer environment (the Deploy button does this automatically).
 3. **Secrets:** `SUPERMEMORY_API_KEY`, provider keys, `TYPESAFE_API_KEY`, and set explicitly `ENCRYPTION_SECRET` (kept in our vault, so tokens stay decryptable if KV is wiped), `PUBLIC_URL`, and `SLACK_CLIENT_ID/SECRET/SIGNING_SECRET` once the Slack app exists (Workers secrets beat the D1 copy and close the setup window).
-4. **Lock the setup window from the first deploy:** put Cloudflare Access (customer admin + Nova emails) in front of the worker hostname, or at least `/setup*` and `/auth*`, until the owner has signed in. Until then, anyone who finds the URL can store their own Slack app credentials and become owner (`src/setup/routes.ts:L73-95`, `src/auth/routes.ts:L172-226`).
+4. **Lock the setup window from the first deploy:** put Cloudflare Access (customer admin + Shonin emails) in front of the worker hostname, or at least `/setup*` and `/auth*`, until the owner has signed in. Until then, anyone who finds the URL can store their own Slack app credentials and become owner (`src/setup/routes.ts:L73-95`, `src/auth/routes.ts:L172-226`).
 5. `wrangler deploy`; open `/setup` and confirm migrations, memory key and model provider checks pass.
 6. **Create the Slack app** from the generated manifest (rename it to the customer's brand), paste Client ID/Secret/Signing Secret, retry event URL verification.
 7. **Customer admin signs in with Slack first** (becomes owner), then clicks Install. The bot creates `#company-brain`, researches the company domain, DMs the installer an "add me to public channels" card (7-day backfill), and starts rolling out welcome DMs to the team.
@@ -877,7 +877,7 @@ Elapsed time: same day for install; the brain becomes useful after the 7-day pub
 | Roles | D1 `member` table (no UI) | promote admins with a D1 query; document it |
 | Skills | Configure → Skills or `save_skill` in Slack | encode SOPs (onboarding, incident, month-end close, customer escalation) |
 | Automations | Configure → Automations or ask in Slack | Monday digest, daily error recap, weekly "what changed" |
-| Connectors | Configure → Integrations, "Add custom MCP" | build Paystack/Flutterwave/Moniepoint MCP servers as a Nova add-on (none exist in the directory) |
+| Connectors | Configure → Integrations, "Add custom MCP" | build Paystack/Flutterwave/Moniepoint MCP servers as a Shonin add-on (none exist in the directory) |
 
 ### 6.5 Ongoing operations ("monthly care")
 
@@ -899,7 +899,7 @@ Elapsed time: same day for install; the brain becomes useful after the 7-day pub
 | Private info in a public answer | private channel metadata cached wrong, or content pasted into public channels | scoping is fail-closed on `conversations.info`; train staff; review tags |
 | Approvals expire unseen | 15-minute expiry, asker-only | teach staff; asker can re-ask |
 | Slack app blocked | workspace restricts custom apps | admin approval before kickoff |
-| Payment friction | Nigerian cards and USD provider billing | Nova pays providers and invoices in Naira, or AI Gateway unified billing |
+| Payment friction | Nigerian cards and USD provider billing | Shonin pays providers and invoices in Naira, or AI Gateway unified billing |
 | Upstream breaking change | models deprecated, patched deps | pin, test, own the fork |
 
 ### 6.7 Pricing suggestion
@@ -960,8 +960,8 @@ Code (primary):
 - [supermemoryai/company-brain](https://github.com/supermemoryai/company-brain) at [0071d61](https://github.com/supermemoryai/company-brain/commit/0071d6164991ce5dccddbd645bcac631ee477572); PRs [#4 one model key](https://github.com/supermemoryai/company-brain/pull/4), [#6 QuickJS Code Mode](https://github.com/supermemoryai/company-brain/pull/6), [#7 onboarding](https://github.com/supermemoryai/company-brain/pull/7), [#8 Slack branding](https://github.com/supermemoryai/company-brain/pull/8), [#9 Firecrawl web search](https://github.com/supermemoryai/company-brain/pull/9), [#10 Slack description](https://github.com/supermemoryai/company-brain/pull/10)
 - [Deploy to Cloudflare button URL](https://deploy.workers.cloudflare.com/?url=https://github.com/supermemoryai/company-brain)
 - [supermemoryai/emoji-resolve](https://github.com/supermemoryai/emoji-resolve) at `92db049`
-- Nova decision layer: `/home/user/ai-native-company/packages/brain/src/{types,questions,policy,brain,cost,math}.ts`
-- Parallel Nova research: `research/jev-typesafe.md` (Jev access paths via OpenRouter / Vercel AI Gateway, `jev-1.13.0` pin, measured latency, documented failure modes)
+- Shonin decision layer: `/home/user/ai-native-company/packages/brain/src/{types,questions,policy,brain,cost,math}.ts`
+- Parallel Shonin research: `research/jev-typesafe.md` (Jev access paths via OpenRouter / Vercel AI Gateway, `jev-1.13.0` pin, measured latency, documented failure modes)
 
 Packages (npm registry):
 

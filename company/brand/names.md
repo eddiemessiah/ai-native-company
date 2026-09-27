@@ -1,8 +1,8 @@
 # Naming the company
 
-**Working name: Nova.** Edidiong chose it on 26 Sep 2026. On 27 Sep, Edidiong asked for a replacement, because Nova is taken and crowded: Amazon Nova, Nova Act, Nova Credit. The shortlist is below. The name lives in one file (`packages/catalog/src/brand.ts`); the site, llms.txt, the agent card and the OG image all read it from there.
+**Name: Shonin.** Edidiong chose it on 27 Sep 2026. It replaced Nova (chosen 26 Sep), which was taken and crowded: Amazon Nova, Nova Act, Nova Credit. The name lives in one file (`packages/catalog/src/brand.ts`); the site, llms.txt, the agent card and the OG image all read it from there.
 
-## Replacing Nova: the 27 Sep shortlist
+## Choosing Shonin: the 27 Sep search
 
 We looked for a word, in Japanese, Chinese or Greek, for what we are: **judgment you can check.** Agents decide and do the work, every decision is checked and recorded, and a person signs off.
 
@@ -11,7 +11,7 @@ Two checks were run on 27 Sep 2026:
 - **Domains:** Vercel's registrar API, 81 domains answered (its registrar doesn't answer for `.africa`). "Available" means registrable that day, not reserved.
 - **Collisions:** a web search per candidate. It finds companies and open-source projects; it is not a trademark search.
 
-### Recommended: Shonin
+### Chosen: Shonin
 
 Shōnin is one sound in Japanese with three meanings, each a part of the firm:
 
@@ -27,8 +27,9 @@ Shōnin is one sound in Japanese with three meanings, each a part of the firm:
 - **Watch out for:** 上人 (shōnin) is also an honorific for eminent Buddhist priests. It's respectful, not offensive, but Japanese speakers will hear it.
 - **Products:**
   - Shonin Check, Shonin Gate and Shonin Receipt;
+  - `shonin-mcp`, the MCP server;
   - the GTM Harness "by Shonin";
-  - the proprietary brain could take its own name: **Kan** (勘), Japanese for the trained instinct that judges fast, which is System One in one syllable.
+  - Shonin One, the agent co-founder. The proprietary brain could still take its own name: **Kan** (勘), Japanese for the trained instinct that judges fast, which is System One in one syllable.
 
 ### Runners-up
 
@@ -36,7 +37,7 @@ Shōnin is one sound in Japanese with three meanings, each a part of the firm:
 |---|---|---|---|---|
 | **Shusei** | Japanese 修正, "correction" | Our moat is corrections that become rules | Available | Leads with mistakes; "SHOO-say" |
 | **Uhakika** | Swahili, "certainty" | Certainty you can check, with an African root | Available | Four syllables; a common word in Swahili ads, but we found no company using it |
-| **Hanketsu** | Japanese 判決, "verdict" | Nova Check returns a verdict | Available | Courtroom tone; hard to spell on hearing |
+| **Hanketsu** | Japanese 判決, "verdict" | Shonin Check returns a verdict | Available | Courtroom tone; hard to spell on hearing |
 | **Tabaka** | Swahili, "layer, stratum" (from Arabic *ṭabaqa*) | What Strata means, and our four-part split is four layers | Available | Found on 27 Sep when Strata failed; no AI company found using it |
 
 ### Ruled out
@@ -54,20 +55,25 @@ Shōnin is one sound in Japanese with three meanings, each a part of the firm:
 | Heng, Jian | Chinese 衡, the balance beam; 鉴, the bronze mirror used to appraise | The `.ai` is taken for each; hard to say in English |
 | Probo, Hakika | Latin, "I test, I prove, I approve"; Swahili, "certainty" | The `.ai` and `.com` are taken for each |
 
-**Before committing to Shonin:** run the trademark searches (Nigeria, USPTO and WIPO; classes 35, 41 and 42) and check the handles on X, GitHub, LinkedIn and Telegram. Then say it to ten people and ask them to spell it back.
+**Still to do for Shonin:**
 
-**When:** decide by Monday 28 Sep. Tuesday's launch thread and Thursday's demo are the name's first public use, so a rename after that means changing it in public.
+- Register `shonin.ai` before anyone else does. It was available on 27 Sep.
+- Run the trademark searches: Nigeria, USPTO and WIPO; classes 9, 35, 41 and 42.
+- Claim the handles on X, GitHub, LinkedIn and Telegram.
+- Say it to ten people and ask them to spell it back.
 
-> The sections below predate the 27 Sep search. Their domain and trademark notes were never checked. Run the checks in the last section before buying a domain or printing anything.
+**Decided:** 27 Sep. That's two days before the name's first public use, the GTM Harness launch on Tue 29 Sep.
 
-## Why Nova
+> The sections below are the record from 26 Sep, when the firm was named Nova. Their domain and trademark notes were never checked.
+
+## Why we first chose Nova (26 Sep; retired 27 Sep)
 
 - **Latin for "new".** A new kind of firm: finished work sold per unit, done by agents, owned by people.
 - **A nova is a star that suddenly burns thousands of times brighter.** That's the study-group story: builders who flare up once they ship.
 - **Travels.** Four letters, one pronunciation from Lagos to Nairobi to London, spellable after hearing it once.
 - **The agent co-founder becomes Nova One,** still a nod to System One.
 
-## Risks to check first
+## Nova's risks, which retired it
 
 Nova fails the "be ownable" test below, so the checks matter more than they would for a coined word.
 
@@ -102,7 +108,7 @@ Nova fails the "be ownable" test below, so the checks matter more than they woul
 
 | Product | Name | Why |
 |---|---|---|
-| Decision layer, the agent co-founder | **Nova One** | A nod to System One; the brain that decides |
+| Decision layer, the agent co-founder | **Shonin One** | A nod to System One; the brain that decides |
 | Research desk and newsletter | **Griot** | The West African keeper of a people's record |
 | Payments infrastructure | **Omni402** | Already has mainnet proof and an ERC-8004 identity; don't rename proven work |
 | Typed-decision API, if it launches | **Nsibidi** | A symbol language for machine decisions, from your region |
@@ -113,7 +119,7 @@ Nova fails the "be ownable" test below, so the checks matter more than they woul
 ## Checks before you commit
 
 1. Domains: the candidates above, plus `.com`, `.ai`, `.work`, `.africa`, `.ng` and `.com.ng` variants.
-2. Nigerian trademark search (Trademarks, Patents and Designs Registry) in classes 35, 41 and 42; add Ghana and Kenya when you expand. Search for "Nova" marks in class 42 first.
+2. Nigerian trademark search (Trademarks, Patents and Designs Registry) in classes 35, 41 and 42; add Ghana and Kenya when you expand. Search for "Shonin" marks in classes 9 and 42 first.
 3. CAC business-name availability.
 4. Handles on X, Instagram, LinkedIn, GitHub, Telegram and WhatsApp Business.
 5. Say it out loud to ten people in Lagos, Accra and London; ask them to spell it back.
