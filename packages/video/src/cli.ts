@@ -44,6 +44,7 @@ import {
 } from "./job";
 import { selectClips, trailerBeats } from "./select";
 import { runShort } from "./short/cli";
+import { runVoice } from "./voice-cli";
 import { findSceneRenderer, HYPERFRAMES_VERSION } from "./short/scene";
 import { autoVoice, voiceLicence } from "./short/voice";
 import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
@@ -66,6 +67,7 @@ Code cuts, the brain scores, a person approves. Nothing here publishes anything.
   pnpm video tighten <job> [--mode talk|screen] [--max-pause 0.6] [--keep-fillers]
   pnpm video chapters <job> <chapters.txt|json> [--tightened]
   pnpm video short …                      topic + sources → a sourced explainer short (pnpm video short for its commands)
+  pnpm video voice …                      releases for cloned voices and declared stock voices (pnpm video voice)
 
 Jobs default to video-jobs/<title> (ignored by git). Paths are relative to where you run pnpm.
 --demo ranks with the lexical heuristic when no decision model key is set: fine for a dry run, never for a client.`;
@@ -129,6 +131,18 @@ const OPTIONS = {
   music: { type: "string" },
   "music-licence": { type: "string" },
   cta: { type: "string" },
+  client: { type: "string" },
+  languages: { type: "string" },
+  uses: { type: "string" },
+  channels: { type: "string" },
+  until: { type: "string" },
+  release: { type: "string" },
+  consent: { type: "string" },
+  statement: { type: "string" },
+  name: { type: "string" },
+  reason: { type: "string" },
+  engine: { type: "string" },
+  native: { type: "string" },
   audience: { type: "string" },
   help: { type: "boolean", short: "h" },
 } as const;
@@ -722,6 +736,7 @@ const commands: Record<string, () => void | Promise<void>> = {
   tighten,
   chapters,
   short: () => runShort({ positionals, opt, abs, rel, fail }),
+  voice: () => runVoice({ positionals, opt, abs, rel, fail }),
 };
 
 const command = positionals[0];

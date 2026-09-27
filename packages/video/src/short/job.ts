@@ -35,6 +35,10 @@ export interface ShortSettings {
   /** The licence id or certificate for the music bed: what clears a Content ID claim. */
   readonly musicLicence?: string;
   readonly cta?: string;
+  /** Who the short is for: a cloned voice's release must name them. Our own channel is "Shonin". */
+  readonly client?: string;
+  /** The language it speaks, as a BCP 47 tag: en unless set. */
+  readonly language?: string;
   readonly lexicon?: Readonly<Record<string, string>>;
   readonly sources: readonly { readonly id: string; readonly title: string; readonly url?: string; readonly file: string }[];
 }
@@ -62,8 +66,8 @@ export interface ShortStatus {
   checkPassed?: boolean;
   renderedHash?: string;
   forced?: boolean;
-  /** The voice of the last render and the licence it was used under. Approval refuses a draft voice. */
-  voice?: VoiceSpec & VoiceLicence;
+  /** The voice of the last render, the licence it was used under and, for a clone, its release. Approval refuses a draft voice. */
+  voice?: VoiceSpec & VoiceLicence & { readonly engine?: string; readonly clones?: boolean; readonly release?: string };
   approvedBy?: string;
   approvedAt?: string;
 }

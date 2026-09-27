@@ -25,14 +25,17 @@ import { checkScript, DEFAULT_LEXICON, draftText, forSpeech } from "./script";
 import { packetProblems, publishPacket, type PublishPacket } from "./publish";
 import { findSceneRenderer, HYPERFRAMES_VERSION, renderScene } from "./scene";
 import { ACCENTS, brandArgs, download, footageArgs, isImage, pickLocal, pickPexels, searchPexels, stillArgs } from "./visuals";
-import { autoVoice, parseVoice, speak, voiceLicence } from "./voice";
+import { autoVoice, parseVoice, speak, voiceLicence, type VoiceSpec } from "./voice";
+import { registryDir, today } from "../voice-cli";
+import { checkClone, loadRegistry, voiceEngine, type CloneJob } from "../voices";
 
 export const SHORT_HELP = `Explainer shorts: a topic and its sources in; a sourced 30–60 second vertical video out.
 LLM writes the script, code checks every count and quote, the brain checks each claim, a person approves.
 
   pnpm video short new "<topic>" --source <file|url> [--source …] [--seconds 30-50] [--audience "…"]
                        [--voice auto|azure|local|openai|elevenlabs:<id>|edge|say|pico|espeak] [--visuals brand|stock|local]
-                       [--local <folder>] [--music <file> --music-licence "<licence id or certificate>"] [--cta "…"] [--out <job>]
+                       [--local <folder>] [--music <file> --music-licence "<licence id or certificate>"] [--cta "…"]
+                       [--client "<who it's for>"] [--language en] [--out <job>]
   pnpm video short write <job> [--model claude-opus-5]     Claude writes script.json from brief.md
   pnpm video short check <job> [--demo]                    code checks, content gate, one claim check per claim
   pnpm video short render <job> [--voice …] [--force]      voice, visuals, captions, music, loudness, publish packet
@@ -99,6 +102,11 @@ function parseSeconds(value: string | undefined): { minSec: number; maxSec: numb
   return { minSec: min, maxSec: max };
 }
 
+/** What a cloned voice's release has to cover for this short. */
+function cloneJob(settings: ShortSettings): CloneJob {
+  return { client: settings.client ?? "Shonin", language: settings.language ?? "en", use: "shorts", date: today() };
+}
+
 function readJson<T>(file: string): T {
   return JSON.parse(readFileSync(file, "utf8")) as T;
 }
@@ -153,6 +161,8 @@ async function create(ctx: ShortContext): Promise<void> {
     ...(str(ctx.opt.local) ? { localDir: ctx.abs(str(ctx.opt.local)!) } : {}),
     ...(str(ctx.opt.music) ? { music: ctx.abs(str(ctx.opt.music)!), musicLicence: str(ctx.opt["music-licence"])! } : {}),
     ...(str(ctx.opt.cta) ? { cta: str(ctx.opt.cta)! } : {}),
+    client: str(ctx.opt.client)?.trim() || "Shonin",
+    language: str(ctx.opt.language)?.trim() || "en",
     sources: unique.map((s) => ({ id: s.id, title: s.title, ...(s.url ? { url: s.url } : {}), file: `sources/${s.id}.md` })),
   };
   writeJson(p.settings, settings);
@@ -242,6 +252,10 @@ async function render(ctx: ShortContext): Promise<void> {
   const voice = voiceSetting === "auto" ? await autoVoice() : parseVoice(voiceSetting);
   const licence = voiceLicence(voice);
   if (licence.use === "never") ctx.fail(`${voice.provider}:${voice.voice} runs ${licence.licence}: ${licence.note}. Pick a licensed engine`);
+  const engine = voiceEngine(voice, process.env);
+  const clone = checkClone(voice, engine, loadRegistry(registryDir(ctx.abs)), cloneJob(settings));
+  if (clone.clone && clone.problems.length) ctx.fail(`No release covers this voice, so it isn't used:\n${clone.problems.map((x) => `  - ${x}`).join("\n")}`);
+  if (clone.clone && clone.release) console.log(`Cloned voice: ${clone.release.person}, release ${clone.release.id} (until ${clone.release.until})`);
   if (licence.use === "draft") {
     console.warn(`note: ${voice.provider}:${voice.voice} is a draft voice (${licence.note ?? licence.licence}). Approval will need a licensed one: --voice azure`);
   }
@@ -260,7 +274,10 @@ async function render(ctx: ShortContext): Promise<void> {
 
   const sceneBeats = script.beats.filter((b) => b.visual?.kind === "scene").length;
   console.log(`Building ${settings.visuals} visuals${sceneBeats ? ` and ${sceneBeats} scene${sceneBeats === 1 ? "" : "s"}` : ""} for ${shortDuration(total)}…`);
-  const credits: Record<string, unknown>[] = [{ part: "voice", provider: voice.provider, voice: voice.voice, ...licence }];
+  const release = clone.clone ? clone.release?.id : undefined;
+  const credits: Record<string, unknown>[] = [
+    { part: "voice", provider: voice.provider, voice: voice.voice, engine: engine.engine, ...licence, ...(release ? { release, person: clone.clone ? clone.release?.person : undefined } : {}) },
+  ];
   const footageAuthors: string[] = [];
   const localFiles = settings.localDir && existsSync(settings.localDir) ? readdirSync(settings.localDir).map((f) => join(settings.localDir!, f)).sort() : [];
   const renderer = sceneBeats > 0 ? await findSceneRenderer() : null;
@@ -368,7 +385,7 @@ async function render(ctx: ShortContext): Promise<void> {
   await levelAndFinish(out, "short.raw.mp4", "short.mp4", true);
   await run("ffmpeg", frameArgs(join(out, "short.mp4"), Math.min(1.2, total / 2), join(out, "cover.jpg")));
   writeJson(join(out, "credits.json"), credits);
-  writeJson(p.publish, publishPacket(script, { ...voice, ...licence }, hash, { footageAuthors, ...(licence.credit ? { voiceCredit: licence.credit } : {}) }));
+  writeJson(p.publish, publishPacket(script, { ...voice, ...licence, ...(release ? { release } : {}) }, hash, { footageAuthors, ...(licence.credit ? { voiceCredit: licence.credit } : {}) }));
   const loud = await measureLoudness(join(out, "short.mp4"));
 
   const next: ShortStatus = {
@@ -377,7 +394,7 @@ async function render(ctx: ShortContext): Promise<void> {
     checkPassed: checked,
     renderedHash: hash,
     ...(checked ? {} : { forced: true }),
-    voice: { ...voice, ...licence },
+    voice: { ...voice, ...licence, engine: engine.engine, clones: engine.clones, ...(release ? { release } : {}) },
   };
   save(ctx, dir, settings, next);
   console.log(
@@ -395,6 +412,11 @@ function approve(ctx: ShortContext): void {
   if (status.renderedHash !== hash) ctx.fail("script.json changed after the render: render again, then approve");
   if (!status.voice || !existsSync(p.publish)) ctx.fail("This render has no voice licence or publish packet on record: render again, then approve");
   if (settings.music && !settings.musicLicence) ctx.fail("The music bed has no licence on record: add musicLicence to short.json, render again, then approve");
+  // A release can be revoked or run out between the render and the approval.
+  const v = status.voice;
+  const spec: VoiceSpec = { provider: v.provider, voice: v.voice };
+  const clone = checkClone(spec, { engine: v.engine ?? v.provider, clones: v.clones ?? false }, loadRegistry(registryDir(ctx.abs)), cloneJob(settings));
+  if (clone.clone && clone.problems.length) ctx.fail(`Can't approve this voice:\n${clone.problems.map((x) => `  - ${x}`).join("\n")}`);
   const packet = readJson<PublishPacket>(p.publish);
   const problems = packetProblems(packet, hash);
   if (problems.length) {

@@ -18,6 +18,7 @@ export {
   parseVoice,
   voiceCommand,
   voiceLicence,
+  LOCAL_ENGINES,
   speechRequest,
   tidyArgs,
   DEFAULT_VOICES,
@@ -26,6 +27,24 @@ export {
   type VoiceProvider,
 } from "./short/voice";
 export { packetProblems, publishPacket, type PacketBeat, type PublishPacket } from "./short/publish";
+export {
+  addRelease,
+  checkClone,
+  consentProblems,
+  isPreset,
+  loadRegistry,
+  newReleaseProblems,
+  releaseProblems,
+  revokeRelease,
+  saveRelease,
+  voiceEngine,
+  VOICE_USES,
+  type CloneCheck,
+  type CloneJob,
+  type StockVoice,
+  type VoiceRegistry,
+  type VoiceRelease,
+} from "./voices";
 export {
   BANDS,
   fitSize,

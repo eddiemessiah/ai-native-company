@@ -28,7 +28,12 @@ The offer stays `soon` until it has shipped our own shorts:
 - **Voice.**
   - Published shorts, ours included, use a voice with a commercial licence: `azure` by default (`en-NG-EzinneNeural` or `en-NG-AbeoNeural`), `openai`, `elevenlabs` on a paid plan, or a `local` engine in the allowlist (`LOCAL_ENGINES` in `packages/video/src/short/voice.ts`: Kokoro, VoxCPM2 and the other Apache-2.0 engines). Approval refuses anything else, and render refuses non-commercial engines such as OmniVoice (`research/voicestudio.md` §3).
   - `edge`, `say`, `pico` and `espeak` are for drafts only. edge-tts imitates Edge's read-aloud client and its maintainer says it's for personal use (§6a).
-  - Never clone a real person's voice without their written consent.
+  - Never clone a real person's voice without a signed release and a spoken consent (`research/voicestudio.md` §7c). Code enforces it:
+    1. `pnpm video voice add` records the release and the consent recording. The release names the person, the one client, the languages, the uses, the channels and the end date; the recording names the person, Shonin and the client. Edidiong approves every release.
+    2. `voice link` ties the release to the voice made from that person's audio.
+    3. A voice on an engine that can clone counts as a clone unless it's a preset or declared stock (`voice stock`). Render and approval both refuse a clone that no active release covers.
+    4. On revocation (`voice revoke`), code deletes the consent recording, and we delete the voice on its server.
+  - Never clone anyone under 18, a politician or public figure, or a voice taken from media the client doesn't own. A person checks this before approving the release; code can't.
 
 ## The job, step by step
 

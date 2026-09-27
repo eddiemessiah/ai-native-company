@@ -107,6 +107,28 @@ The same `local` voice reaches VoiceStudio: set `LOCAL_TTS_MODEL` to an engine i
 - OmniVoice, VoiceStudio's default, is refused at render.
 - Anything not listed is a draft.
 
+**Cloned voices need a release** (`research/voicestudio.md` §7c).
+
+A voice on an engine that can clone (VoxCPM2, ElevenLabs, any engine we don't know) counts as someone's clone, unless it's one of the engine's presets or a person has declared it a stock voice. Render and approval each check that an active release covers it. The release has to name:
+- the person;
+- the one client;
+- the languages;
+- the uses (shorts, dubs, clips, ads, podcasts);
+- the channels;
+- the last day of use.
+
+The person also records themselves reading a consent statement that names them, Shonin and the client.
+
+```bash
+pnpm video voice add "Ada Obi" --client "Kowry" --languages en,fr --uses shorts,dubs --channels youtube,tiktok \
+  --until 2027-09-30 --release ada-release.pdf --consent ada-consent.wav --statement "I, Ada Obi, agree that Shonin …" --by "Edidiong"
+pnpm video voice link ada-obi-kowry-2026-09-27 --voice local:ada-obi --engine voxcpm2   # the voice made from her audio
+pnpm video voice stock elevenlabs:<id> --name "ElevenLabs library voice" --by "Edidiong"  # a voice that is nobody's clone
+pnpm video voice revoke ada-obi-kowry-2026-09-27 --by "Edidiong" --reason "she withdrew consent"
+```
+
+`short new --client "<who it's for>" --language fr` sets what the release must cover; our own channel is `Shonin`. Revoking deletes the consent recording (its hash stays), and every later render or approval with that voice fails. The registry is `video-jobs/voices`, which git ignores.
+
 Music needs its licence on record: `--music bed.mp3 --music-licence "<Pixabay certificate or licence id>"`. That's what clears a Content ID claim.
 
 Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).
