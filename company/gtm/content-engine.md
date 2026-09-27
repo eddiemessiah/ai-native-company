@@ -45,6 +45,8 @@ The content gate is live as a recipe (`contentQuestions` in `packages/brain`, an
 
 ## Ready-to-post drafts
 
+The launch trailer's script and shot list, and the domain-day announcement thread, are in `shonin-gtm-plan.md` (§5–6).
+
 See `content/threads/`:
 1. Launch thread
 2. The Jev explainer (the 24-hour format)
