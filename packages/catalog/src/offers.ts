@@ -182,7 +182,7 @@ export const offers: readonly Offer[] = [
     delivery: "A web run in about a minute, and a .zip harness folder: CLAUDE.md, scorecard, sources, rules, prompts, drafts, sprint and dashboard.",
     turnaround: "About a minute",
     price: {
-      label: "Free",
+      label: "Free and open source (MIT)",
       humanAlternative: "A GTM consultant's launch plan, or weeks of the founder's own time",
       model: "free",
     },
@@ -192,7 +192,7 @@ export const offers: readonly Offer[] = [
       decide: "Whether each draft is ready, needs a revision, or is blocked",
       code: "Validation, the scorecard math, the folder, the pipeline and the dashboard",
     },
-    tags: ["gtm", "founders", "agents", "claude-code", "free"],
+    tags: ["gtm", "founders", "agents", "claude-code", "open-source"],
     links: [{ label: "Run it", href: "/gtm" }],
   },
 

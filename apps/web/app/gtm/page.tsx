@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: MIT
+// GTM Harness. Copyright (c) 2026 Edidiong Umana; licence text in packages/gtm-harness/LICENSE.
+
 import type { Metadata } from "next";
 import { GtmHarness } from "@/components/gtm-harness";
 
 export const metadata: Metadata = {
   title: "GTM Harness",
   description:
-    "Your go-to-market, run by agents you can check: an ideal-customer scorecard, where your customers gather, reviewed first messages, a 7-day sprint and a harness folder for Claude Code. Free.",
+    "Your go-to-market, run by agents you can check: an ideal-customer scorecard, where your customers gather, reviewed first messages, a 7-day sprint and a harness folder for Claude Code. Free and open source (MIT).",
 };
 
 const SPLIT = [
@@ -19,7 +22,7 @@ export default function GtmPage() {
     <div className="wrap pb-10 pt-32">
       <p className="label flex flex-wrap items-center gap-3">
         <span className="dot live-dot" />
-        New · launch week · free
+        New · launch week · free and open source
       </p>
       <h1 className="mt-5 max-w-5xl text-[clamp(44px,7.5vw,112px)] font-semibold leading-[0.9] tracking-[-0.055em]">
         Your go-to-market, <span className="serif text-write">run by agents</span> you can check.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// GTM Harness. Copyright (c) 2026 Edidiong Umana; licence text in packages/gtm-harness/LICENSE.
+
 import { buildHarness, generatePlan, gtmInputSchema, reviewOutreach, templatePlan, type GeneratedPlan } from "@repo/gtm-harness";
 import { NextResponse } from "next/server";
 import { getPublicBrain } from "@/lib/brain";

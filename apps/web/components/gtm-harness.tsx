@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// GTM Harness. Copyright (c) 2026 Edidiong Umana; licence text in packages/gtm-harness/LICENSE.
+
 "use client";
 
 import { CHANNEL_LABELS, CHANNELS, STAGE_LABELS, STAGES, type Channel, type Stage } from "@repo/gtm-harness/input";
