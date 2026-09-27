@@ -41,7 +41,7 @@ Everything below uses what exists today: the site, the brain, Nova Check, Gate a
 
 ## Day 1 · Sunday 27 Sep: deploy, and sell the screenshot
 
-- [ ] Read and merge the two pull requests: the firm, then the GTM Harness.
+- [ ] Read and merge the two pull requests. Merge the GTM Harness first (it merges into the firm's branch), then the firm into `main`. Make `main` the default branch.
 - [ ] Deploy to Vercel from your personal account, with root directory `apps/web` (`ops/setup-checklist.md`). Set:
   - `X402_PAY_TO` and `X402_API_KEY`, so agents can pay on Celo;
   - `CDP_API_KEY_ID` and `CDP_API_KEY_SECRET`, for the Base leg;
@@ -68,7 +68,7 @@ Everything below uses what exists today: the site, the brain, Nova Check, Gate a
   - three sellers or facilitators get the audit ask.
 
   Edidiong approves each message before it goes out.
-- [ ] Get the GTM Harness ready (`gtm/gtm-harness-launch.md`): time one real run, decide the licence, record the 60-second capture.
+- [ ] Get the GTM Harness ready (`gtm/gtm-harness-launch.md`): time one real run and record the 60-second capture. The licence is done (MIT).
 - [ ] Start the company registration (CAC). Grant KYC, cloud credits, business banking and Stripe all need it.
 - [ ] Send outbound messages:
   - 30 to SMEs (scripts §1–2);

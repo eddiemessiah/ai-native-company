@@ -12,15 +12,14 @@ It is free, with no upsell. Many of the founders who use it will be builders in 
 
 ## Before launch (Mon 28 Sep)
 
-- [ ] Merge the firm and the GTM Harness into `main`, then deploy (root directory `apps/web`).
+- [ ] Merge the GTM Harness pull request first: it merges into the firm's branch. Then merge the firm's pull request into `main`, which brings both.
+- [ ] Make `main` the repository's default branch (it's the feature branch today), so Vercel deploys production from `main`. Then deploy (root directory `apps/web`).
 - [ ] Set `ANTHROPIC_API_KEY` on the deployment. Without it, every plan comes from templates.
 - [ ] Run it once on a product you know well, and time the run.
   - Read the whole plan. Every number in it must come from the form; nothing is invented.
   - If the run takes more than a minute, change "about a minute" on the page and in the thread.
 - [ ] Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Each run then reaches you with its draft verdicts.
-- [ ] Decide the licence.
-  - The page says "free", not "open source", because the repo has no licence yet.
-  - Rule 2 promises builders open-source tools. So add a licence before Thursday (MIT is the usual choice for a tool like this), then put "open source" back in the copy.
+- [x] License it. MIT, in `packages/gtm-harness/LICENSE`, with SPDX headers on the page, component and API route, and the page says "free and open source (MIT)". The draft reviewer runs on `@repo/brain`, which the licence doesn't cover.
 - [ ] Record a 60-second screen capture of a real run, from the form to the zip opened in Claude Code.
 
 ## Launch day (Tue 29 Sep)
@@ -50,7 +49,7 @@ If the model is slow or down, the page falls back to templates and says so. Clic
 
 **Rules for the demo** (`ops/conflicts-of-interest.md`):
 
-- Say it plainly: "I built this with my firm, Nova. It's free for builders, and it stays free."
+- Say it plainly: "I built this with my firm, Nova. It's free and MIT-licensed, and it stays that way."
 - No pitch for paid services, no prices, and no links to the directory.
 - Emails from the form are for replies about the tool, never for sales.
 - If the room shares one network, raise `GTM_RUNS_PER_HOUR` for the day. The default is 6 runs per IP per hour.
