@@ -51,3 +51,5 @@ See `content/threads/`:
 3. "10 AI-native services I'd start in Lagos"
 4. AI Study Group v2 and the cohort
 5. Selling to agents on Celo with x402
+6. AI roll-ups, and why we're selling the shovels first
+7. GTM Harness launch

@@ -6,7 +6,16 @@
 
 export type Category = "service" | "product" | "infra" | "agent-api" | "community" | "research";
 export type Status = "live" | "beta" | "soon";
-export type Audience = "smb" | "startup" | "enterprise" | "builders" | "agents" | "learners" | "ecosystems";
+export type Audience =
+  | "smb"
+  | "startup"
+  | "enterprise"
+  | "builders"
+  | "agents"
+  | "learners"
+  | "ecosystems"
+  /** Searchers, ETA buyers, holdcos and PE-backed roll-ups buying services firms. */
+  | "acquirers";
 
 export interface Price {
   /** What we show, e.g. "$490 per audit". */

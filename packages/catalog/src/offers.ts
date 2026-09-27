@@ -501,7 +501,7 @@ export const offers: readonly Offer[] = [
       "Sandbox access to the agent",
       "The workflow and what can go wrong",
       "Real or synthetic test cases",
-      "Rules that apply: NDPA, CBN circulars, Ghana's data protection drafts",
+      "Rules that apply: NDPA and CBN circulars, Ghana's data protection drafts, the EU AI Act, FCA or RBI guidance",
     ],
     engine:
       "A harness modelled on Princeton's agent-reliability work: repeated runs, reworded prompts, simulated tool outages, prompt-injection suites, leak and destructive-action checks. The brain grades every trace.",
@@ -843,6 +843,109 @@ export const offers: readonly Offer[] = [
       code: "Field comparison, expiry dates, tier rules",
     },
     tags: ["kyc", "compliance", "fintech"],
+  },
+
+  // Acquirers: the picks and shovels of AI roll-ups (see research/ai-rollups.md)
+  {
+    slug: "acquisition-automation-map",
+    name: "Acquisition Automation Map",
+    category: "service",
+    status: "beta",
+    oneLiner: "Before you sign the LOI: every task in the target firm mapped to what agents can take over, with the margin model.",
+    pitch:
+      "Due diligence before buying or acquiring a services business such as an accounting, bookkeeping, payroll, insurance, property management or IT managed services firm: from 20–50 anonymized work samples, a map of every task the target does, which tasks AI agents can take over after the acquisition, and the margin model, for searchers, holdcos and private equity buyers before they sign the letter of intent (LOI)",
+    audience: ["acquirers"],
+    unit: "One target firm mapped from 20–50 anonymized work samples, with the margin model",
+    intake: [
+      "20–50 anonymized completed jobs from the target, across its main services",
+      "Monthly volume per service and headcount by role, from the seller or the CIM",
+      "Two years of P&L",
+      "Your deal terms: price, financing and the margin you need",
+      "An NDA with the seller, and the seller's consent to share samples",
+    ],
+    engine:
+      "Agents extract every task from the samples: trigger, inputs, steps, output, minutes and monthly volume. The brain scores each task's checkability and risk and classes it: automate now, automate with human review, assist only, or keep human. Code builds the margin model from the target's own volumes and costs.",
+    rulebook: [
+      "Every task cites the work samples it came from; nothing is inferred from the broker's summary alone.",
+      "Minutes and volumes come from the target's own records; where there are none, the map says 'estimate' and shows the range.",
+      "Anything that files, signs, pays or goes out in a client's name is at most 'automate with human review', at any confidence.",
+      "The margin model runs on the target's own numbers, holds revenue flat and shows every formula; peers' self-reported results never go in.",
+      "Every map names the tasks and client relationships that depend on one person, the owner above all.",
+      "Samples arrive anonymized or under NDA; client names and personal data are stripped before a model sees them.",
+      "We never bid for a firm we mapped for a client, and nothing learned in a client's diligence feeds our own deals.",
+    ],
+    review: "The founder reviews every map line by line; every 'automate now' call is checked by hand against its samples.",
+    delivery:
+      "A report page and a spreadsheet: one row per task with its class, the margin model with every formula, the risks to price in, and a 30-minute walkthrough.",
+    turnaround: "5 working days after the samples arrive",
+    price: {
+      label: "$2,500 per target",
+      humanAlternative: "Operational due diligence from a consulting firm at $10,000–$30,000",
+      model: "per-unit",
+    },
+    checkout: { amountUsd: 1250, label: "50% deposit on one target ($2,500)" },
+    distribution: [
+      "Search-fund and ETA communities, with an anonymized sample map as the screenshot",
+      "Business brokers, deal lawyers and quality-of-earnings accountants who already serve buyers",
+      "Holdco and roll-up operators on X and LinkedIn",
+    ],
+    split: {
+      llm: "Extracts tasks from the work samples and writes the map",
+      decide: "Scores checkability and risk; classes each task: automate now, with review, assist or keep human",
+      code: "Minutes, volumes, cost per task and the margin model",
+    },
+    tags: ["acquisitions", "due-diligence", "roll-ups", "automation-map", "margins"],
+  },
+  {
+    slug: "agent-integration-100",
+    name: "100-Day Agent Integration",
+    category: "service",
+    status: "beta",
+    oneLiner: "After the close: agents take over the back office in 100 days, and the clients and key staff stay.",
+    pitch:
+      "Post-acquisition integration for buyers who just acquired or closed on a services business such as an accounting, bookkeeping, payroll, insurance, property management or IT managed services firm: a 100-day plan to integrate AI agents into its back office without losing clients or key staff, with shadow mode first, a rulebook written with senior staff, a preparer agent and a separate reviewer, a weekly corrections log, and a Monday dashboard of margin and retention",
+    audience: ["acquirers"],
+    unit: "One acquired firm integrated over 100 days, then monthly agent operations",
+    intake: [
+      "The Acquisition Automation Map, or 20–50 anonymized work samples to build one",
+      "Read-only access to the firm's practice software, email and document store",
+      "Two hours with each senior staff member for the rulebook interviews",
+      "The former owner's time for the announcement and the handoff",
+      "Who approves what: filings, payments and anything sent in a client's name",
+    ],
+    engine:
+      "Days 1–30 change nothing clients see: agents run in shadow mode while senior staff write the rulebook. Days 31–60 move intake, document collection and the highest-volume, lowest-risk task to a preparer agent, with every draft reviewed. Days 61–100 add the next two tasks and a client-comms agent for routine status updates only. A separate reviewer agent can block but never ship; the preparer ships nothing on its own.",
+    rulebook: [
+      "Days 1–30 change nothing clients see: shadow mode only, and the deal is announced together with the former owner.",
+      "No rule is active until the senior staff member it came from approves it; every approved rule becomes a test case.",
+      "The preparer and the reviewer are separate agents: the reviewer can block but never ship, and the preparer ships nothing on its own.",
+      "Filings, payments and anything sent in a client's name wait for a person's approval at any confidence.",
+      "Every week, agent drafts are compared with the approved versions; each change is classed as a factual error, client preference, missing information or style, and a repeated correction becomes a proposed rule.",
+      "Client and key-person retention are reported next to margin every Monday; if margin rises while client retention falls, automation stops expanding.",
+      "The client-comms agent sends routine status updates only; advice, fees and bad news go to a person.",
+    ],
+    review:
+      "The firm's own staff review every agent draft; Nova reads the decision and corrections logs weekly and runs a monthly corrections review with senior staff.",
+    delivery:
+      "Agents live in the firm's own tools, the rulebook and corrections log in its own folder, and the Monday dashboard (margin, client retention, key-person retention, human minutes per job, corrections per job); a runbook at day 100, then monthly agent operations.",
+    turnaround: "100 days, then monthly",
+    price: {
+      label: "From $12,000 per firm + $1,500/month agent ops",
+      humanAlternative: "An operating partner or integration team at $150,000+ a year",
+      model: "retainer",
+    },
+    checkout: { amountUsd: 6000, label: "50% deposit on one firm ($12,000)" },
+    distribution: [
+      "Acquisition Automation Map clients whose deals close",
+      "Buyers who just closed, through their brokers, deal lawyers and lenders",
+      "Case studies with the Monday numbers, published with the owner's consent",
+    ],
+    split: {
+      llm: "Drafts the firm's work and routine client updates; turns staff interviews into draft rules",
+      decide: "Routes each job, reviews each draft (block or pass), proposes rules from repeated corrections",
+      code: "Deadlines, volumes, minutes per job, permissions and the Monday dashboard",
+    },
+    tags: ["acquisitions", "integration", "roll-ups", "rulebook", "back-office"],
   },
 
   // ─── Agent APIs: agents pay per call with x402 ───────────────────────────────
