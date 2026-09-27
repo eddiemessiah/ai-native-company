@@ -2,6 +2,7 @@
   "name": "@repo/brain",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "System One decision layer: typed Choice/Score/Noul decisions with calibrated confidence, provider fallbacks, policy gates and decision logs.",
   "type": "module",
   "exports": {

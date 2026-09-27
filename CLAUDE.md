@@ -17,7 +17,7 @@ The firm is led by a person, Edidiong Umana, and an agent, Nova One (the decisio
 ## Layout
 
 ```
-packages/brain      @repo/brain: the System One decision layer. Choice/Score/Noul questions, providers
+packages/brain      @repo/brain (proprietary): the System One decision layer. Choice/Score/Noul questions, providers
                     (Jev, then Claude, then a heuristic for free demos), confidence gates, decision log, recipes
 packages/catalog    @repo/catalog: the single source of truth for brand, offers, prices, APIs, study tracks, chapters
 packages/agents     @repo/agents: what agents buy. Nova Check (pre-payment checks of x402 requests) and
@@ -100,6 +100,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 ## Never
 
 - Send, pay, sign, submit or publish on a client's behalf without a person approving that specific action.
+- Copy `@repo/brain` code into MIT-licensed files, or publish it. The brain is proprietary; only the GTM Harness is MIT.
 - Let a paid route fall back to the heuristic provider, or answer 2xx when it couldn't do the work.
 - Let a model raise a spending limit, an auto-approve limit or a verdict. Nova Check and Nova Gate can only lower a verdict.
 - Charge before the work is done, or serve paid content without settling.
