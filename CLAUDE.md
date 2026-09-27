@@ -126,6 +126,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 | gtm | 3008 | `company/gtm`, `content/threads` |
 | ops | 3009 | `company/ops`, `company/funding` |
 | agents | 3010 | `packages/agents`, `packages/mcp` |
+| gtm-harness | 3011 | GTM Harness for founders: `packages/gtm-harness`, `apps/web/app/gtm`, `apps/web/app/api/gtm` |
 
 Stay inside your line's files. Changes to the public API of `@repo/brain` or `@repo/catalog` go through their own line. Run `pnpm check` before each commit and merge back through a pull request.
 

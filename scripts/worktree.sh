@@ -21,7 +21,8 @@ company-brain|3006|Company Brain offering: client deployments, playbook, setup s
 research|3007|research/ and content/posts: the research branch and the blog
 gtm|3008|company/gtm and content/threads: outbound, content engine, launches
 ops|3009|company/ops and company/funding: playbooks, rulebook, grants
-agents|3010|packages/agents and packages/mcp: Nova Check, Nova Receipt, nova-mcp'
+agents|3010|packages/agents and packages/mcp: Nova Check, Nova Receipt, nova-mcp
+gtm-harness|3011|GTM Harness for founders: packages/gtm-harness, app/gtm, app/api/gtm'
 
 die() { printf 'worktree: %s\n' "$*" >&2; exit 1; }
 
