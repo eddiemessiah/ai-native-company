@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type Anthropic from "@anthropic-ai/sdk";
 import {
+  autoVoice,
   captionWords,
   checkScript,
   concatList,
@@ -9,9 +10,11 @@ import {
   mix,
   normalizeText,
   numbersIn,
+  packetProblems,
   parseVoice,
   pickLocal,
   pickPexels,
+  publishPacket,
   renderBrief,
   speechRequest,
   shortLength,
@@ -19,6 +22,7 @@ import {
   toScript,
   voiceArgs,
   voiceCommand,
+  voiceLicence,
   writeScript,
   type ShortScript,
 } from "../src/index";
@@ -39,7 +43,7 @@ function script(over: Partial<ShortScript> = {}): ShortScript {
   return {
     version: 1,
     title: "x402 on Celo",
-    post: "Agents pay per call.",
+    post: "Agents pay per call. Voiced with AI.",
     sources: [{ id: "post", title: "x402 on Celo" }],
     beats: [
       beat("The request becomes the transaction, one call at a time.", "The request is the payment", "The request becomes the transaction."),
@@ -85,6 +89,19 @@ describe("script checks", () => {
     expect(long.problems.join("\n")).toMatch(/X allows 280/);
   });
 
+  it("requires the post to say the voice is AI, and never lets the narrator pose as an expert", () => {
+    const limits = { minSec: 10, maxSec: 60 };
+    expect(checkScript({ ...script(), post: "Agents pay per call." }, sources, limits).problems.join("\n")).toMatch(/must say the voice is AI/);
+    for (const post of ["Narrated by AI. Agents pay per call.", "AI voice. Agents pay per call.", "AI-generated voiceover."]) {
+      expect(checkScript({ ...script(), post }, sources, limits).problems).toEqual([]);
+    }
+    const s = script();
+    const beats = [...s.beats];
+    beats[3] = { ...beats[3]!, narration: "As a certified financial adviser, I say this works on any route you already serve today." };
+    expect(checkScript({ ...s, beats }, sources, limits).problems.join("\n")).toMatch(/Beat 4: the narrator presents itself as a human expert \("As a certified financial adviser"\)/);
+    expect(checkScript({ ...s, post: "I'm your doctor. Voiced with AI." }, sources, limits).problems.join("\n")).toMatch(/post presents the narrator/);
+  });
+
   it("reads numbers the way people write them, and leaves names alone", () => {
     expect(numbersIn("1,700 emails for $0.18, about 42% off, 3.0 times")).toEqual(["1700", "0.18", "42", "3"]);
     expect(numbersIn("x402 on web3 with ERC-8004 v2 is 3x faster")).toEqual(["3"]);
@@ -118,6 +135,81 @@ describe("voices", () => {
     expect(eleven.url).toContain("/v1/text-to-speech/abc123?output_format=mp3_44100_128");
     expect(JSON.parse(String(speechRequest(parseVoice("openai:ash"), "Hi", { OPENAI_API_KEY: "k" }).init.body))).toMatchObject({ voice: "ash", input: "Hi" });
     expect(() => speechRequest(parseVoice("azure"), "Hi", {})).toThrow(/needs AZURE_SPEECH_REGION/);
+  });
+
+  it("speaks the OpenAI contract to a server you run", () => {
+    expect(parseVoice("local")).toEqual({ provider: "local", voice: "af_heart" });
+    const plain = speechRequest(parseVoice("local:bf_emma"), "Hi", { LOCAL_TTS_URL: "http://localhost:8880/v1/" });
+    expect(plain.url).toBe("http://localhost:8880/v1/audio/speech");
+    expect(plain.init.headers).toEqual({ "content-type": "application/json" });
+    expect(JSON.parse(String(plain.init.body))).toEqual({ model: "kokoro", voice: "bf_emma", input: "Hi", response_format: "wav" });
+    const keyed = speechRequest(parseVoice("local"), "Hi", { LOCAL_TTS_URL: "http://gpu:8000/v1", LOCAL_TTS_KEY: "k", LOCAL_TTS_MODEL: "tts-1" });
+    expect(keyed.init.headers).toMatchObject({ authorization: "Bearer k" });
+    expect(JSON.parse(String(keyed.init.body)).model).toBe("tts-1");
+    expect(voiceCommand(parseVoice("local"), "Hi", "a.wav")).toBeNull();
+    expect(() => speechRequest(parseVoice("local"), "Hi", {})).toThrow(/needs LOCAL_TTS_URL/);
+  });
+
+  it("ships only voices with a commercial licence", () => {
+    const use = (voice: string, env: NodeJS.ProcessEnv = {}) => voiceLicence(parseVoice(voice), env).use;
+    expect(use("azure")).toBe("publish");
+    expect(use("openai")).toBe("publish");
+    expect(use("edge")).toBe("draft");
+    expect(use("say")).toBe("draft");
+    expect(use("pico")).toBe("draft");
+    expect(use("espeak")).toBe("draft");
+    expect(use("elevenlabs:abc")).toBe("draft");
+    expect(use("elevenlabs:abc", { ELEVENLABS_PLAN: "free" })).toBe("draft");
+    expect(voiceLicence(parseVoice("elevenlabs:abc"), { ELEVENLABS_PLAN: "Creator" })).toEqual({ use: "publish", licence: "ElevenLabs Creator plan" });
+    expect(use("local")).toBe("draft");
+    expect(use("local", { LOCAL_TTS_LICENCE: "Apache-2.0" })).toBe("publish");
+    expect(use("local", { LOCAL_TTS_LICENCE: "CC BY-NC-SA 4.0" })).toBe("draft");
+    expect(use("local", { LOCAL_TTS_LICENCE: "for personal use only" })).toBe("draft");
+  });
+
+  it("picks a licensed voice when one is configured, and never edge-tts on its own", async () => {
+    const none = async () => false;
+    const all = async () => true;
+    expect((await autoVoice({ AZURE_SPEECH_KEY: "k", AZURE_SPEECH_REGION: "r", OPENAI_API_KEY: "k" }, none, "linux")).provider).toBe("azure");
+    expect(await autoVoice({ LOCAL_TTS_URL: "http://x/v1", LOCAL_TTS_VOICE: "bm_george" }, none, "linux")).toEqual({ provider: "local", voice: "bm_george" });
+    expect((await autoVoice({ AZURE_SPEECH_KEY: "k", OPENAI_API_KEY: "k" }, none, "linux")).provider).toBe("openai");
+    expect((await autoVoice({}, all, "darwin")).provider).toBe("say");
+    expect((await autoVoice({}, all, "linux")).provider).toBe("pico");
+    expect((await autoVoice({}, none, "linux")).provider).toBe("espeak");
+  });
+});
+
+describe("publish packet", () => {
+  const azure = { ...parseVoice("azure"), ...voiceLicence(parseVoice("azure"), {}) };
+
+  it("switches on every platform's AI label and lists each sentence with its source", () => {
+    const packet = publishPacket(script(), azure, "abc", { footageAuthors: ["Ada", "Ada", "Tunde"] });
+    expect(packet.labels).toEqual({ youtube: { containsSyntheticMedia: true }, tiktok: { aiGeneratedContent: true }, meta: { aiInfo: true } });
+    expect(packet.footageCredit).toBe("Footage: Ada, Tunde (Pexels)");
+    expect(packet.claims).toHaveLength(4);
+    expect(packet.claims[1]).toEqual({
+      beat: 2,
+      narration: "A handler that answers below 400 settles; an error never does.",
+      sources: [
+        {
+          claim: "A handler that answers below 400 settles; an error never does.",
+          quote: "withX402 only settles if your handler answers below 400.",
+          source: "post",
+          title: "x402 on Celo",
+        },
+      ],
+    });
+    expect(packet.claims[3]!.sources).toEqual([]);
+    expect(packetProblems(packet, "abc")).toEqual([]);
+  });
+
+  it("refuses a draft voice, a label switched off, a missing disclosure or a stale script", () => {
+    const pico = { ...parseVoice("pico"), ...voiceLicence(parseVoice("pico"), {}) };
+    const good = publishPacket(script(), azure, "abc");
+    expect(packetProblems(publishPacket(script(), pico, "abc"), "abc").join("\n")).toMatch(/pico:en-GB is a draft voice \(robotic/);
+    expect(packetProblems({ ...good, labels: { ...good.labels, tiktok: { aiGeneratedContent: false } } }, "abc")).toEqual(["TikTok's AI-generated label is off"]);
+    expect(packetProblems({ ...good, post: "Agents pay per call." }, "abc")).toEqual(["The post doesn't say the voice is AI"]);
+    expect(packetProblems(good, "def")).toEqual(["publish.json is for a different script: render again"]);
   });
 });
 

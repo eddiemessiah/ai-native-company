@@ -28,12 +28,13 @@ const RULES = (s: BriefSettings) => [
   "Every sentence that states a fact gets a claim: the sentence, the id of the source it comes from, and a quote copied word for word from that source. Code rejects quotes it can't find.",
   "Say a number only if it appears in that beat's quotes. Invent nothing: no statistics, names, dates, prices or promises the sources don't contain.",
   "Plain, specific, short. No hype words (revolutionary, game-changer, unlock), no filler, no emoji. Write it the way you'd explain it to a builder.",
+  "The voice is synthetic, so the narrator is never a person or an expert: no \"as a doctor\", no \"I'm your financial adviser\". On health, money, legal or political points, say whose words they are (\"Celo's docs say…\").",
   s.visuals === "stock"
     ? 'For each beat set visual to {"kind": "stock", "query": "<2–4 word stock-footage search>"}.'
     : s.visuals === "local"
       ? 'For each beat set visual to {"kind": "local", "query": "<words that match a file name in the footage folder>"}.'
       : 'For each beat set visual to {"kind": "brand", "query": ""}.',
-  "title: 100 characters at most. post: 280 characters at most, for X, with the one call to action.",
+  "title: 100 characters at most. post: 280 characters at most, for X, with the one call to action, ending with \"Voiced with AI.\"",
 ];
 
 /** What the writer gets, whether the writer is Claude through the API or an agent in a session. */

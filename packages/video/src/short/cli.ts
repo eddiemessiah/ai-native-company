@@ -22,19 +22,20 @@ import {
   type ShortStatus,
 } from "./job";
 import { checkScript, DEFAULT_LEXICON, draftText, forSpeech } from "./script";
+import { packetProblems, publishPacket, type PublishPacket } from "./publish";
 import { ACCENTS, brandArgs, download, footageArgs, isImage, pickLocal, pickPexels, searchPexels, stillArgs } from "./visuals";
-import { autoVoice, parseVoice, speak } from "./voice";
+import { autoVoice, parseVoice, speak, voiceLicence } from "./voice";
 
 export const SHORT_HELP = `Explainer shorts: a topic and its sources in; a sourced 30–60 second vertical video out.
 LLM writes the script, code checks every count and quote, the brain checks each claim, a person approves.
 
   pnpm video short new "<topic>" --source <file|url> [--source …] [--seconds 30-50] [--audience "…"]
-                       [--voice auto|edge|azure|openai|elevenlabs:<id>|say|pico|espeak] [--visuals brand|stock|local]
-                       [--local <folder>] [--music <file>] [--cta "…"] [--out <job>]
+                       [--voice auto|azure|local|openai|elevenlabs:<id>|edge|say|pico|espeak] [--visuals brand|stock|local]
+                       [--local <folder>] [--music <file> --music-licence "<licence id or certificate>"] [--cta "…"] [--out <job>]
   pnpm video short write <job> [--model claude-opus-5]     Claude writes script.json from brief.md
   pnpm video short check <job> [--demo]                    code checks, content gate, one claim check per claim
-  pnpm video short render <job> [--force]                  voice, visuals, captions, music, loudness
-  pnpm video short approve <job> --by "<name>"
+  pnpm video short render <job> [--voice …] [--force]      voice, visuals, captions, music, loudness, publish packet
+  pnpm video short approve <job> --by "<name>"             needs a licensed voice: azure, openai, paid elevenlabs, declared local
 
 No ANTHROPIC_API_KEY? Any writer can fill in script.json from brief.md, an agent in a Claude Code session included.`;
 
@@ -126,6 +127,9 @@ async function create(ctx: ShortContext): Promise<void> {
   if (visuals === "local" && !str(ctx.opt.local)) ctx.fail("--visuals local needs --local <folder of your clips and images>");
   const voice = str(ctx.opt.voice) ?? "auto";
   if (voice !== "auto") parseVoice(voice);
+  if (str(ctx.opt.music) && !str(ctx.opt["music-licence"])) {
+    ctx.fail('--music needs --music-licence: the licence id or certificate that clears a Content ID claim (Pixabay\'s certificate, or your library\'s)');
+  }
   const { minSec, maxSec } = parseSeconds(str(ctx.opt.seconds));
 
   const sources = await Promise.all(refs.map((r, i) => loadSource(ctx, r, i)));
@@ -146,7 +150,7 @@ async function create(ctx: ShortContext): Promise<void> {
     voice,
     visuals,
     ...(str(ctx.opt.local) ? { localDir: ctx.abs(str(ctx.opt.local)!) } : {}),
-    ...(str(ctx.opt.music) ? { music: ctx.abs(str(ctx.opt.music)!) } : {}),
+    ...(str(ctx.opt.music) ? { music: ctx.abs(str(ctx.opt.music)!), musicLicence: str(ctx.opt["music-licence"])! } : {}),
     ...(str(ctx.opt.cta) ? { cta: str(ctx.opt.cta)! } : {}),
     sources: unique.map((s) => ({ id: s.id, title: s.title, ...(s.url ? { url: s.url } : {}), file: `sources/${s.id}.md` })),
   };
@@ -233,7 +237,12 @@ async function render(ctx: ShortContext): Promise<void> {
   if (!checked && !ctx.opt.force) ctx.fail("The current script hasn't passed `short check`. Fix it and check again, or pass --force to render a draft anyway");
   if (!checked) console.warn("warning: rendering a script that hasn't passed its check (--force)");
 
-  const voice = settings.voice === "auto" ? await autoVoice() : parseVoice(settings.voice);
+  const voiceSetting = str(ctx.opt.voice) ?? settings.voice;
+  const voice = voiceSetting === "auto" ? await autoVoice() : parseVoice(voiceSetting);
+  const licence = voiceLicence(voice);
+  if (licence.use === "draft") {
+    console.warn(`note: ${voice.provider}:${voice.voice} is a draft voice (${licence.note ?? licence.licence}). Approval will need a licensed one: --voice azure`);
+  }
   const lexicon = { ...DEFAULT_LEXICON, ...(settings.lexicon ?? {}) };
   ensureDir(p.audio);
   ensureDir(p.visuals);
@@ -248,7 +257,8 @@ async function render(ctx: ShortContext): Promise<void> {
   await run("ffmpeg", voiceArgs(spoken.map((s) => s.file), beats, join(p.audio, "voice.wav")));
 
   console.log(`Building ${settings.visuals} visuals for ${shortDuration(total)}…`);
-  const credits: Record<string, unknown>[] = [{ part: "voice", provider: voice.provider, voice: voice.voice }];
+  const credits: Record<string, unknown>[] = [{ part: "voice", provider: voice.provider, voice: voice.voice, ...licence }];
+  const footageAuthors: string[] = [];
   const localFiles = settings.localDir && existsSync(settings.localDir) ? readdirSync(settings.localDir).map((f) => join(settings.localDir!, f)).sort() : [];
   const used = new Set<string>();
   const segments: string[] = [];
@@ -265,7 +275,17 @@ async function render(ctx: ShortContext): Promise<void> {
         const file = join(ensureDir(join(p.visuals, "stock")), `pexels-${clip.id}.mp4`);
         await download(clip.link, file);
         args = footageArgs(file, b.length, target);
-        credits.push({ part: `beat ${b.index + 1}`, provider: "pexels", id: clip.id, page: clip.page, author: clip.author, authorUrl: clip.authorUrl, licence: "Pexels License" });
+        credits.push({
+          part: `beat ${b.index + 1}`,
+          provider: "pexels",
+          id: clip.id,
+          page: clip.page,
+          author: clip.author,
+          authorUrl: clip.authorUrl,
+          licence: "Pexels License",
+          downloadedAt: new Date().toISOString(),
+        });
+        footageAuthors.push(clip.author);
       } else {
         console.warn(`  beat ${b.index + 1}: ${key ? `no portrait clip for "${beat.visual.query}"` : "no PEXELS_API_KEY"}, using the brand background`);
       }
@@ -293,7 +313,7 @@ async function render(ctx: ShortContext): Promise<void> {
   writeFileSync(join(out, "short.ass"), buildAss(chunkWords(words, SOCIAL_CHUNKS), captionStyle("9x16"), { headlines }));
   writeFileSync(join(out, "short.srt"), buildSrt(chunkWords(words, SUBTITLE_CHUNKS)));
   const fonts = installFonts(out);
-  if (settings.music) credits.push({ part: "music", file: settings.music, note: "confirm the licence before publishing" });
+  if (settings.music) credits.push({ part: "music", file: settings.music, licence: settings.musicLicence ?? "not recorded" });
 
   console.log("Rendering the short…");
   await run(
@@ -312,9 +332,17 @@ async function render(ctx: ShortContext): Promise<void> {
   await levelAndFinish(out, "short.raw.mp4", "short.mp4", true);
   await run("ffmpeg", frameArgs(join(out, "short.mp4"), Math.min(1.2, total / 2), join(out, "cover.jpg")));
   writeJson(join(out, "credits.json"), credits);
+  writeJson(p.publish, publishPacket(script, { ...voice, ...licence }, hash, { footageAuthors }));
   const loud = await measureLoudness(join(out, "short.mp4"));
 
-  const next: ShortStatus = { stage: "rendered", ...(status.checkedHash ? { checkedHash: status.checkedHash } : {}), checkPassed: checked, renderedHash: hash, ...(checked ? {} : { forced: true }) };
+  const next: ShortStatus = {
+    stage: "rendered",
+    ...(status.checkedHash ? { checkedHash: status.checkedHash } : {}),
+    checkPassed: checked,
+    renderedHash: hash,
+    ...(checked ? {} : { forced: true }),
+    voice: { ...voice, ...licence },
+  };
   save(ctx, dir, settings, next);
   console.log(
     `  ${ctx.rel(join(out, "short.mp4"))}  ${shortDuration(total)}${loud ? `  ${loud.input_i} LUFS, true peak ${loud.input_tp} dBTP` : ""}\n` +
@@ -323,15 +351,26 @@ async function render(ctx: ShortContext): Promise<void> {
 }
 
 function approve(ctx: ShortContext): void {
-  const { dir, settings, status } = load(ctx);
+  const { dir, p, settings, status } = load(ctx);
   const by = str(ctx.opt.by)?.trim();
   if (!by) ctx.fail('A person approves each short: add --by "<name>"');
   const { hash } = readScript(dir);
   if (status.stage !== "rendered" && status.stage !== "approved") ctx.fail("Render the short and watch it before approving");
   if (status.renderedHash !== hash) ctx.fail("script.json changed after the render: render again, then approve");
+  if (!status.voice || !existsSync(p.publish)) ctx.fail("This render has no voice licence or publish packet on record: render again, then approve");
+  if (settings.music && !settings.musicLicence) ctx.fail("The music bed has no licence on record: add musicLicence to short.json, render again, then approve");
+  const packet = readJson<PublishPacket>(p.publish);
+  const problems = packetProblems(packet, hash);
+  if (problems.length) {
+    ctx.fail(`Can't approve this render:\n${problems.map((x) => `  - ${x}`).join("\n")}\nFor a draft voice, render again with a licensed one: --voice azure`);
+  }
   if (status.forced) console.log("Note: this render skipped a failed check (--force). Approving means you checked it yourself.");
-  save(ctx, dir, settings, { ...status, stage: "approved", approvedBy: by!, approvedAt: new Date().toISOString() });
-  console.log(`Approved by ${by}. Nothing has been posted; post it from your own account.`);
+  const approvedAt = new Date().toISOString();
+  writeJson(p.publish, { ...packet, approvedBy: by!, approvedAt });
+  save(ctx, dir, settings, { ...status, stage: "approved", approvedBy: by!, approvedAt });
+  console.log(
+    `Approved by ${by}. Nothing has been posted: post it from your own account with the AI label on (${ctx.rel(p.publish)} has the post and the checklist).`,
+  );
 }
 
 export async function runShort(ctx: ShortContext): Promise<void> {

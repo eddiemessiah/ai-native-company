@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shortDuration } from "../time";
 import type { ScriptReport, ShortScript } from "./script";
+import type { VoiceLicence, VoiceSpec } from "./voice";
 
 /**
  * An explainer-short job, one folder:
@@ -15,7 +16,7 @@ import type { ScriptReport, ShortScript } from "./script";
  *   status.json      where the job is, and who approved which script
  *   decisions.jsonl  one brain decision per line (state hashed)
  *   audio/ visuals/  per-beat voice and picture
- *   renders/         short.mp4, short.srt, cover.jpg, credits.json
+ *   renders/         short.mp4, short.srt, cover.jpg, credits.json, publish.json (labels, post, claim-to-source list)
  *   review.md        the sheet a person approves from
  */
 export interface ShortSettings {
@@ -25,11 +26,13 @@ export interface ShortSettings {
   readonly createdAt: string;
   readonly minSec: number;
   readonly maxSec: number;
-  /** "auto", or "provider[:voice]", e.g. "edge:en-NG-AbeoNeural". */
+  /** "auto", or "provider[:voice]", e.g. "azure:en-NG-AbeoNeural". */
   readonly voice: string;
   readonly visuals: "brand" | "stock" | "local";
   readonly localDir?: string;
   readonly music?: string;
+  /** The licence id or certificate for the music bed: what clears a Content ID claim. */
+  readonly musicLicence?: string;
   readonly cta?: string;
   readonly lexicon?: Readonly<Record<string, string>>;
   readonly sources: readonly { readonly id: string; readonly title: string; readonly url?: string; readonly file: string }[];
@@ -58,6 +61,8 @@ export interface ShortStatus {
   checkPassed?: boolean;
   renderedHash?: string;
   forced?: boolean;
+  /** The voice of the last render and the licence it was used under. Approval refuses a draft voice. */
+  voice?: VoiceSpec & VoiceLicence;
   approvedBy?: string;
   approvedAt?: string;
 }
@@ -75,6 +80,7 @@ export function shortPaths(dir: string) {
     audio: join(dir, "audio"),
     visuals: join(dir, "visuals"),
     renders: join(dir, "renders"),
+    publish: join(dir, "renders", "publish.json"),
     review: join(dir, "review.md"),
   };
 }
@@ -103,6 +109,15 @@ export function renderShortReview(
   const lines = [`# Short: ${script?.title ?? settings.topic}`, "", `Topic: ${settings.topic}. Stage: **${status.stage}**.`, ""];
   if (status.stage === "approved") lines.push(`Approved by ${status.approvedBy} at ${status.approvedAt}.`, "");
   if (status.forced) lines.push("> Rendered with `--force` past a failed check.", "");
+  if (status.voice) {
+    const v = status.voice;
+    lines.push(
+      v.use === "publish"
+        ? `Voice: ${v.provider}:${v.voice}, under ${v.licence}.`
+        : `> **Draft voice.** ${v.provider}:${v.voice} (${v.licence}): ${v.note ?? "not for publishing"}. Approval needs a licensed voice.`,
+      "",
+    );
+  }
   if (check) {
     const cut = check.claims.filter((c) => c.verdict === "cut").length;
     const flagged = check.claims.filter((c) => c.verdict === "check").length;
@@ -135,7 +150,14 @@ export function renderShortReview(
     lines.push("");
   }
   if (status.stage === "rendered" || status.stage === "approved") {
-    lines.push("## Files", "", "`renders/short.mp4` · `renders/short.srt` · `renders/cover.jpg` · `renders/credits.json`", "");
+    lines.push(
+      "## Files",
+      "",
+      "`renders/short.mp4` · `renders/short.srt` · `renders/cover.jpg` · `renders/credits.json` · `renders/publish.json`",
+      "",
+      "When you post, switch on the AI label on every platform: YouTube's altered-or-synthetic setting, TikTok's AI-generated label, Meta's AI info. `publish.json` has the post and the claim-to-source list.",
+      "",
+    );
   }
   lines.push(
     "Nothing here publishes. Watch the render, then approve it and post it yourself:",

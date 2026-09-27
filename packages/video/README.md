@@ -63,7 +63,7 @@ Modelled on [MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) 
 
 ```bash
 pnpm video short new "x402 on Celo: your API gets paid per call" \
-  --source content/posts/x402-on-celo.md --seconds 30-50 --voice edge:en-NG-EzinneNeural
+  --source content/posts/x402-on-celo.md --seconds 30-50 --voice azure:en-NG-EzinneNeural
 pnpm video short write video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call   # Claude writes script.json from brief.md
 pnpm video short check video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call   # code checks + content gate + claim checks
 pnpm video short render video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-call
@@ -74,22 +74,25 @@ pnpm video short approve video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-c
 |---|---|---|
 | `new` | Code | Copies the sources into the job and writes `brief.md`: word budget, rules, the sources with ids |
 | `write` | LLM | Claude returns `script.json` through structured outputs: beats of narration, on-screen text, a visual, and claims with quotes. No API key? Any writer can fill in `script.json` from `brief.md` |
-| `check` | Code, then System One | Code: 3–10 beats, length at 2.5 words a second, on-screen text ≤ 6 words, title ≤ 100 and post ≤ 280 characters, every quote found in its source, every number backed by a quote. Brain: the content gate on the whole draft, and `claimQuestions` on each claim |
-| `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS |
-| `approve` | A person | Recorded by name against the exact script that was rendered. Nothing is posted by the tool |
+| `check` | Code, then System One | Code: 3–10 beats, length at 2.5 words a second, on-screen text ≤ 6 words, title ≤ 100 and post ≤ 280 characters, the post says the voice is AI, no narrator posing as an expert, every quote found in its source, every number backed by a quote. Brain: the content gate on the whole draft, and `claimQuestions` on each claim |
+| `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS, and writes `publish.json`: the post, the AI labels switched on for YouTube, TikTok and Meta, and every sentence with the passage it rests on |
+| `approve` | A person | Recorded by name against the exact script that was rendered. Code refuses a draft voice, a label switched off, a post without the AI disclosure or music without a licence on record. Nothing is posted by the tool |
 
-Voices (`--voice`), each optionally followed by `:<voice>`:
+Voices (`--voice` on `new` or `render`), each optionally followed by `:<voice>`. Approval accepts only the ones marked publishable; the terms behind each are in `research/explainer-shorts.md` §6.
 
-| Voice | Needs | Use it for |
+| Voice | Needs | Publishable |
 |---|---|---|
-| `edge` | `pip install edge-tts` | Our own channel and drafts. It's free, and it has Nigerian English voices (`en-NG-EzinneNeural`, `en-NG-AbeoNeural`). It isn't an official API |
-| `azure` | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Client work. It's the licensed route to the same neural voices |
-| `openai` | `OPENAI_API_KEY` | Client work |
-| `elevenlabs:<voice id>` | `ELEVENLABS_API_KEY` | Client work |
-| `say` | macOS | Drafts |
-| `pico`, `espeak` | Nothing (offline) | Tests only: they sound robotic |
+| `azure` (default: `en-NG-EzinneNeural`; also `en-NG-AbeoNeural`) | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Yes. Nigerian English, about $0.014 a short, and a free tier of 0.5M characters a month |
+| `local:<voice>` | `LOCAL_TTS_URL`: your own OpenAI-compatible server, such as Kokoro-FastAPI | Once `LOCAL_TTS_LICENCE` declares a commercial licence (Kokoro is Apache-2.0) |
+| `openai:<voice>` | `OPENAI_API_KEY` | Yes |
+| `elevenlabs:<voice id>` | `ELEVENLABS_API_KEY`, `ELEVENLABS_PLAN` | On a paid plan only; the Free plan has no commercial licence |
+| `edge` | `pip install edge-tts` | No. It imitates Edge's read-aloud client, and its maintainer says it's for personal use. Drafts at most |
+| `say` | macOS | No: drafts |
+| `pico`, `espeak` | Nothing (offline) | No: robotic, for tests |
 
-`auto` picks the best voice that needs no key.
+`auto` picks Azure, then your local server, then OpenAI, whichever is configured, and otherwise a draft voice. It never picks edge-tts. Render a draft with any voice, then the final with `render --voice azure`.
+
+Music needs its licence on record: `--music bed.mp3 --music-licence "<Pixabay certificate or licence id>"`. That's what clears a Content ID claim.
 
 Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).
 

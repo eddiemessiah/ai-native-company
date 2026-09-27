@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { platform } from "node:os";
 import { run } from "../ffmpeg";
 
-export type VoiceProvider = "edge" | "azure" | "openai" | "elevenlabs" | "say" | "pico" | "espeak";
+export type VoiceProvider = "azure" | "local" | "openai" | "elevenlabs" | "edge" | "say" | "pico" | "espeak";
 
 export interface VoiceSpec {
   readonly provider: VoiceProvider;
@@ -10,27 +10,32 @@ export interface VoiceSpec {
 }
 
 /**
- * edge: Microsoft's neural voices through the edge-tts package (free, online), including the Nigerian English
- *       voices en-NG-EzinneNeural and en-NG-AbeoNeural. Not an official API: our own channel and drafts only.
- * azure: the same voices through Azure AI Speech, the licensed route for client work (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION).
- * openai: OpenAI's speech API (OPENAI_API_KEY). elevenlabs: a voice id from your ElevenLabs library (ELEVENLABS_API_KEY).
- * say: macOS's built-in voices. pico and espeak: offline and robotic; for drafts and tests only.
+ * azure: Azure AI Speech, the default for published work. Nigerian English neural voices (en-NG-EzinneNeural,
+ *        en-NG-AbeoNeural) under a paid commercial contract (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION).
+ * local: any OpenAI-compatible speech server you run, such as Kokoro (Apache-2.0): LOCAL_TTS_URL, and optionally
+ *        LOCAL_TTS_MODEL, LOCAL_TTS_VOICE and LOCAL_TTS_KEY. Publishable once LOCAL_TTS_LICENCE declares a commercial licence.
+ * openai: OpenAI's speech API (OPENAI_API_KEY). elevenlabs: a voice id from your library (ELEVENLABS_API_KEY),
+ *        publishable on a paid plan (ELEVENLABS_PLAN).
+ * edge: the edge-tts package, which imitates Edge's read-aloud client; its maintainer says it's for personal use.
+ * say: macOS voices. pico and espeak: offline and robotic. edge, say, pico and espeak are for drafts only.
+ * The terms behind each are in research/explainer-shorts.md §6.
  */
 export const DEFAULT_VOICES: Readonly<Record<VoiceProvider, string>> = {
-  edge: "en-NG-EzinneNeural",
   azure: "en-NG-EzinneNeural",
+  local: "af_heart",
   openai: "coral",
   elevenlabs: "",
+  edge: "en-NG-EzinneNeural",
   say: "Samantha",
   pico: "en-GB",
   espeak: "en-us",
 };
 
-/** "edge:en-NG-AbeoNeural", "openai:ash", "pico" */
+/** "azure:en-NG-AbeoNeural", "openai:ash", "local:bf_emma", "pico" */
 export function parseVoice(value: string): VoiceSpec {
   const [provider = "", ...rest] = value.split(":");
   if (!(provider in DEFAULT_VOICES)) {
-    throw new Error(`Unknown voice "${value}": use edge, azure, openai, elevenlabs, say, pico or espeak, optionally with :<voice>`);
+    throw new Error(`Unknown voice "${value}": use azure, local, openai, elevenlabs, edge, say, pico or espeak, optionally with :<voice>`);
   }
   const p = provider as VoiceProvider;
   const voice = rest.join(":") || DEFAULT_VOICES[p];
@@ -38,12 +43,56 @@ export function parseVoice(value: string): VoiceSpec {
   return { provider: p, voice };
 }
 
+export interface VoiceLicence {
+  /** publish: may ship in a published short. draft: for review and tests; approval refuses it. */
+  readonly use: "publish" | "draft";
+  /** What the job ledger records: the licence or plan the voice is used under. */
+  readonly licence: string;
+  readonly note?: string;
+}
+
+const NON_COMMERCIAL = /\bNC\b|non-?commercial|personal|research|evaluation/i;
+
+/** Whether a voice may ship, from its provider and the licence or plan declared in the environment. */
+export function voiceLicence(spec: VoiceSpec, env: NodeJS.ProcessEnv = process.env): VoiceLicence {
+  switch (spec.provider) {
+    case "azure":
+      return { use: "publish", licence: "Azure AI Speech, paid service terms" };
+    case "openai":
+      return { use: "publish", licence: "OpenAI API terms", note: "OpenAI requires telling listeners the voice is AI; the post does" };
+    case "elevenlabs": {
+      const plan = env.ELEVENLABS_PLAN?.trim();
+      if (plan && !/^free$/i.test(plan)) return { use: "publish", licence: `ElevenLabs ${plan} plan` };
+      return {
+        use: "draft",
+        licence: plan ? "ElevenLabs Free" : "ElevenLabs, plan not declared",
+        note: "only paid plans include a commercial licence: set ELEVENLABS_PLAN to yours",
+      };
+    }
+    case "local": {
+      const declared = env.LOCAL_TTS_LICENCE?.trim();
+      if (!declared) return { use: "draft", licence: "not declared", note: "set LOCAL_TTS_LICENCE to the model's and voice's licence, such as Apache-2.0 for Kokoro" };
+      if (NON_COMMERCIAL.test(declared)) return { use: "draft", licence: declared, note: "this licence doesn't allow commercial use" };
+      return { use: "publish", licence: declared };
+    }
+    case "edge":
+      return { use: "draft", licence: "none: an unofficial client of Edge's read-aloud service", note: "its maintainer says it's for personal use; azure sells the same voices" };
+    case "say":
+      return { use: "draft", licence: "none on record", note: "macOS system voices are for drafts" };
+    case "pico":
+      return { use: "draft", licence: "SVOX Pico, Apache-2.0", note: "robotic: drafts and tests only" };
+    case "espeak":
+      return { use: "draft", licence: "eSpeak NG, GPL-3.0", note: "robotic: drafts and tests only" };
+  }
+}
+
 /** The file extension each provider writes before we normalize it. */
 export const RAW_EXTENSION: Readonly<Record<VoiceProvider, string>> = {
-  edge: "mp3",
   azure: "wav",
+  local: "wav",
   openai: "wav",
   elevenlabs: "mp3",
+  edge: "mp3",
   say: "aiff",
   pico: "wav",
   espeak: "wav",
@@ -61,6 +110,7 @@ export function voiceCommand(spec: VoiceSpec, text: string, out: string): { cmd:
     case "espeak":
       return { cmd: "espeak-ng", args: ["-v", spec.voice, "-s", "165", "-w", out, text] };
     case "azure":
+    case "local":
     case "openai":
     case "elevenlabs":
       return null;
@@ -76,11 +126,20 @@ async function has(cmd: string): Promise<boolean> {
   }
 }
 
-/** The best voice this machine can use without a key: edge-tts, then macOS say, then Pico, then espeak. */
-export async function autoVoice(): Promise<VoiceSpec> {
-  if (await has("edge-tts")) return parseVoice("edge");
-  if (platform() === "darwin") return parseVoice("say");
-  if (await has("pico2wave")) return parseVoice("pico");
+/**
+ * The best voice this machine can use: a licensed one when its key is set (Azure, then your own server, then OpenAI),
+ * else a draft voice (macOS say, Pico, espeak). Never edge-tts: name it with --voice edge for a draft if you must.
+ */
+export async function autoVoice(
+  env: NodeJS.ProcessEnv = process.env,
+  probe: (cmd: string) => Promise<boolean> = has,
+  os: string = platform(),
+): Promise<VoiceSpec> {
+  if (env.AZURE_SPEECH_KEY && env.AZURE_SPEECH_REGION) return parseVoice("azure");
+  if (env.LOCAL_TTS_URL) return parseVoice(env.LOCAL_TTS_VOICE ? `local:${env.LOCAL_TTS_VOICE}` : "local");
+  if (env.OPENAI_API_KEY) return parseVoice("openai");
+  if (os === "darwin") return parseVoice("say");
+  if (await probe("pico2wave")) return parseVoice("pico");
   return parseVoice("espeak");
 }
 
@@ -109,6 +168,16 @@ export function speechRequest(spec: VoiceSpec, text: string, env: NodeJS.Process
         },
       };
     }
+    case "local":
+      // The OpenAI speech contract, which Kokoro-FastAPI and most self-hosted servers speak. LOCAL_TTS_URL ends in /v1.
+      return {
+        url: `${need("LOCAL_TTS_URL").replace(/\/+$/, "")}/audio/speech`,
+        init: {
+          method: "POST",
+          headers: { ...(env.LOCAL_TTS_KEY ? { authorization: `Bearer ${env.LOCAL_TTS_KEY}` } : {}), "content-type": "application/json" },
+          body: JSON.stringify({ model: env.LOCAL_TTS_MODEL ?? "kokoro", voice: spec.voice, input: text, response_format: "wav" }),
+        },
+      };
     case "openai":
       return {
         url: "https://api.openai.com/v1/audio/speech",

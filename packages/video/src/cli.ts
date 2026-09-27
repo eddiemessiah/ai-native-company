@@ -44,7 +44,7 @@ import {
 } from "./job";
 import { selectClips, trailerBeats } from "./select";
 import { runShort } from "./short/cli";
-import { autoVoice } from "./short/voice";
+import { autoVoice, voiceLicence } from "./short/voice";
 import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
 import { nearestWord, paddedRange, parseTranscript, splitSentences } from "./transcript";
 import type { Format, Interval, Mode, Sentence, Transcript } from "./types";
@@ -126,6 +126,7 @@ const OPTIONS = {
   visuals: { type: "string" },
   local: { type: "string" },
   music: { type: "string" },
+  "music-licence": { type: "string" },
   cta: { type: "string" },
   audience: { type: "string" },
   help: { type: "boolean", short: "h" },
@@ -221,8 +222,14 @@ async function doctor(): Promise<void> {
   const fonts = brandFontFiles().length;
   rows.push(["brand font", fonts > 0, fonts > 0 ? `Bricolage Grotesque, ${fonts} subsets` : "run pnpm install"]);
   const voice = await autoVoice();
-  const humanVoice = voice.provider === "edge" || voice.provider === "say";
-  rows.push(["shorts voice", humanVoice, humanVoice ? `${voice.provider}:${voice.voice}` : `${voice.provider} only (robotic): pip install edge-tts, or use --voice openai with OPENAI_API_KEY`]);
+  const licence = voiceLicence(voice);
+  rows.push([
+    "shorts voice",
+    licence.use === "publish",
+    licence.use === "publish"
+      ? `${voice.provider}:${voice.voice} (${licence.licence})`
+      : `${voice.provider}:${voice.voice} is for drafts only: set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION for the en-NG voices, or LOCAL_TTS_URL and LOCAL_TTS_LICENCE`,
+  ]);
   rows.push(["shorts writer", Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), "ANTHROPIC_API_KEY for short write; without it, fill in script.json from brief.md"]);
   rows.push(["stock footage", Boolean(process.env.PEXELS_API_KEY), "optional: PEXELS_API_KEY for --visuals stock"]);
   for (const [name, ok, note] of rows) console.log(`${ok ? "✓" : "✗"} ${name.padEnd(18)} ${note}`);

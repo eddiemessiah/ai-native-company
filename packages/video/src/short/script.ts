@@ -76,6 +76,17 @@ export function numbersIn(text: string): string[] {
   return figures.map((n) => n.replace(/\.0+$/, ""));
 }
 
+/** The line every post carries: the voice is synthetic (research/explainer-shorts.md §4, §6d). */
+export const AI_DISCLOSURE = "Voiced with AI.";
+
+/** "Voiced with AI", "narrated by AI", "AI voice", "AI-generated voiceover". */
+export const DISCLOSES_AI =
+  /\b(?:voiced|narrated|made|created|generated|produced)\s+(?:with|by|using)\s+(?:an?\s+)?AI\b|\bAI[- ](?:voice|voiced|narrat|generated)/i;
+
+/** A narrator claiming to be a human expert: YouTube won't monetize AI personas giving health, legal or money advice. */
+const EXPERT_PERSONA =
+  /\b(?:as an?|I am an?|I'm an?|I'm your|as your)\s+(?:(?:certified|licensed|qualified|practising|practicing)\s+)?(?:doctor|physician|nurse|pharmacist|lawyer|attorney|solicitor|barrister|financial (?:adviser|advisor|planner)|investment (?:adviser|advisor)|accountant|therapist|expert)\b/i;
+
 /** Code checks: counts, lengths, and every quote found word for word in its source. */
 export function checkScript(script: ShortScript, sources: ReadonlyMap<string, string>, limits: ScriptLimits): ScriptReport {
   const problems: string[] = [];
@@ -90,6 +101,9 @@ export function checkScript(script: ShortScript, sources: ReadonlyMap<string, st
   }
   if (script.title.length > 100) problems.push(`Title is ${script.title.length} characters; YouTube allows 100`);
   if (script.post.length > 280) problems.push(`Post is ${script.post.length} characters; X allows 280 without Premium`);
+  if (!DISCLOSES_AI.test(script.post)) problems.push(`The post must say the voice is AI: end it with "${AI_DISCLOSURE}"`);
+  const persona = EXPERT_PERSONA.exec(script.post);
+  if (persona) problems.push(`The post presents the narrator as a human expert ("${persona[0]}"); name the source instead`);
   const hook = script.beats[0];
   if (hook && words(hook.narration).length > 16) {
     warnings.push(`The hook runs ${words(hook.narration).length} words; under 16 lands it in the first few seconds`);
@@ -103,6 +117,8 @@ export function checkScript(script: ShortScript, sources: ReadonlyMap<string, st
       problems.push(`Beat ${n}: on-screen text is ${shown} words and ${beat.onscreen.length} characters; keep it to 6 words and 40 characters`);
     }
     if (!beat.narration.trim()) problems.push(`Beat ${n} has no narration`);
+    const expert = EXPERT_PERSONA.exec(beat.narration);
+    if (expert) problems.push(`Beat ${n}: the narrator presents itself as a human expert ("${expert[0]}"); an AI voice names its source instead`);
     if (beat.visual?.kind === "stock" && !beat.visual.query.trim()) problems.push(`Beat ${n}: a stock visual needs a search query`);
 
     const quotes: string[] = [];

@@ -463,6 +463,62 @@ export const offers: readonly Offer[] = [
     tags: ["video", "clips", "podcast", "captions", "content"],
   },
   {
+    // Soon until it has shipped 5 shorts from our own posts (company/ops/playbooks/explainer-shorts.md).
+    slug: "explainer-shorts",
+    name: "Explainer Shorts",
+    category: "service",
+    status: "soon",
+    oneLiner: "A topic and your sources in; a 30–60 second vertical explainer out, every fact quoted from a source and approved by you.",
+    pitch:
+      "Short-form explainer videos for founders, product teams, ecosystems and creators: turn a doc, blog post, changelog or research note into a sourced 30–60 second vertical video for TikTok, Instagram Reels, YouTube Shorts and X, with an AI voiceover (Nigerian English available), captions, on-screen headlines, brand visuals or licensed stock footage, and a claim-to-source list the owner approves",
+    audience: ["builders", "startup", "ecosystems", "smb"],
+    unit: "One short: 30–60 seconds at 1080×1920, from one topic and sources you own or may use, with one revision round",
+    intake: [
+      "The topic, and the sources the short may draw on: docs, posts, changelogs or research you own or may use",
+      "Names, products, tickers and places, spelled right, with how each one is said",
+      "Brand kit: logo, colours, and any footage or music you hold a licence for",
+      "Where it will run (TikTok, Reels, Shorts or X) and the one call to action",
+    ],
+    engine:
+      "An LLM writes the script from your sources: a hook, one idea, on-screen text, and every fact with a quote copied from its source; code checks every length, quote and number said aloud; the decision brain runs the content gate and checks each claim against its quote; code voices it with a licensed voice (Azure's Nigerian English voices by default), lays the beats on whole frames, burns in captions and headlines, adds brand visuals or licensed stock, ducks a licensed music bed, levels the audio and writes the publish packet.",
+    rulebook: [
+      "A script is written from the client's sources, never from a topic alone. Every factual sentence carries a quote that code finds word for word in its source.",
+      "Every number said aloud appears in that beat's quotes; a miss blocks the short until a person fixes it. A person checks names against the client's glossary and listens to each one.",
+      "Each short ships with a claim-to-source list: every beat's narration, the passage each fact rests on, and the page or URL.",
+      "The voice has a commercial licence, recorded with its provider and voice: no edge-tts or other unofficial endpoint, no ElevenLabs Free, no local model without a declared commercial licence (research/explainer-shorts.md §6).",
+      "The post says the voice is AI, and the publish packet switches on YouTube's altered-or-synthetic setting, TikTok's AI-generated label and Meta's AI info label; code checks both before approval.",
+      "An AI narrator is never presented as a human expert. Health, money, legal and political shorts name the human or institutional source and go to a person, whatever their score.",
+      "Stock footage comes only from Pexels or Pixabay, logged clip by clip with provider, id, page, creator and download date. No identifiable person in a short about health, crime or debt, and no third-party logo in a stock shot.",
+      "Music comes only from the client's licensed library, Pixabay Music with its certificate saved, or a paid library licensed for every platform; never TikTok's or Meta's business libraries in a master, never commercial releases.",
+      "Every short puts at least one sourced number, name or date on screen, and one client's shorts vary hook, structure and footage. A short is never a verbatim reading of a page.",
+      "Audio is measured in code: -14 LUFS integrated and a true peak at or under -1 dBTP; captions run from the first spoken word to the last.",
+      "The client approves every short by name against the exact script that was rendered, and posts it; we never post from a client's account.",
+    ],
+    review:
+      "A person watches each short with the sound on and off, reads every claim the brain flags against its source, listens to every name, and approves by name; an edit after the render needs a new render and a new approval.",
+    delivery:
+      "A vertical MP4 with burned-in captions, an SRT file, a cover frame, post copy with the AI disclosure, and a publish packet with the platform AI labels, the claim-to-source list and the licence ledger.",
+    turnaround: "24 hours per short",
+    price: {
+      label: "$75 per short · $720 for 12 a month",
+      ngn: "₦35,000 per short · ₦360,000 for 12 a month",
+      humanAlternative:
+        "A freelancer scripts, voices and edits a 30–60 second explainer for $130–$550, Fiverr's guide puts one at $200–$400, and agencies charge $1,000–$3,000; in Nigeria a social-media animation costs ₦50,000–₦150,000",
+      model: "per-unit",
+    },
+    distribution: [
+      "Our own channel first: one short from each Nova research post, 5 before the offer opens",
+      "Ecosystem teams and startups that ship docs, changelogs and launches every month",
+      "A free short made from one of the prospect's public posts, sent to them as the sample",
+    ],
+    split: {
+      llm: "Writes the script from the sources: narration, on-screen text, visuals, claims with quotes, the post",
+      decide: "Runs the content gate on the draft and checks each claim against its quote: ok, check or cut",
+      code: "Checks lengths, quotes and numbers; voices, times beats to whole frames, captions, visuals, music ducking, loudness; gates approval on the voice licence and the AI labels",
+    },
+    tags: ["video", "shorts", "explainer", "content", "captions"],
+  },
+  {
     slug: "decision-router-retrofit",
     name: "Decision Router Retrofit",
     category: "service",
