@@ -14,6 +14,7 @@ const AUDIENCE_LABEL: Record<Audience, string> = {
   agents: "AI agents",
   learners: "Learners",
   ecosystems: "Ecosystems & NGOs",
+  acquirers: "Acquirers",
 };
 
 export function DirectoryBrowser({
