@@ -14,6 +14,7 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 
 | Doc | Use it for |
 |---|---|
+| [`gtm/shonin-gtm-plan.md`](gtm/shonin-gtm-plan.md) | The launch: positioning per audience, the offer ladder, the sequence from live site to domain-day announcement, the 45–60 second trailer, metrics and rules |
 | [`gtm/outbound.md`](gtm/outbound.md) | Ten outreach scripts and a proposal template |
 | [`gtm/content-engine.md`](gtm/content-engine.md) | Formats, the draft → gate → publish pipeline, weekly calendar, voice rules |
 | [`gtm/study-group-global.md`](gtm/study-group-global.md) | AI Study Group v2: pods, cohorts, chapters, pricing, the global rollout |
