@@ -1,7 +1,7 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, join, relative, resolve } from "node:path";
 import { brainFromEnv } from "@repo/brain/env";
-import { checkClaim, gateDraft } from "@repo/brain/recipes";
+import { checkClaim, checkTranslation, gateDraft } from "@repo/brain/recipes";
 import { buildAss, buildSrt, captionStyle, chunkWords, SOCIAL_CHUNKS, SUBTITLE_CHUNKS } from "../captions";
 import { fileSink } from "../decide";
 import { frameArgs, levelAndFinish, measureLoudness, run } from "../ffmpeg";
@@ -9,7 +9,8 @@ import { installFonts } from "../fonts";
 import { ensureDir, slug, writeJson } from "../job";
 import { shortDuration } from "../time";
 import { captionWords, concatList, finalArgs, timeline, shortLength, voiceArgs } from "./assemble";
-import { renderBrief, writeScript, type BriefSource } from "./brief";
+import { DUB_SYSTEM, renderBrief, writeScript, type BriefSource } from "./brief";
+import { alignDub, checkDub, DEFAULT_GLOSSARY, languageName, NO_LICENSED_VOICE, renderDubBrief, type DubSettings } from "./dub";
 import {
   hashText,
   readScript,
@@ -21,7 +22,7 @@ import {
   type ShortSettings,
   type ShortStatus,
 } from "./job";
-import { checkScript, DEFAULT_LEXICON, draftText, forSpeech } from "./script";
+import { checkScript, DEFAULT_LEXICON, draftText, forSpeech, type ScriptReport, type ShortScript } from "./script";
 import { packetProblems, publishPacket, type PublishPacket } from "./publish";
 import { findSceneRenderer, HYPERFRAMES_VERSION, renderScene } from "./scene";
 import { ACCENTS, brandArgs, download, footageArgs, isImage, pickLocal, pickPexels, searchPexels, stillArgs } from "./visuals";
@@ -39,7 +40,9 @@ LLM writes the script, code checks every count and quote, the brain checks each 
   pnpm video short write <job> [--model claude-opus-5]     Claude writes script.json from brief.md
   pnpm video short check <job> [--demo]                    code checks, content gate, one claim check per claim
   pnpm video short render <job> [--voice …] [--force]      voice, visuals, captions, music, loudness, publish packet
-  pnpm video short approve <job> --by "<name>"             needs a licensed voice: azure, openai, paid elevenlabs, an allowlisted local engine
+  pnpm video short approve <job> --by "<name>" [--native "<name>"]   a licensed voice; a dub also needs its native-speaker reviewer
+  pnpm video short dub <job> --language fr --voice local:ff_siwis [--glossary "Celo, MiniPay"] [--out <job>]
+                                                           the same short in another language, from a checked script
 
 No ANTHROPIC_API_KEY? Any writer can fill in script.json from brief.md, an agent in a Claude Code session included.`;
 
@@ -104,7 +107,7 @@ function parseSeconds(value: string | undefined): { minSec: number; maxSec: numb
 
 /** What a cloned voice's release has to cover for this short. */
 function cloneJob(settings: ShortSettings): CloneJob {
-  return { client: settings.client ?? "Shonin", language: settings.language ?? "en", use: "shorts", date: today() };
+  return { client: settings.client ?? "Shonin", language: settings.language ?? "en", use: settings.dub ? "dubs" : "shorts", date: today() };
 }
 
 function readJson<T>(file: string): T {
@@ -177,17 +180,27 @@ async function create(ctx: ShortContext): Promise<void> {
 async function write(ctx: ShortContext): Promise<void> {
   const { dir, p, settings } = load(ctx);
   const sources = settings.sources.map((s) => ({ ...s, text: readFileSync(join(dir, s.file), "utf8") }));
-  console.log("Writing the script with Claude…");
+  console.log(settings.dub ? `Translating into ${languageName(settings.dub.language)} with Claude…` : "Writing the script with Claude…");
   let result;
   try {
-    result = await writeScript(readFileSync(p.brief, "utf8"), sources, str(ctx.opt.model) ? { model: str(ctx.opt.model)! } : {});
+    result = await writeScript(readFileSync(p.brief, "utf8"), sources, {
+      ...(str(ctx.opt.model) ? { model: str(ctx.opt.model)! } : {}),
+      ...(settings.dub ? { system: DUB_SYSTEM } : {}),
+    });
   } catch (error) {
     return ctx.fail(
       `The writer failed: ${error instanceof Error ? error.message : String(error)}\n` +
         "Without Anthropic credentials, write script.json from brief.md yourself (an agent in a Claude Code session can).",
     );
   }
-  writeJson(p.script, result.script);
+  let script = result.script;
+  if (settings.dub) {
+    // Code puts back what a translation mustn't change: quotes and their sources, code, figures, visual choices.
+    const aligned = alignDub(dubSource(dir, settings.dub).script, script);
+    script = aligned.script;
+    for (const problem of aligned.problems) console.warn(`  warning: ${problem}`);
+  }
+  writeJson(p.script, script);
   save(ctx, dir, settings, { stage: "written" });
   console.log(`Wrote ${ctx.rel(p.script)} with ${result.model} (${result.inputTokens} in, ${result.outputTokens} out). Next: pnpm video short check ${ctx.rel(dir)}`);
 }
@@ -196,7 +209,16 @@ async function check(ctx: ShortContext): Promise<void> {
   const { dir, p, settings } = load(ctx);
   const { script, hash } = readScript(dir);
   const sources = readSources(dir, settings);
-  const code = checkScript(script, sources, { minSec: settings.minSec, maxSec: settings.maxSec });
+  const language = settings.language ?? "en";
+  let code: ScriptReport = checkScript(script, sources, { minSec: settings.minSec, maxSec: settings.maxSec, language });
+  let source: ShortScript | null = null;
+  if (settings.dub) {
+    const from = dubSource(dir, settings.dub);
+    source = from.script;
+    const problems = [...code.problems, ...checkDub(from.script, script, settings.dub.glossary)];
+    if (from.hash !== settings.dub.fromHash) problems.push("The source script changed after this dub was made: make the dub again");
+    code = { ...code, problems };
+  }
 
   let brain;
   try {
@@ -206,7 +228,23 @@ async function check(ctx: ShortContext): Promise<void> {
   }
   const gate = await gateDraft(brain, draftText(script));
   const claims: ClaimResult[] = [];
-  for (const [i, beat] of script.beats.entries()) {
+  const translations: ClaimResult[] = [];
+  // A dub's claims were checked in the source's language; what's checked here is that each beat says the same.
+  for (const [i, beat] of source ? script.beats.entries() : []) {
+    const { decision, route } = await checkTranslation(
+      brain,
+      { source: source!.beats[i]?.narration ?? "", target: beat.narration, language },
+      { meta: { job: basename(dir), beat: i + 1 } },
+    );
+    const demo = decision.provider === "heuristic";
+    translations.push({
+      beat: i + 1,
+      text: beat.narration,
+      verdict: demo ? "check" : route.verdict,
+      reasons: demo ? ["demo: a native speaker reads it against the source", ...route.reasons] : route.reasons,
+    });
+  }
+  for (const [i, beat] of source ? [] : script.beats.entries()) {
     for (const claim of beat.claims ?? []) {
       const text = sources.get(claim.source) ?? "";
       if (!text) continue;
@@ -227,7 +265,8 @@ async function check(ctx: ShortContext): Promise<void> {
     code,
     gate: { verdict: gate.verdict.verdict, fixes: gate.verdict.fixes, provider: gate.decision.provider, model: gate.decision.model },
     claims,
-    passed: code.problems.length === 0 && !claims.some((c) => c.verdict === "cut"),
+    ...(source ? { translations } : {}),
+    passed: code.problems.length === 0 && ![...claims, ...translations].some((c) => c.verdict === "cut"),
   };
   writeJson(p.check, result);
   // A new check starts the approval over: the next render and approval are for this script.
@@ -237,6 +276,7 @@ async function check(ctx: ShortContext): Promise<void> {
   for (const problem of code.problems) console.log(`  problem: ${problem}`);
   for (const warning of code.warnings) console.log(`  warning: ${warning}`);
   for (const c of claims) console.log(`  beat ${c.beat} claim ${c.verdict}: ${c.text}`);
+  for (const t of translations) console.log(`  beat ${t.beat} translation ${t.verdict}: ${t.text}`);
   console.log(`Review: ${ctx.rel(p.review)}${result.passed ? `\nNext: pnpm video short render ${ctx.rel(dir)}` : ""}`);
   if (!result.passed) process.exitCode = 1;
 }
@@ -259,7 +299,9 @@ async function render(ctx: ShortContext): Promise<void> {
   if (licence.use === "draft") {
     console.warn(`note: ${voice.provider}:${voice.voice} is a draft voice (${licence.note ?? licence.licence}). Approval will need a licensed one: --voice azure`);
   }
-  const lexicon = { ...DEFAULT_LEXICON, ...(settings.lexicon ?? {}) };
+  // The default lexicon is English; a dub brings its own in short.json.
+  const english = (settings.language ?? "en").toLowerCase().startsWith("en");
+  const lexicon = { ...(english ? DEFAULT_LEXICON : {}), ...(settings.lexicon ?? {}) };
   ensureDir(p.audio);
   ensureDir(p.visuals);
   const out = ensureDir(p.renders);
@@ -385,7 +427,7 @@ async function render(ctx: ShortContext): Promise<void> {
   await levelAndFinish(out, "short.raw.mp4", "short.mp4", true);
   await run("ffmpeg", frameArgs(join(out, "short.mp4"), Math.min(1.2, total / 2), join(out, "cover.jpg")));
   writeJson(join(out, "credits.json"), credits);
-  writeJson(p.publish, publishPacket(script, { ...voice, ...licence, ...(release ? { release } : {}) }, hash, { footageAuthors, ...(licence.credit ? { voiceCredit: licence.credit } : {}) }));
+  writeJson(p.publish, publishPacket(script, { ...voice, ...licence, ...(release ? { release } : {}) }, hash, { footageAuthors, language: settings.language ?? "en", ...(licence.credit ? { voiceCredit: licence.credit } : {}) }));
   const loud = await measureLoudness(join(out, "short.mp4"));
 
   const next: ShortStatus = {
@@ -407,6 +449,10 @@ function approve(ctx: ShortContext): void {
   const { dir, p, settings, status } = load(ctx);
   const by = str(ctx.opt.by)?.trim();
   if (!by) ctx.fail('A person approves each short: add --by "<name>"');
+  const native = str(ctx.opt.native)?.trim();
+  if (settings.dub && !native) {
+    ctx.fail(`A native ${languageName(settings.dub.language)} speaker reads every line of a dub against its source before it ships: add --native "<name>"`);
+  }
   const { hash } = readScript(dir);
   if (status.stage !== "rendered" && status.stage !== "approved") ctx.fail("Render the short and watch it before approving");
   if (status.renderedHash !== hash) ctx.fail("script.json changed after the render: render again, then approve");
@@ -425,15 +471,51 @@ function approve(ctx: ShortContext): void {
   if (status.forced) console.log("Note: this render skipped a failed check (--force). Approving means you checked it yourself.");
   const approvedAt = new Date().toISOString();
   writeJson(p.publish, { ...packet, approvedBy: by!, approvedAt });
-  save(ctx, dir, settings, { ...status, stage: "approved", approvedBy: by!, approvedAt });
+  save(ctx, dir, settings, { ...status, stage: "approved", approvedBy: by!, approvedAt, ...(native ? { nativeReviewer: native } : {}) });
   console.log(
     `Approved by ${by}. Nothing has been posted: post it from your own account with the AI label on (${ctx.rel(p.publish)} has the post and the checklist).`,
   );
 }
 
+/** The script a dub translates. */
+function dubSource(dir: string, dub: DubSettings): { script: ShortScript; hash: string } {
+  const from = resolve(dir, dub.from);
+  if (!existsSync(shortPaths(from).script)) throw new Error(`The dub's source ${from} has no script.json`);
+  return readScript(from);
+}
+
+async function dub(ctx: ShortContext): Promise<void> {
+  const { dir, p, settings, status } = load(ctx);
+  if (settings.dub) ctx.fail("That short is already a dub: dub its source");
+  const language = str(ctx.opt.language)?.trim() || ctx.fail("--language names the dub's language, such as fr");
+  const lang = language.toLowerCase().split("-")[0]!;
+  if (lang === (settings.language ?? "en").toLowerCase().split("-")[0]) ctx.fail(`The short already speaks ${languageName(lang)}`);
+  const voice = str(ctx.opt.voice)?.trim() || ctx.fail(`--voice picks a ${languageName(lang)} voice, such as local:ff_siwis (Kokoro) for French`);
+  parseVoice(voice);
+  const { script, hash } = readScript(dir);
+  if (status.checkPassed !== true || status.checkedHash !== hash) ctx.fail("Dub a script that passed its check: run pnpm video short check on it first");
+  if (NO_LICENSED_VOICE.has(lang)) {
+    console.warn(`note: no commercially licensed synthetic voice speaks ${languageName(lang)} yet (research/voicestudio.md §7d); plan subtitles or a voice actor`);
+  }
+  const out = ctx.abs(str(ctx.opt.out) ?? `${dir}-${lang}`);
+  if (existsSync(shortPaths(out).settings)) ctx.fail(`${ctx.rel(out)} already has a short: pass --out <folder>`);
+  const q = shortPaths(ensureDir(out));
+  cpSync(p.sources, q.sources, { recursive: true });
+  const glossary = [...new Set([...DEFAULT_GLOSSARY, ...(str(ctx.opt.glossary) ?? "").split(",").map((t) => t.trim()).filter(Boolean)])];
+  const dubSettings: DubSettings = { from: relative(out, dir) || ".", fromHash: hash, language, glossary };
+  const next: ShortSettings = { ...settings, createdAt: new Date().toISOString(), voice, language, lexicon: {}, dub: dubSettings };
+  writeJson(q.settings, next);
+  writeFileSync(q.brief, renderDubBrief(script, dubSettings));
+  save(ctx, out, next, { stage: "new" });
+  console.log(
+    `Dub ${ctx.rel(out)}: ${languageName(lang)}, voice ${voice}, from ${ctx.rel(dir)}.\n` +
+      `Next: pnpm video short write ${ctx.rel(out)}   (or translate script.json from brief.md), then check, render, approve with --native`,
+  );
+}
+
 export async function runShort(ctx: ShortContext): Promise<void> {
   const sub = ctx.positionals[1];
-  const commands: Record<string, (c: ShortContext) => void | Promise<void>> = { new: create, write, check, render, approve };
+  const commands: Record<string, (c: ShortContext) => void | Promise<void>> = { new: create, write, check, render, approve, dub };
   if (!sub || !(sub in commands)) {
     console.log(SHORT_HELP);
     if (sub) process.exitCode = 1;

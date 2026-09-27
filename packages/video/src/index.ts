@@ -12,7 +12,7 @@ export { fileSink, scoreCandidates, type ScoredCandidate } from "./decide";
 export { brandFontFiles, installFonts } from "./fonts";
 export * from "./short/script";
 export * from "./short/assemble";
-export { renderBrief, SCRIPT_SCHEMA, toScript, writeScript, type BriefSettings, type BriefSource } from "./short/brief";
+export { DUB_SYSTEM, renderBrief, SCRIPT_SCHEMA, toScript, writeScript, type BriefSettings, type BriefSource } from "./short/brief";
 export {
   autoVoice,
   parseVoice,
@@ -27,6 +27,7 @@ export {
   type VoiceProvider,
 } from "./short/voice";
 export { packetProblems, publishPacket, type PacketBeat, type PublishPacket } from "./short/publish";
+export { alignDub, checkDub, DEFAULT_GLOSSARY, languageName, NO_LICENSED_VOICE, renderDubBrief, type DubSettings } from "./short/dub";
 export {
   addRelease,
   checkClone,

@@ -48,6 +48,20 @@ The offer stays `soon` until it has shipped our own shorts:
 | 7. Watch it with the sound on and with it off. Read every flagged claim against its source | A person | `review.md` |
 | 8. Approve by name. The client posts it from their account with the AI label switched on, using `renders/publish.json` | A person | `pnpm video short approve <job> --by "Name"` |
 
+## Dubs
+
+Dub only a short that passed its check. French is covered by Kokoro, VoxCPM2 and Azure; Swahili by VoxCPM2 after a native speaker's listening test. Yoruba, Hausa, Igbo and Pidgin get subtitles or a voice actor until a commercially licensed voice exists (`research/voicestudio.md` §7d).
+
+| Step | Who | Command |
+|---|---|---|
+| 1. Make the dub from the checked source | Code | `pnpm video short dub <job> --language fr --voice <voice>` |
+| 2. Translate | LLM writes | `pnpm video short write <dub>`: code puts back quotes, sources, code, figures and visuals |
+| 3. Check numbers, names, locks and the disclosure | Code | `pnpm video short check <dub>` |
+| 4. Check each beat's meaning | System One decides | (same command) |
+| 5. Put the dub's pronunciation lexicon in `short.json`, then render | Code | `pnpm video short render <dub>` |
+| 6. Read every line against the source, listening | A native speaker | `review.md` |
+| 7. Approve with both names | A person | `pnpm video short approve <dub> --by "Name" --native "Name"` |
+
 ## What code checks every time
 
 - 3–10 beats; the spoken length (at 2.5 words a second) inside the brief's range; on-screen text of 6 words and 40 characters at most.

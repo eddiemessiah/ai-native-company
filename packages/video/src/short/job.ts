@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { shortDuration } from "../time";
+import type { DubSettings } from "./dub";
 import { sceneText } from "./scene";
 import type { ScriptReport, ShortScript } from "./script";
 import type { VoiceLicence, VoiceSpec } from "./voice";
@@ -39,6 +40,8 @@ export interface ShortSettings {
   readonly client?: string;
   /** The language it speaks, as a BCP 47 tag: en unless set. */
   readonly language?: string;
+  /** Set when this short is a dub of another. */
+  readonly dub?: DubSettings;
   readonly lexicon?: Readonly<Record<string, string>>;
   readonly sources: readonly { readonly id: string; readonly title: string; readonly url?: string; readonly file: string }[];
 }
@@ -56,7 +59,9 @@ export interface ShortCheck {
   readonly code: ScriptReport;
   readonly gate: { readonly verdict: string; readonly fixes: readonly string[]; readonly provider: string; readonly model: string };
   readonly claims: readonly ClaimResult[];
-  /** No code problems and no claim to cut. The gate's verdict is advice for the person approving. */
+  /** A dub's beats, each checked against the source it translates. */
+  readonly translations?: readonly ClaimResult[];
+  /** No code problems and no claim or translation to cut. The gate's verdict is advice for the person approving. */
   readonly passed: boolean;
 }
 
@@ -70,6 +75,8 @@ export interface ShortStatus {
   voice?: VoiceSpec & VoiceLicence & { readonly engine?: string; readonly clones?: boolean; readonly release?: string };
   approvedBy?: string;
   approvedAt?: string;
+  /** For a dub: the native speaker who read every line against the source. */
+  nativeReviewer?: string;
 }
 
 export function shortPaths(dir: string) {
@@ -112,7 +119,8 @@ export function renderShortReview(
   jobRef: string,
 ): string {
   const lines = [`# Short: ${script?.title ?? settings.topic}`, "", `Topic: ${settings.topic}. Stage: **${status.stage}**.`, ""];
-  if (status.stage === "approved") lines.push(`Approved by ${status.approvedBy} at ${status.approvedAt}.`, "");
+  if (settings.dub) lines.push(`A ${settings.dub.language} dub of ${settings.dub.from}. A native speaker reads every line against the source before approval.`, "");
+  if (status.stage === "approved") lines.push(`Approved by ${status.approvedBy} at ${status.approvedAt}${status.nativeReviewer ? `; language checked by ${status.nativeReviewer}` : ""}.`, "");
   if (status.forced) lines.push("> Rendered with `--force` past a failed check.", "");
   if (status.voice) {
     const v = status.voice;
@@ -141,6 +149,7 @@ export function renderShortReview(
     for (const w of check.code.warnings) lines.push(`- warning: ${w}`);
     for (const f of check.gate.fixes) lines.push(`- gate: ${f}`);
     for (const c of check.claims.filter((x) => x.verdict !== "ok")) lines.push(`- beat ${c.beat}, ${c.verdict}: "${c.text}" (${c.reasons.join("; ")})`);
+    for (const t of (check.translations ?? []).filter((x) => x.verdict !== "ok")) lines.push(`- beat ${t.beat} translation, ${t.verdict}: "${t.text}" (${t.reasons.join("; ")})`);
     lines.push("");
   }
   if (script) {

@@ -129,6 +129,25 @@ pnpm video voice revoke ada-obi-kowry-2026-09-27 --by "Edidiong" --reason "she w
 
 `short new --client "<who it's for>" --language fr` sets what the release must cover; our own channel is `Shonin`. Revoking deletes the consent recording (its hash stays), and every later render or approval with that voice fails. The registry is `video-jobs/voices`, which git ignores.
 
+**Dubs.** `short dub` makes the same short in another language from a script that passed its check (`research/voicestudio.md` §7e):
+
+```bash
+pnpm video short dub video-jobs/shorts/x402-on-celo --language fr --voice local:ff_siwis   # makes video-jobs/shorts/x402-on-celo-fr
+pnpm video short write video-jobs/shorts/x402-on-celo-fr      # Claude translates; code puts back what mustn't change
+pnpm video short check video-jobs/shorts/x402-on-celo-fr      # code checks the locks; the brain checks each beat's meaning
+pnpm video short render video-jobs/shorts/x402-on-celo-fr
+pnpm video short approve video-jobs/shorts/x402-on-celo-fr --by "Edidiong" --native "<native speaker>"
+```
+
+The steps split as usual:
+- **The LLM translates:** narration, on-screen text, claims, scene text, the title and the post.
+- **Code puts back what a translation mustn't change:** each claim's quote and source, code lines, figure values and visual choices.
+- **Code checks** that every number is written as the source writes it, that product names survive (x402, USDC, Celo and `--glossary`), and that no beat was left untranslated. The post carries the disclosure in its own language ("Voix générée par IA.").
+- **The brain (`checkTranslation`)** checks each beat says what the source says and adds nothing.
+- **A native speaker** reads every line before approval.
+
+The English pronunciation lexicon doesn't carry over: put the dub's own in its `short.json`. No commercially licensed synthetic voice speaks Yoruba, Hausa, Igbo or Pidgin yet, so for those, plan subtitles or a voice actor (§7d).
+
 Music needs its licence on record: `--music bed.mp3 --music-licence "<Pixabay certificate or licence id>"`. That's what clears a Content ID claim.
 
 Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).

@@ -46,6 +46,8 @@ export interface ScriptLimits {
   readonly maxSec: number;
   /** Speaking rate used to estimate length before a voice exists: 2.5 words a second is 150 a minute. */
   readonly wordsPerSecond?: number;
+  /** The script's language, for the disclosure the post must carry. English unless set. */
+  readonly language?: string;
 }
 
 export interface ScriptReport {
@@ -86,6 +88,25 @@ export const AI_DISCLOSURE = "Voiced with AI.";
 export const DISCLOSES_AI =
   /\b(?:voiced|narrated|made|created|generated|produced)\s+(?:with|by|using)\s+(?:an?\s+)?AI\b|\bAI[- ](?:voice|voiced|narrat|generated)/i;
 
+/** The disclosure in the languages we dub into. Any other language carries the English line. */
+export const AI_DISCLOSURES: Readonly<Record<string, { readonly line: string; readonly pattern: RegExp }>> = {
+  en: { line: AI_DISCLOSURE, pattern: DISCLOSES_AI },
+  fr: {
+    line: "Voix générée par IA.",
+    pattern: /\b(?:voix|narration)\s+(?:générée|créée|synthétisée|produite)\s+(?:par|avec)\s+(?:l['’]\s*)?IA\b|\bvoix\s+(?:de\s+synthèse|IA)\b/i,
+  },
+};
+
+/** The disclosure a post in this language needs: its own, or the English one. */
+export function disclosureFor(language = "en"): { readonly line: string; readonly pattern: RegExp } {
+  return AI_DISCLOSURES[language.toLowerCase().split("-")[0]!] ?? AI_DISCLOSURES.en!;
+}
+
+/** Whether a post says its voice is AI, in its own language or in English. */
+export function disclosesAI(post: string, language = "en"): boolean {
+  return disclosureFor(language).pattern.test(post) || DISCLOSES_AI.test(post);
+}
+
 /** A narrator claiming to be a human expert: YouTube won't monetize AI personas giving health, legal or money advice. */
 const EXPERT_PERSONA =
   /\b(?:as an?|I am an?|I'm an?|I'm your|as your)\s+(?:(?:certified|licensed|qualified|practising|practicing)\s+)?(?:doctor|physician|nurse|pharmacist|lawyer|attorney|solicitor|barrister|financial (?:adviser|advisor|planner)|investment (?:adviser|advisor)|accountant|therapist|expert)\b/i;
@@ -104,7 +125,7 @@ export function checkScript(script: ShortScript, sources: ReadonlyMap<string, st
   }
   if (script.title.length > 100) problems.push(`Title is ${script.title.length} characters; YouTube allows 100`);
   if (script.post.length > 280) problems.push(`Post is ${script.post.length} characters; X allows 280 without Premium`);
-  if (!DISCLOSES_AI.test(script.post)) problems.push(`The post must say the voice is AI: end it with "${AI_DISCLOSURE}"`);
+  if (!disclosesAI(script.post, limits.language)) problems.push(`The post must say the voice is AI: end it with "${disclosureFor(limits.language).line}"`);
   const persona = EXPERT_PERSONA.exec(script.post);
   if (persona) problems.push(`The post presents the narrator as a human expert ("${persona[0]}"); name the source instead`);
   const hook = script.beats[0];

@@ -1,4 +1,4 @@
-import { DISCLOSES_AI, type ShortScript } from "./script";
+import { disclosesAI, type ShortScript } from "./script";
 import type { VoiceLicence, VoiceSpec } from "./voice";
 
 /**
@@ -12,6 +12,8 @@ export interface PublishPacket {
   readonly cover: string;
   readonly title: string;
   readonly post: string;
+  /** BCP 47 tag of the language the short speaks. */
+  readonly language: string;
   /** YouTube, TikTok and Meta all require a label on synthetic voices (research/explainer-shorts.md §4). */
   readonly labels: {
     readonly youtube: { readonly containsSyntheticMedia: boolean };
@@ -40,7 +42,7 @@ export function publishPacket(
   script: ShortScript,
   voice: VoiceSpec & VoiceLicence,
   scriptHash: string,
-  opts: { footageAuthors?: readonly string[]; voiceCredit?: string } = {},
+  opts: { footageAuthors?: readonly string[]; voiceCredit?: string; language?: string } = {},
 ): PublishPacket {
   const known = new Map(script.sources.map((s) => [s.id, s]));
   const authors = [...new Set(opts.footageAuthors ?? [])];
@@ -51,6 +53,7 @@ export function publishPacket(
     cover: "cover.jpg",
     title: script.title,
     post: script.post,
+    language: opts.language ?? "en",
     labels: { youtube: { containsSyntheticMedia: true }, tiktok: { aiGeneratedContent: true }, meta: { aiInfo: true } },
     voice,
     ...(authors.length ? { footageCredit: `Footage: ${authors.join(", ")} (Pexels)` } : {}),
@@ -74,7 +77,7 @@ export function packetProblems(packet: PublishPacket, scriptHash: string): strin
   if (!packet.labels?.youtube?.containsSyntheticMedia) problems.push("YouTube's altered-or-synthetic setting is off");
   if (!packet.labels?.tiktok?.aiGeneratedContent) problems.push("TikTok's AI-generated label is off");
   if (!packet.labels?.meta?.aiInfo) problems.push("Meta's AI info label is off");
-  if (!DISCLOSES_AI.test(packet.post ?? "")) problems.push("The post doesn't say the voice is AI");
+  if (!disclosesAI(packet.post ?? "", packet.language)) problems.push("The post doesn't say the voice is AI");
   if (packet.voice?.use !== "publish") {
     problems.push(`${packet.voice?.provider}:${packet.voice?.voice} is a draft voice (${packet.voice?.note ?? packet.voice?.licence})`);
   }
