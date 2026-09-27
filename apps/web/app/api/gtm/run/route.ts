@@ -7,16 +7,20 @@ import { clientKey, rateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+const configuredRuns = Number(process.env.GTM_RUNS_PER_HOUR);
+/** Per IP. Raise it for a live demo where the whole room shares one network. */
+const RUNS_PER_HOUR = Number.isInteger(configuredRuns) && configuredRuns > 0 ? configuredRuns : 6;
+
 /**
  * One GTM Harness run: the LLM writes the plan (templates when no model is
  * configured or it fails), the brain reviews every draft, code packs the
  * folder. Free: builders in programs the founder supports get free tools only.
  */
 export async function POST(req: Request) {
-  const limit = rateLimit(`gtm:${clientKey(req)}`, 6, 60 * 60_000);
+  const limit = rateLimit(`gtm:${clientKey(req)}`, RUNS_PER_HOUR, 60 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
-      { error: "That's six runs this hour. Try again in a bit." },
+      { error: "That's this hour's runs from your network. Try again in a bit." },
       { status: 429, headers: { "retry-after": String(limit.retryAfterS) } },
     );
   }
@@ -46,6 +50,7 @@ export async function POST(req: Request) {
   const brain = getPublicBrain();
   const reviews = await Promise.all(generated.plan.drafts.map((d) => reviewOutreach(brain, d).catch(() => null)));
   const files = buildHarness(input, generated.plan, reviews);
+  const verdicts = reviews.map((r) => r?.verdict ?? "not reviewed");
 
   await notify({
     title: "GTM Harness run (free tool)",
@@ -56,9 +61,11 @@ export async function POST(req: Request) {
       ["Goal", input.goal],
       ["Onchain", input.onchain ? "yes" : "no"],
       ["Email", input.email || "not given"],
+      ["Plan by", generated.generatedBy.kind],
+      ["Drafts", verdicts.join(", ")],
     ],
     body: `${input.pitch}\n\nFree tool: no paid follow-up for builders in programs you support (conflicts rule 2).`,
-    payload: { type: "gtm.run", product: input.product, stage: input.stage, onchain: Boolean(input.onchain), email: input.email || null, generatedBy: generated.generatedBy.kind },
+    payload: { type: "gtm.run", product: input.product, stage: input.stage, onchain: Boolean(input.onchain), email: input.email || null, generatedBy: generated.generatedBy.kind, verdicts },
   }).catch(() => undefined);
 
   return NextResponse.json({ plan: generated.plan, generatedBy: generated.generatedBy, reviews, files, ...(note ? { note } : {}) });

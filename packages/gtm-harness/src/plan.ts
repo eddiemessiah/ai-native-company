@@ -123,7 +123,8 @@ export async function generatePlan(
   opts: { client?: Anthropic; model?: string; effort?: "low" | "medium" | "high"; signal?: AbortSignal } = {},
 ): Promise<GeneratedPlan> {
   const client = opts.client ?? new Anthropic();
-  const model = opts.model ?? process.env.GTM_MODEL ?? "claude-opus-5";
+  // `||`, not `??`: a blank GTM_MODEL= copied from .env.example must not become the model name.
+  const model = opts.model || process.env.GTM_MODEL || "claude-opus-5";
   const response = await client.beta.messages.create(
     {
       model,

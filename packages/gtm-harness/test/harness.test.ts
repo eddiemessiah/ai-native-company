@@ -91,6 +91,16 @@ describe("normalizing model output", () => {
     const out = await generatePlan(input, { client });
     expect(out.generatedBy).toEqual({ kind: "model", model: "claude-opus-5" });
     expect(request).toMatchObject({ model: "claude-opus-5", fallbacks: "default", output_config: { format: { type: "json_schema" } } });
+
+    const previous = process.env.GTM_MODEL;
+    process.env.GTM_MODEL = "";
+    try {
+      await generatePlan(input, { client });
+      expect(request.model).toBe("claude-opus-5");
+    } finally {
+      if (previous === undefined) delete process.env.GTM_MODEL;
+      else process.env.GTM_MODEL = previous;
+    }
   });
 });
 
