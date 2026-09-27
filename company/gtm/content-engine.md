@@ -10,7 +10,7 @@ Content is the cheapest distribution you have: you already have the audience, th
 4. **"Sell the screenshot" case studies.** Before-and-after of what AI said about a real business (with permission), and what fixed it.
 5. **Lesson threads.** One concept from the study group per week, with a code sample and a "try it" step.
 6. **Africa field notes (Griot).** Sourced, dated notes on AI in Africa: summits, policy, infrastructure, builders.
-7. **Audio and video.** Keep CeloIQ Sessions and Based Conversations going. Each episode becomes 3 clips and a thread.
+7. **Audio and video.** Keep CeloIQ Sessions and Based Conversations going. Each episode becomes 3 clips and a thread. The clips, trailer and chapters come from the Video Desk (`ops/playbooks/video-desk.md`); these shows are its first jobs.
 
 ## The pipeline
 

@@ -28,6 +28,7 @@ Everything that runs Nova besides code. Agents read these before doing client wo
 | [`ops/playbooks/agent-ready-website.md`](ops/playbooks/agent-ready-website.md) | Agent-Ready Website |
 | [`ops/playbooks/grant-desk.md`](ops/playbooks/grant-desk.md) | Grant & RFP Desk |
 | [`ops/playbooks/company-brain.md`](ops/playbooks/company-brain.md) | Company Brain |
+| [`ops/playbooks/video-desk.md`](ops/playbooks/video-desk.md) | Video Desk (running on our own shows first) |
 
 Every correction a person makes to delivered work goes into [`ops/rulebook-log.md`](ops/rulebook-log.md), then into the offer's rulebook in `packages/catalog`.
 

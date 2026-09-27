@@ -13,3 +13,6 @@ coverage/
 *.tsbuildinfo
 decisions.jsonl
 next-env.d.ts
+__pycache__/
+# Video Desk jobs hold client footage, transcripts and renders
+video-jobs/

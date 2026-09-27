@@ -20,7 +20,8 @@ study|3005|AI Study Group: app/study, catalog study.ts, company/gtm/study-group-
 company-brain|3006|Company Brain offering: client deployments, playbook, setup scripts
 research|3007|research/ and content/posts: the research branch and the blog
 gtm|3008|company/gtm and content/threads: outbound, content engine, launches
-ops|3009|company/ops and company/funding: playbooks, rulebook, grants'
+ops|3009|company/ops and company/funding: playbooks, rulebook, grants
+video|3010|Video Desk: packages/video pipeline, its playbook and research; footage stays out of git'
 
 die() { printf 'worktree: %s\n' "$*" >&2; exit 1; }
 

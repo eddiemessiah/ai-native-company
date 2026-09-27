@@ -20,6 +20,8 @@ The firm is led by a person, Edidiong Umana, and an agent, Nova One (the decisio
 packages/brain      @repo/brain: the System One decision layer. Choice/Score/Noul questions, providers
                     (Jev, then Claude, then a heuristic for free demos), confidence gates, decision log, recipes
 packages/catalog    @repo/catalog: the single source of truth for brand, offers, prices, APIs, study tracks, chapters
+packages/video      @repo/video: the Video Desk pipeline. A recording and its transcript in; brain-scored clips,
+                    trailers, chapters and tightened cuts out, rendered by ffmpeg
 apps/web            Next.js 16 site: home, directory, intake, study group, agents, research, company pages;
                     agent-payable x402 API under app/api/v1
 content/posts       research blog (markdown + frontmatter), rendered at /research
@@ -38,7 +40,10 @@ pnpm check                        # typecheck + tests in every package; run befo
 pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL for a custom domain
 pnpm --filter @repo/brain test
 pnpm worktree <line>              # open a product line in its own worktree (see below)
+pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, the brain keys and the font
 ```
+
+Video Desk jobs follow `company/ops/playbooks/video-desk.md`: `pnpm video` ingests a recording, scores it, renders drafts, records who approved each clip, and cuts trailers and tighter long-form edits. It needs ffmpeg with libass on the PATH.
 
 Env vars are documented in `apps/web/.env.example`.
 
@@ -95,6 +100,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 - Pay our own wallets to inflate volume or reputation.
 - Resell raw Jev decisions (`decide-api`) before TypeSafe confirms in writing that its terms allow it.
 - Store raw client state in decision logs. The log keeps a hash unless `includeStateInLogs` is set.
+- Commit client footage, transcripts or renders. Video jobs live in `video-jobs/`, which git ignores.
 - Commit secrets. `.env*` is ignored except `.env.example`.
 - Publish a claim, number or proof that isn't in `brand.proofs`, `research/` or our own data.
 - Apply to Prezenti Boost, or judge a program we compete in. See `company/ops/conflicts-of-interest.md`.
@@ -114,6 +120,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 | research | 3007 | `research/`, `content/posts` |
 | gtm | 3008 | `company/gtm`, `content/threads` |
 | ops | 3009 | `company/ops`, `company/funding` |
+| video | 3010 | `packages/video`, `company/ops/playbooks/video-desk.md`, `research/video-editing.md` |
 
 Stay inside your line's files. Changes to the public API of `@repo/brain` or `@repo/catalog` go through their own line. Run `pnpm check` before each commit and merge back through a pull request.
 

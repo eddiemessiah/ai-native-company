@@ -410,6 +410,59 @@ export const offers: readonly Offer[] = [
     tags: ["content", "social", "smb", "whatsapp"],
   },
   {
+    // Soon until it has shipped our own shows first (company/ops/playbooks/video-desk.md).
+    slug: "video-desk",
+    name: "Video Desk",
+    category: "service",
+    status: "soon",
+    oneLiner: "One long recording in; captioned clips, a trailer, chapters and a tighter cut out, and you approve every clip.",
+    pitch:
+      "Video editing for creators, founders, podcasts and communities: turn a long recording such as a podcast, livestream, workshop, tutorial or community call into captioned vertical clips for X, TikTok, Instagram Reels and YouTube Shorts, a highlight trailer, YouTube chapters and a tightened long-form edit, with the owner approving every clip",
+    audience: ["builders", "startup", "ecosystems", "smb"],
+    unit: "One recording of up to 60 minutes: 8 captioned vertical clips, a trailer of up to 60 seconds, YouTube chapters and a tightened long-form cut",
+    intake: [
+      "The recording or a link to it, plus the transcript if your recording tool exports one",
+      "Who speaks, with names spelled right, and a publishing release from every guest",
+      "A glossary: products, tickers, people and places to spell right",
+      "Brand kit: logo, colours, intro or outro, and any music you have a licence for",
+      "Where the clips will run: X, TikTok, Reels, Shorts or LinkedIn",
+    ],
+    engine:
+      "Code transcribes the recording with word timings (Whisper), cuts it into candidate moments on sentence boundaries and finds the pauses and fillers; the decision brain scores every moment for hook, payoff and whether it stands alone, and flags money claims and private details; code reframes to 9:16, burns in captions, levels the audio and renders; an LLM writes titles, post copy and chapter names.",
+    rulebook: [
+      "A clip starts on the first word of a sentence and ends on the last word of a finished thought; code snaps every cut to word timings.",
+      "Cuts remove pauses, fillers and retakes, never words that change what was said. A trailer may reorder whole sentences but never splices words into new ones.",
+      "A person checks names, products and numbers in the captions against the client's glossary before a clip ships; the glossary also goes into the transcriber's prompt.",
+      "Money, health or legal claims, and private details said aloud (phone numbers, addresses, seed phrases), go to a person before a clip ships, whatever its score.",
+      "Guests appear only in clips from recordings they agreed to publish.",
+      "Music, B-roll and logos come only from the client's own library or licensed sources.",
+      "Clips run 140 seconds or less, so one file posts to X without Premium, Shorts, Reels, TikTok and LinkedIn (research/video-editing.md).",
+      "Audio is measured in code: -14 LUFS integrated and a true peak at or under -1 dBTP in the delivered file.",
+      "The client approves every clip and posts it; we never post from a client's account.",
+    ],
+    review: "The owner watches every draft clip and approves, trims, reframes or rejects it; nothing ships without a named approval, and every trim goes into the rulebook log.",
+    delivery: "Vertical MP4s with burned-in captions, SRT files, the trailer, the tightened cut, YouTube chapters and post copy, in a shared folder with the review sheet.",
+    turnaround: "48 hours per recording",
+    price: {
+      label: "$200 per recording (up to 60 min)",
+      ngn: "₦100,000 per recording",
+      humanAlternative:
+        "Editors charge $484–$1,675 for a long-form cut plus nine short pieces; in Lagos, recording and editing a one-hour video episode costs ₦250,000–₦400,000",
+      model: "per-unit",
+    },
+    distribution: [
+      "Our own shows first: CeloIQ Sessions and Based Conversations, 3 or more clips per episode",
+      "Ecosystem teams that record community calls, workshops and Spaces",
+      "A free clip pack cut from one public episode, sent to the host as the sample",
+    ],
+    split: {
+      llm: "Writes titles, post copy and chapter names",
+      decide: "Scores each candidate moment: hook, payoff, stands alone, kind, money claims, private details",
+      code: "Transcribes, cuts on word timings, removes pauses and fillers, reframes, captions, levels audio, checks lengths",
+    },
+    tags: ["video", "clips", "podcast", "captions", "content"],
+  },
+  {
     slug: "decision-router-retrofit",
     name: "Decision Router Retrofit",
     category: "service",

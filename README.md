@@ -17,6 +17,7 @@ Nova sells finished work (audits, agents in production, grant applications, comp
 |---|---|
 | [`packages/brain`](packages/brain) | The decision layer. Typed Choice/Score/Noul questions answered in one pass; providers Jev (direct, Vercel AI Gateway or OpenRouter), then Claude, then a heuristic for free demos; per-risk confidence gates; hashed decision logs; recipes for leads, support tickets, grants, study placement, content and a Slack-style teammate. |
 | [`packages/catalog`](packages/catalog) | The single source of truth: brand, every offer with its unit, rulebook, review layer and price, the paid API routes, study tracks and chapters. |
+| [`packages/video`](packages/video) | The Video Desk pipeline: a recording and its transcript in; brain-scored clips with burned-in captions, trailers, YouTube chapters and tightened long-form cuts out, rendered with ffmpeg. A person approves every clip. |
 | [`apps/web`](apps/web) | The Next.js 16 site: animated home page with a live decision demo, a filterable directory of every product and service, intake with lead routing, the AI Study Group, the agents page, the research blog and the company page. |
 | [`apps/web/app/api/v1`](apps/web/app/api/v1) | Agent-payable endpoints (triage, lead score, grant fit, content gate) behind x402 v2 on Celo. |
 | [`company/`](company) | The company OS: strategy, the 7-day revenue sprint, GTM, funding, playbooks, the rulebook log. Start at [`company/README.md`](company/README.md). |
@@ -73,7 +74,7 @@ The full day-0 list (entity, payments, Telegram bot, x402, ERC-8004) is in [`com
 Each product line gets its own branch and worktree, so several agents can work at once:
 
 ```bash
-pnpm worktree lines     # brain, catalog, web, apis, study, company-brain, research, gtm, ops
+pnpm worktree lines     # brain, catalog, web, apis, study, company-brain, research, gtm, ops, video
 pnpm worktree apis      # ../ai-native-company-apis on branch line/apis
 ```
 
