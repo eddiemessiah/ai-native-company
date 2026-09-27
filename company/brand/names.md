@@ -37,11 +37,13 @@ Shōnin is one sound in Japanese with three meanings, each a part of the firm:
 | **Shusei** | Japanese 修正, "correction" | Our moat is corrections that become rules | Available | Leads with mistakes; "SHOO-say" |
 | **Uhakika** | Swahili, "certainty" | Certainty you can check, with an African root | Available | Four syllables; a common word in Swahili ads, but we found no company using it |
 | **Hanketsu** | Japanese 判決, "verdict" | Nova Check returns a verdict | Available | Courtroom tone; hard to spell on hearing |
+| **Tabaka** | Swahili, "layer, stratum" (from Arabic *ṭabaqa*) | What Strata means, and our four-part split is four layers | Available | Found on 27 Sep when Strata failed; no AI company found using it |
 
 ### Ruled out
 
 | Name | Root | Why not |
 |---|---|---|
+| Strata ("Strata AI") | Latin, "layers" | At least seven companies use it in AI, three of them in our lanes: [Strata Identity](https://www.strata.io/) sells identity guardrails for AI agents, [strata.ai](https://www.strata.ai/) sells AI agents for law-firm operations, and [getstrata.ai](https://app.getstrata.ai/) is a GTM platform. 28 of the 29 domains checked are taken; only `strataagents.ai` is free |
 | Krino | Greek κρίνω, "I judge, I decide" | [krino.ai](https://krino.ai/) sells AI agents for WhatsApp sales (Chile, Mexico), which is our category |
 | Gnomon | Greek γνώμων, the sundial's pointer and the carpenter's square | Several AI-agent projects use it, [one](https://github.com/yasintqvi/gnomon) for "separating human authorization from agent execution"; the `.com`, `.ai` and `.co` are taken |
 | Mekiki | Japanese 目利き, the eye that judges quality at a glance | [Mekiki Inc.](https://www.linkedin.com/company/mekiki) is a Japanese AI company, and [an MCP-ready automation tool](https://github.com/ooISHoo/Mekiki) uses the name |
