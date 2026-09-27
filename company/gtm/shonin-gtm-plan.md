@@ -1,0 +1,145 @@
+# Shonin GTM plan: from live site to launch
+
+**Status:** written 27 Sep 2026. The temple site goes live this week on its Vercel URL; the public announcement waits for the domain (`shonin.ai`, next week). Numbers below are either sourced (with the file) or marked as targets.
+
+## 1. What we're launching
+
+**Shonin is an AI-native firm: agents do the work, every step is checked, and a person approves anything that matters.**
+
+The name carries the model: 商人 merchant (agents trade the work), 証人 witness (every decision is recorded), 承認 approval (a person signs off). The site tells it as a walk through a temple, and the dragon section explains the four steps: you ask, agents work, every step is checked, a person seals it.
+
+One sentence per audience:
+
+| Audience | What we say | First step we ask for |
+|---|---|---|
+| **Agents and the people who build them** | "Before your agent pays or acts, it asks Shonin: pay, confirm with a person, or block. $0.01 a call, no account." | Point the agent at `/api/v1/check`, or add `shonin-mcp` |
+| **Businesses, anywhere** | "Hand us a job with a finish line. Fixed price per unit, never per hour: from a $150 audit to an agent in production." | Pick an offer in `/directory`, or describe the job at `/start` |
+| **Founders** | "Your go-to-market, run by agents you can check. Free and open source." | Run the GTM Harness at `/gtm` |
+| **Learners** | "Learn to run agents. The best join the bench that delivers our jobs." | Join the AI Study Group at `/study` |
+
+Prices come from `packages/catalog`; never quote one that isn't there.
+
+## 2. The offer ladder
+
+Each rung opens the next. Free things earn trust; small paid things prove the work; big things come from the relationship.
+
+| Rung | Offers (catalog prices) | Job it does |
+|---|---|---|
+| **Free** | GTM Harness (MIT); AI Study Group free tracks; a free Shonin Check report on a prospect's own 402; the first five Agent Readiness or AI Visibility Audits for design partners | Reach and proof. Every free run and report is a reason to talk |
+| **Per call** | Shonin Check, Gate and Receipt ($0.01 each) | Agents buy with no sales cycle. Small money, big signal: paying wallets we don't control |
+| **Entry** | AI Visibility Audit ($150); Agent-Ready Website (from $200 + $25/month); Grant & RFP Desk ($350); Pro cohort seat ($49) | First cash from people who already know us |
+| **Core** | Agent Readiness Audit ($490); Agent Launch Sprint (from $2,500); Company Brain ($3,500 + $900/month) | Repeatable delivery with a playbook |
+| **High ticket** | Agent Reliability Audit (from $3,000); Acquisition Automation Map ($2,500); 100-Day Agent Integration (from $12,000 + $1,500/month) | Teams whose agents move money, and acquirers |
+
+## 3. Launch sequence
+
+| When | Move | Owner | Done when |
+|---|---|---|---|
+| **Sun 27 Sep** | Temple site merged to `main` and deployed to Vercel (personal account, root `apps/web`) | Edidiong deploys; Claude prepared it | The Vercel URL serves the new home page |
+| **Sun 27 Sep** | Soft launch: send the Vercel link privately to 10 people whose taste you trust (founders, one designer, two agent builders). One question: "What did you think we do, after 10 seconds?" | Edidiong | 10 answers; fix anything two people misread |
+| **Mon 28 Sep** | Agents day: Base leg on (CDP keys), `shonin-mcp` to npm and the MCP registry, the three routes on x402scan (`research/first-customers.md` §5) | Claude prepares; Edidiong sets keys and publishes | `/api/v1/check` answers 402 with a Base and a Celo option |
+| **Mon 28 Sep** | Warm outbound starts (`gtm/outbound.md` §1–4, §9–10), Vercel link in DMs only | Edidiong approves every message | 30 SME, 10 founder, 10 fintech, 10 NGO and 10 acquirer messages sent (`seven-day-sprint.md`, day 2) |
+| **Tue 29 Sep** | **GTM Harness launch** on X (`content/threads/07-gtm-harness.md`) with a 60-second run capture | Edidiong posts | Thread pinned |
+| **Thu 1 Oct** | **Demo at Celo Devs Office Hours**: the GTM Harness only, as a free tool, no prices, no directory link (`gtm/gtm-harness-launch.md`) | Edidiong | 10-minute run sheet done; corrections collected |
+| **Sat 3 Oct** | Week-1 numbers, in public (`seven-day-sprint.md`, day 7) | Edidiong | Post published with real numbers |
+| **Next week, domain day** | Register `shonin.ai`; point it at Vercel; set `NEXT_PUBLIC_SITE_URL=https://shonin.ai`; redeploy so llms.txt, the agent card and the sitemap use it | Edidiong buys; Claude checks the redeploy | `https://shonin.ai/llms.txt` lists the new URL |
+| **Announcement day** (the day after the domain works) | Post the trailer (§5) with the "Shonin is open" thread (§6); pin it; send it to everyone from the soft launch | Edidiong | Trailer live on X, LinkedIn, YouTube Shorts, Instagram Reels, TikTok |
+| **Announcement +1 to +7** | One post a day from the content calendar (`gtm/content-engine.md`); reply to every comment in a working day | Edidiong, drafts by agents | Seven posts out |
+
+Why wait for the domain: every link in the announcement, the trailer's end card, llms.txt and the agent card should carry the address we keep. A Vercel URL in a viral post is a link that dies.
+
+## 4. Channels, in the order they pay
+
+From `research/first-customers.md` §4, with the new site in each:
+
+1. **Warm-network DMs.** Existing website clients, founders, NBW contacts outside Celo programs. The site is now the proof you send after the first reply: "Here's how we work", linking to `/#how` (the dragon).
+2. **Show them their own data.** A free Shonin Check report on a target's live 402, or a free AI Visibility screenshot for an SME. Then the audit.
+3. **Integrations into wallets that already pay.** Opt-in Shonin Check in Run402, opencrowd, tryx402, ArisPay and AgentCash (`gtm/outbound.md` §10). Merged code keeps paying.
+4. **Machine discovery.** Base leg, CDP Bazaar (automatic after the first real settlement), x402scan, the MCP registry, llms.txt, the agent card, ERC-8004. A prerequisite, not demand.
+5. **Content.** The trailer, the threads in `content/threads/`, the weekly calendar. Every post links to one page, not the home page, when a deeper page answers better.
+6. **Founder communities.** The GTM Harness as a free tool. In Celo channels, free tools only.
+7. **Launch directories** (week 2+). Product Hunt for the GTM Harness on a Tuesday, after the first 50 runs and the corrections from the demo are in. Hacker News "Show HN" only for something technical and open (the harness, or a sourced x402 post).
+
+## 5. The trailer (45–60 seconds)
+
+**Goal:** someone who has never heard of Shonin knows in under a minute what it is, who it's for and where to go. It is shot from the live site, so what people see in the trailer is what they get when they click.
+
+**Formats:** 16:9 (X, YouTube, LinkedIn) and 9:16 (Reels, Shorts, TikTok). Burned-in captions; most people watch muted.
+
+**Sound:** a shakuhachi or koto line over a slow taiko pulse; three sound effects: the gate doors (wood), a seal pressing (a dull thud), the temple bell at the end. Use licensed or royalty-free audio only, and keep the licence with the files.
+
+| Time | Picture (from the site) | On screen / voice-over |
+|---|---|---|
+| 0–4 s | Black. The gate doors, closed. The gold plaque 山門 glows. | "Agents are fast." |
+| 4–8 s | The doors open on the temple at dusk; lanterns flicker, leaves fall. | "But they can be wrong." |
+| 8–13 s | The hero headline settles; "seals" is underlined in vermilion. | "Shonin: agents do the work. A person seals what matters." |
+| 13–25 s | The dragon section: the dragon carries the pearl through 一 二 三 四; the vermilion 承 seal lands on step four. | Captions, one per step: "You ask." "Agents do the work." "Every step is checked." "A person seals it." |
+| 25–33 s | The agent stops: the 許 問 止 seals press in one by one; the code strip `POST /api/v1/check → 402 → pay $0.01 → 200 {"verdict":"pay"}`. | "For agents: a check before it pays, a gate before it acts, a receipt after. One cent a call." |
+| 33–41 s | The hanging scroll unrolls; a request is routed live. Then the shop boards swing, with prices. | "For businesses: finished work, priced per unit, never per hour." |
+| 41–47 s | The paper lantern (GTM Harness), then the kintsugi bowl's gold seams drawing in. | "Every correction becomes a rule, mended in gold." |
+| 47–55 s | The bell swings. "Enter." | End card: **shonin.ai** · "Agents, businesses, founders: start free." |
+
+**How to make it:**
+
+- Record the site at 60 fps, 1920×1080 and 1080×1920, with the cursor hidden (a scripted browser run, or a screen recorder with a hidden cursor). Scroll with an eased script so the pinned dragon section plays through all four steps.
+- Cut in CapCut, Premiere or Canva. The Canva connector in claude.ai needs to be re-authorised before Claude can help there.
+- Before posting: every price on screen must match the catalog, and the end card must show the domain that works.
+
+## 6. The announcement thread (for domain day)
+
+Draft; run it through the content gate (`POST /api/v1/content-gate`) and edit before posting.
+
+> 1/ Shonin is open. [trailer]
+>
+> An AI-native firm: agents do the work, every step is checked, and a person approves anything that matters.
+>
+> 2/ Shōnin is one Japanese word with three meanings. 商人, merchant. 証人, witness. 承認, approval. That's the firm.
+>
+> 3/ For agents: Shonin Check, Gate and Receipt. Before your agent pays, before it acts, after it pays. $0.01 a call over x402, no account.
+>
+> 4/ For businesses: finished work priced per unit, never per hour. From a $150 audit to an agent in production.
+>
+> 5/ For founders: the GTM Harness, free and open source (MIT). For learners: the AI Study Group.
+>
+> 6/ What's already shipped: Omni402 on Celo mainnet (block 74,479,633), ERC-8004 agent #9765, 22 projects into Proof of Ship. Start here: shonin.ai
+
+Every number in it is in `brand.proofs` or the catalog.
+
+## 7. What we measure
+
+Weekly, every Monday (`strategy.md`, "Measures that matter"):
+
+| Measure | Source |
+|---|---|
+| Cash collected, and deposits | Stripe, Paystack, the wallet |
+| Qualified leads, and replies to outbound | The intake log and the brain's routing |
+| Paid agent calls, and **distinct paying wallets we don't control** | Settlement logs; never count our own wallets |
+| GTM Harness runs, and founders who sent corrections | Telegram alerts; the rulebook log |
+| Study-group applicants and cohort seats | `/api/study/apply` |
+| Site: visits to `/`, clicks on the three "Start here" paths, time to first click | Add Vercel Web Analytics before the announcement |
+
+**Targets, not promises** (from `seven-day-sprint.md` and `research/first-customers.md`):
+
+- **Day 7 (3 Oct):** roughly $3,000–4,000 collected from the warm network; 50 harness runs; a pipeline worth $15,000+.
+- **Day 30:** the first paid call from a wallet we don't control; one integration merged; 5 case studies from design-partner audits; the first Pro cohort running (starts 12 Oct); the Frontier application submitted (6–10 Oct).
+- **Day 60:** a playbook for every offer sold twice; Shonin Gate graduated on Virtuals ACP.
+- **Day 90:** the first Agent Reliability Audit or Acquisition Automation Map sold; revenue per offer reviewed and prices revisited (every ten jobs).
+
+## 8. Rules for the launch
+
+1. **No invented proof.** Numbers come from `brand.proofs`, `research/` or our own data. Targets are called targets.
+2. **Celo channels get free tools only** (`ops/conflicts-of-interest.md`, rules 1–2): the GTM Harness, study-group tracks, open-source code. No prices, no directory links, no paid pitch.
+3. **Nothing sent in a client's name** without Edidiong approving that exact message.
+4. **Count only real agent demand.** No calls from our own wallets to trigger a listing or a ranking.
+5. **Separate identities.** The firm's own email and accounts, never `@celo.org`.
+6. **Log every correction** from the launch week in `ops/rulebook-log.md`; the good ones become catalog rules.
+
+## 9. Risks
+
+| Risk | What we do |
+|---|---|
+| The temple theme reads as decoration, and people miss what we sell | The soft-launch question ("what do we do?"); the three paths sit right under the hero; every section ends in one clear link |
+| Launching before the domain, then links break | Only DMs carry the Vercel URL; the public announcement waits for `shonin.ai` |
+| The site is slow on low-end phones | The dragon pauses off-screen and stills with reduced motion; check a mid-range Android on 4G before the announcement |
+| Traffic spike with no model key | Paid routes answer 503 rather than guess; the demo falls back to the free heuristic and says so; set `ANTHROPIC_API_KEY` before announcing |
+| Cultural misread of Japanese words | The words are used for their meanings, with readings shown; ask two Japanese speakers to check the page before the announcement |
