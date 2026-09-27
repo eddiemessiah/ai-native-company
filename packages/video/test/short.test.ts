@@ -13,6 +13,7 @@ import {
   pickLocal,
   pickPexels,
   renderBrief,
+  speechRequest,
   shortLength,
   timeline,
   toScript,
@@ -84,8 +85,9 @@ describe("script checks", () => {
     expect(long.problems.join("\n")).toMatch(/X allows 280/);
   });
 
-  it("reads numbers the way people write them", () => {
+  it("reads numbers the way people write them, and leaves names alone", () => {
     expect(numbersIn("1,700 emails for $0.18, about 42% off, 3.0 times")).toEqual(["1700", "0.18", "42", "3"]);
+    expect(numbersIn("x402 on web3 with ERC-8004 v2 is 3x faster")).toEqual(["3"]);
   });
 
   it("changes only what the voice hears", () => {
@@ -105,6 +107,17 @@ describe("voices", () => {
     });
     expect(voiceCommand(parseVoice("pico"), "Hi", "a.wav")?.cmd).toBe("pico2wave");
     expect(voiceCommand(parseVoice("openai:ash"), "Hi", "a.wav")).toBeNull();
+    expect(() => parseVoice("elevenlabs")).toThrow(/needs a voice id/);
+  });
+
+  it("builds licensed API requests without touching the network", () => {
+    const azure = speechRequest(parseVoice("azure"), "Fees & gas <1 cent>", { AZURE_SPEECH_KEY: "k", AZURE_SPEECH_REGION: "westeurope" });
+    expect(azure.url).toBe("https://westeurope.tts.speech.microsoft.com/cognitiveservices/v1");
+    expect(azure.init.body).toBe('<speak version="1.0" xml:lang="en-NG"><voice name="en-NG-EzinneNeural">Fees &amp; gas &lt;1 cent&gt;</voice></speak>');
+    const eleven = speechRequest(parseVoice("elevenlabs:abc123"), "Hi", { ELEVENLABS_API_KEY: "k" });
+    expect(eleven.url).toContain("/v1/text-to-speech/abc123?output_format=mp3_44100_128");
+    expect(JSON.parse(String(speechRequest(parseVoice("openai:ash"), "Hi", { OPENAI_API_KEY: "k" }).init.body))).toMatchObject({ voice: "ash", input: "Hi" });
+    expect(() => speechRequest(parseVoice("azure"), "Hi", {})).toThrow(/needs AZURE_SPEECH_REGION/);
   });
 });
 

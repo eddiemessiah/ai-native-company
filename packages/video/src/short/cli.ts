@@ -29,7 +29,7 @@ export const SHORT_HELP = `Explainer shorts: a topic and its sources in; a sourc
 LLM writes the script, code checks every count and quote, the brain checks each claim, a person approves.
 
   pnpm video short new "<topic>" --source <file|url> [--source …] [--seconds 30-50] [--audience "…"]
-                       [--voice auto|edge[:voice]|openai[:voice]|say|pico|espeak] [--visuals brand|stock|local]
+                       [--voice auto|edge|azure|openai|elevenlabs:<id>|say|pico|espeak] [--visuals brand|stock|local]
                        [--local <folder>] [--music <file>] [--cta "…"] [--out <job>]
   pnpm video short write <job> [--model claude-opus-5]     Claude writes script.json from brief.md
   pnpm video short check <job> [--demo]                    code checks, content gate, one claim check per claim
@@ -160,7 +160,7 @@ async function create(ctx: ShortContext): Promise<void> {
 }
 
 async function write(ctx: ShortContext): Promise<void> {
-  const { dir, p, settings, status } = load(ctx);
+  const { dir, p, settings } = load(ctx);
   const sources = settings.sources.map((s) => ({ ...s, text: readFileSync(join(dir, s.file), "utf8") }));
   console.log("Writing the script with Claude…");
   let result;
@@ -175,11 +175,10 @@ async function write(ctx: ShortContext): Promise<void> {
   writeJson(p.script, result.script);
   save(ctx, dir, settings, { stage: "written" });
   console.log(`Wrote ${ctx.rel(p.script)} with ${result.model} (${result.inputTokens} in, ${result.outputTokens} out). Next: pnpm video short check ${ctx.rel(dir)}`);
-  void status;
 }
 
 async function check(ctx: ShortContext): Promise<void> {
-  const { dir, p, settings, status } = load(ctx);
+  const { dir, p, settings } = load(ctx);
   const { script, hash } = readScript(dir);
   const sources = readSources(dir, settings);
   const code = checkScript(script, sources, { minSec: settings.minSec, maxSec: settings.maxSec });
@@ -216,7 +215,8 @@ async function check(ctx: ShortContext): Promise<void> {
     passed: code.problems.length === 0 && !claims.some((c) => c.verdict === "cut"),
   };
   writeJson(p.check, result);
-  save(ctx, dir, settings, { ...status, stage: "checked", checkedHash: hash, checkPassed: result.passed });
+  // A new check starts the approval over: the next render and approval are for this script.
+  save(ctx, dir, settings, { stage: "checked", checkedHash: hash, checkPassed: result.passed });
 
   console.log(`${result.passed ? "Passed" : "Failed"}: ${code.words} words, about ${code.estimatedSeconds}s. Content gate: ${result.gate.verdict}.`);
   for (const problem of code.problems) console.log(`  problem: ${problem}`);

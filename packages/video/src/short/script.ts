@@ -67,9 +67,13 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
-/** Every number said aloud: 1,700 · 0.18 · 42% · $0.01 · ₦250,000. Commas are dropped so 1,700 matches 1700. */
+/**
+ * Every number said aloud: 1,700 · 0.18 · 42% · $0.01 · 3x · ₦250,000. Commas are dropped so 1,700 matches
+ * 1700. Digits inside a name (x402, ERC-8004, web3, v2) are part of the name, not a figure to source.
+ */
 export function numbersIn(text: string): string[] {
-  return (text.replace(/(\d),(\d{3})/g, "$1$2").match(/\d+(?:\.\d+)?/g) ?? []).map((n) => n.replace(/\.0+$/, ""));
+  const figures = text.replace(/(\d),(\d{3})/g, "$1$2").match(/(?<![A-Za-z]-?|[\d.])\d+(?:\.\d+)?/g) ?? [];
+  return figures.map((n) => n.replace(/\.0+$/, ""));
 }
 
 /** Code checks: counts, lengths, and every quote found word for word in its source. */

@@ -13,6 +13,6 @@ export { brandFontFiles, installFonts } from "./fonts";
 export * from "./short/script";
 export * from "./short/assemble";
 export { renderBrief, SCRIPT_SCHEMA, toScript, writeScript, type BriefSettings, type BriefSource } from "./short/brief";
-export { parseVoice, voiceCommand, tidyArgs, DEFAULT_VOICES, type VoiceSpec, type VoiceProvider } from "./short/voice";
+export { parseVoice, voiceCommand, speechRequest, tidyArgs, DEFAULT_VOICES, type VoiceSpec, type VoiceProvider } from "./short/voice";
 export { ACCENTS, BRAND, brandArgs, footageArgs, stillArgs, mix, pickLocal, pickPexels, type StockClip } from "./short/visuals";
 export { shortPaths, renderShortReview, type ShortSettings, type ShortCheck, type ShortStatus } from "./short/job";

@@ -44,6 +44,7 @@ import {
 } from "./job";
 import { selectClips, trailerBeats } from "./select";
 import { runShort } from "./short/cli";
+import { autoVoice } from "./short/voice";
 import { clockTime, parseTimestamp, round3, shortDuration } from "./time";
 import { nearestWord, paddedRange, parseTranscript, splitSentences } from "./transcript";
 import type { Format, Interval, Mode, Sentence, Transcript } from "./types";
@@ -219,6 +220,11 @@ async function doctor(): Promise<void> {
   ]);
   const fonts = brandFontFiles().length;
   rows.push(["brand font", fonts > 0, fonts > 0 ? `Bricolage Grotesque, ${fonts} subsets` : "run pnpm install"]);
+  const voice = await autoVoice();
+  const humanVoice = voice.provider === "edge" || voice.provider === "say";
+  rows.push(["shorts voice", humanVoice, humanVoice ? `${voice.provider}:${voice.voice}` : `${voice.provider} only (robotic): pip install edge-tts, or use --voice openai with OPENAI_API_KEY`]);
+  rows.push(["shorts writer", Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), "ANTHROPIC_API_KEY for short write; without it, fill in script.json from brief.md"]);
+  rows.push(["stock footage", Boolean(process.env.PEXELS_API_KEY), "optional: PEXELS_API_KEY for --visuals stock"]);
   for (const [name, ok, note] of rows) console.log(`${ok ? "✓" : "✗"} ${name.padEnd(18)} ${note}`);
   const required = rows.filter(([name]) => name === "ffmpeg" || name === "ffprobe" || name.trim() === "ass filter");
   if (required.some(([, ok]) => !ok)) process.exitCode = 1;

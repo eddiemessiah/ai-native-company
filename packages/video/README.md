@@ -78,7 +78,18 @@ pnpm video short approve video-jobs/shorts/x402-on-celo-your-api-gets-paid-per-c
 | `render` | Code | Voices each beat, lays the beats on whole frames, builds the visuals, burns in captions and headlines, adds a progress bar, ducks music under the voice, levels to -14 LUFS |
 | `approve` | A person | Recorded by name against the exact script that was rendered. Nothing is posted by the tool |
 
-Voices (`--voice`): `edge` (the edge-tts package; free, online, with Nigerian English voices `en-NG-EzinneNeural` and `en-NG-AbeoNeural`), `openai[:voice]` (`OPENAI_API_KEY`), `say` (macOS), `pico` and `espeak` (offline and robotic, for drafts). `auto` picks the best one installed.
+Voices (`--voice`), each optionally followed by `:<voice>`:
+
+| Voice | Needs | Use it for |
+|---|---|---|
+| `edge` | `pip install edge-tts` | Our own channel and drafts. It's free, and it has Nigerian English voices (`en-NG-EzinneNeural`, `en-NG-AbeoNeural`). It isn't an official API |
+| `azure` | `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Client work. It's the licensed route to the same neural voices |
+| `openai` | `OPENAI_API_KEY` | Client work |
+| `elevenlabs:<voice id>` | `ELEVENLABS_API_KEY` | Client work |
+| `say` | macOS | Drafts |
+| `pico`, `espeak` | Nothing (offline) | Tests only: they sound robotic |
+
+`auto` picks the best voice that needs no key.
 
 Visuals (`--visuals`): `brand` (a slow beam in the beat's accent colour on the dark ground, drawn by ffmpeg), `stock` (Pexels, with `PEXELS_API_KEY`; each clip is logged in `renders/credits.json`) or `local` (`--local <folder>`: your own clips and photos, matched to each beat by file name).
 
