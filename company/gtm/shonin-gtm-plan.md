@@ -1,6 +1,6 @@
 # Shonin GTM plan: from live site to launch
 
-**Status:** written 27 Sep 2026. The temple site goes live this week on its Vercel URL; the public announcement waits for the domain (`shonin.ai`, next week). Numbers below are either sourced (with the file) or marked as targets.
+**Status:** written 27 Sep 2026; timeline revised 29 Sep. The temple site is on `main` and deploys today on its Vercel URL; the public announcement waits for the domain (`shonin.ai`, next week). Numbers below are either sourced (with the file) or marked as targets.
 
 ## 1. What we're launching
 
@@ -35,18 +35,21 @@ Each rung opens the next. Free things earn trust; small paid things prove the wo
 
 | When | Move | Owner | Done when |
 |---|---|---|---|
-| **Sun 27 Sep** | Temple site merged to `main` and deployed to Vercel (personal account, root `apps/web`) | Edidiong deploys; Claude prepared it | The Vercel URL serves the new home page |
-| **Sun 27 Sep** | Soft launch: send the Vercel link privately to 10 people whose taste you trust (founders, one designer, two agent builders). One question: "What did you think we do, after 10 seconds?" | Edidiong | 10 answers; fix anything two people misread |
-| **Mon 28 Sep** | Agents day: Base leg on (CDP keys), `shonin-mcp` to npm and the MCP registry, the three routes on x402scan (`research/first-customers.md` §5) | Claude prepares; Edidiong sets keys and publishes | `/api/v1/check` answers 402 with a Base and a Celo option |
-| **Mon 28 Sep** | Warm outbound starts (`gtm/outbound.md` §1–4, §9–10), Vercel link in DMs only | Edidiong approves every message | 30 SME, 10 founder, 10 fintech, 10 NGO and 10 acquirer messages sent (`seven-day-sprint.md`, day 2) |
-| **Tue 29 Sep** | **GTM Harness launch** on X (`content/threads/07-gtm-harness.md`) with a 60-second run capture | Edidiong posts | Thread pinned |
-| **Thu 1 Oct** | **Demo at Celo Devs Office Hours**: the GTM Harness only, as a free tool, no prices, no directory link (`gtm/gtm-harness-launch.md`) | Edidiong | 10-minute run sheet done; corrections collected |
+| **Tue 29 Sep, morning** | Deploy from the personal Vercel account (`ops/deploy-vercel.md`). The site was merged to `main` on 27 Sep; the deploy moved from Sun 27 | Edidiong; Claude wrote the steps and checked the build | The vercel.app URL serves the temple page, and a test intake reaches Telegram |
+| **Tue 29 Sep, midday** | Soft launch: send the link privately to 10 people whose taste you trust (founders, one designer, two agent builders). One question: "What did you think we do, after 10 seconds?" | Edidiong | 10 answers; fix anything two people misread |
+| **Tue 29 Sep, evening** | **GTM Harness launch** on X (`content/threads/07-gtm-harness.md`), with a 60-second capture of a real run on the live site | Edidiong posts | Thread pinned |
+| **Wed 30 Sep** | Agents day, moved from Mon 28: x402 and CDP keys on (`ops/deploy-vercel.md` §3), `shonin-mcp` to npm and the MCP registry, the three routes on x402scan, five free Check reports (`research/first-customers.md` §5) | Claude prepares; Edidiong sets keys, publishes and approves each report | `/api/v1/check` answers 402 with a Base and a Celo option |
+| **Wed 30 Sep** | Warm outbound, moved from Mon 28 (`gtm/outbound.md` §1–4, §9–10); prep Thursday's demo | Edidiong approves every message | 30 SME, 10 founder, 10 fintech, 10 NGO and 10 acquirer messages sent (`seven-day-sprint.md`, day 2); a volunteer founder confirmed for the demo |
+| **Thu 1 Oct** | **Demo at Celo Devs Office Hours**: the GTM Harness only, as a free tool, no prices, no directory link (`gtm/gtm-harness-launch.md`). Raise `GTM_RUNS_PER_HOUR` for the day | Edidiong | 10-minute run sheet done; corrections collected |
+| **Fri 2 Oct** | Corrections from the demo become rules. Register for the Open Agent Hackathon (deadline 5 Oct) once it's clear Shonin has no judging role there | Edidiong | Rulebook log updated |
 | **Sat 3 Oct** | Week-1 numbers, in public (`seven-day-sprint.md`, day 7) | Edidiong | Post published with real numbers |
-| **Next week, domain day** | Register `shonin.ai`; point it at Vercel; set `NEXT_PUBLIC_SITE_URL=https://shonin.ai`; redeploy so llms.txt, the agent card and the sitemap use it | Edidiong buys; Claude checks the redeploy | `https://shonin.ai/llms.txt` lists the new URL |
+| **Mon 5 – Wed 7 Oct: domain day** | Register `shonin.ai`, attach it, set `NEXT_PUBLIC_SITE_URL=https://shonin.ai` and redeploy (`ops/deploy-vercel.md` §5). Record and cut the trailer (§5) | Edidiong buys; Claude checks the redeploy and prepares the footage | `https://shonin.ai/llms.txt` lists the new URL; trailer approved |
 | **Announcement day** (the day after the domain works) | Post the trailer (§5) with the "Shonin is open" thread (§6); pin it; send it to everyone from the soft launch | Edidiong | Trailer live on X, LinkedIn, YouTube Shorts, Instagram Reels, TikTok |
-| **Announcement +1 to +7** | One post a day from the content calendar (`gtm/content-engine.md`); reply to every comment in a working day | Edidiong, drafts by agents | Seven posts out |
+| **Announcement +1 to +7** | One post a day from the content calendar (`gtm/content-engine.md`); reply to every comment within a working day | Edidiong, drafts by agents | Seven posts out |
+| **6–10 Oct** | Submit the Prezenti Frontier application (`funding/plan.md`) | Edidiong | Submitted |
+| **Mon 12 Oct** | First AI Study Group Pro cohort starts | Edidiong | First session held |
 
-Why wait for the domain: every link in the announcement, the trailer's end card, llms.txt and the agent card should carry the address we keep. A Vercel URL in a viral post is a link that dies.
+Why the announcement waits for the domain: every link in it, the trailer's end card, llms.txt and the agent card should carry the address we keep. This week's posts can use the vercel.app URL; it keeps working after the domain arrives.
 
 ## 4. Channels, in the order they pay
 
@@ -139,7 +142,7 @@ Weekly, every Monday (`strategy.md`, "Measures that matter"):
 | Risk | What we do |
 |---|---|
 | The temple theme reads as decoration, and people miss what we sell | The soft-launch question ("what do we do?"); the three paths sit right under the hero; every section ends in one clear link |
-| Launching before the domain, then links break | Only DMs carry the Vercel URL; the public announcement waits for `shonin.ai` |
+| Launching before the domain | This week's posts (the harness launch) use the vercel.app URL, which keeps working after the domain arrives. The firm-wide announcement waits for `shonin.ai` |
 | The site is slow on low-end phones | The dragon pauses off-screen and stills with reduced motion; check a mid-range Android on 4G before the announcement |
 | Traffic spike with no model key | Paid routes answer 503 rather than guess; the demo falls back to the free heuristic and says so; set `ANTHROPIC_API_KEY` before announcing |
 | Cultural misread of Japanese words | The words are used for their meanings, with readings shown; ask two Japanese speakers to check the page before the announcement |

@@ -9,6 +9,7 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 | [`seven-day-sprint.md`](seven-day-sprint.md) | This week: Sat 26 Sep → Sat 3 Oct 2026, day by day, aiming for first revenue plus a pipeline |
 | [`strategy.md`](strategy.md) | Thesis, flywheel, horizons, segments, unit economics, moats, risks, metrics |
 | [`ops/setup-checklist.md`](ops/setup-checklist.md) | Day 0: entity, payments, deploy, Telegram alerts, brain providers, x402, ERC-8004 |
+| [`ops/deploy-vercel.md`](ops/deploy-vercel.md) | Deploy the site on Vercel: import settings, environment variables, checks, the agent side, domain day |
 | [`video-line-rollout.md`](video-line-rollout.md) | The video line (Video Desk, Explainer Shorts, dubs): what's built, phases and gates, tests and reviews, decisions |
 
 ## Selling
