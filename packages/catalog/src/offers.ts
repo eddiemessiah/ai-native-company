@@ -609,6 +609,118 @@ export const offers: readonly Offer[] = [
     tags: ["content", "social", "smb", "whatsapp"],
   },
   {
+    // Soon until it has shipped our own shows first (company/ops/playbooks/video-desk.md).
+    slug: "video-desk",
+    name: "Video Desk",
+    category: "service",
+    status: "soon",
+    oneLiner: "One long recording in; captioned clips, a trailer, chapters and a tighter cut out, and you approve every clip.",
+    pitch:
+      "Video editing for creators, founders, podcasts and communities: turn a long recording such as a podcast, livestream, workshop, tutorial or community call into captioned vertical clips for X, TikTok, Instagram Reels and YouTube Shorts, a highlight trailer, YouTube chapters and a tightened long-form edit, with the owner approving every clip",
+    audience: ["builders", "startup", "ecosystems", "smb"],
+    unit: "One recording of up to 60 minutes: 8 captioned vertical clips, a trailer of up to 60 seconds, YouTube chapters and a tightened long-form cut",
+    intake: [
+      "The recording or a link to it, plus the transcript if your recording tool exports one",
+      "Who speaks, with names spelled right, and a publishing release from every guest",
+      "A glossary: products, tickers, people and places to spell right",
+      "Brand kit: logo, colours, intro or outro, and any music you have a licence for",
+      "Where the clips will run: X, TikTok, Reels, Shorts or LinkedIn",
+    ],
+    engine:
+      "Code transcribes the recording with word timings (Whisper), cuts it into candidate moments on sentence boundaries and finds the pauses and fillers; the decision brain scores every moment for hook, payoff and whether it stands alone, and flags money claims and private details; code reframes to 9:16, burns in captions, levels the audio and renders; an LLM writes titles, post copy and chapter names.",
+    rulebook: [
+      "A clip starts on the first word of a sentence and ends on the last word of a finished thought; code snaps every cut to word timings.",
+      "Cuts remove pauses, fillers and retakes, never words that change what was said. A trailer may reorder whole sentences but never splices words into new ones.",
+      "A person checks names, products and numbers in the captions against the client's glossary before a clip ships; the glossary also goes into the transcriber's prompt.",
+      "Money, health or legal claims, and private details said aloud (phone numbers, addresses, seed phrases), go to a person before a clip ships, whatever its score.",
+      "Guests appear only in clips from recordings they agreed to publish.",
+      "Music, B-roll and logos come only from the client's own library or licensed sources.",
+      "Clips run 140 seconds or less, so one file posts to X without Premium, Shorts, Reels, TikTok and LinkedIn (research/video-editing.md).",
+      "Audio is measured in code: -14 LUFS integrated and a true peak at or under -1 dBTP in the delivered file.",
+      "The client approves every clip and posts it; we never post from a client's account.",
+    ],
+    review: "The owner watches every draft clip and approves, trims, reframes or rejects it; nothing ships without a named approval, and every trim goes into the rulebook log.",
+    delivery: "Vertical MP4s with burned-in captions, SRT files, the trailer, the tightened cut, YouTube chapters and post copy, in a shared folder with the review sheet.",
+    turnaround: "48 hours per recording",
+    price: {
+      label: "$200 per recording (up to 60 min)",
+      ngn: "₦100,000 per recording",
+      humanAlternative:
+        "Editors charge $484–$1,675 for a long-form cut plus nine short pieces; in Lagos, recording and editing a one-hour video episode costs ₦250,000–₦400,000",
+      model: "per-unit",
+    },
+    distribution: [
+      "Our own shows first: CeloIQ Sessions and Based Conversations, 3 or more clips per episode",
+      "Ecosystem teams that record community calls, workshops and Spaces",
+      "A free clip pack cut from one public episode, sent to the host as the sample",
+    ],
+    split: {
+      llm: "Writes titles, post copy and chapter names",
+      decide: "Scores each candidate moment: hook, payoff, stands alone, kind, money claims, private details",
+      code: "Transcribes, cuts on word timings, removes pauses and fillers, reframes, captions, levels audio, checks lengths",
+    },
+    tags: ["video", "clips", "podcast", "captions", "content"],
+  },
+  {
+    // Soon until it has shipped 5 shorts from our own posts (company/ops/playbooks/explainer-shorts.md).
+    slug: "explainer-shorts",
+    name: "Explainer Shorts",
+    category: "service",
+    status: "soon",
+    oneLiner: "A topic and your sources in; a 30–60 second vertical explainer out, every fact quoted from a source and approved by you.",
+    pitch:
+      "Short-form explainer videos for founders, product teams, ecosystems and creators: turn a doc, blog post, changelog or research note into a sourced 30–60 second vertical video for TikTok, Instagram Reels, YouTube Shorts and X, with an AI voiceover (Nigerian English available), captions, on-screen headlines, brand visuals or licensed stock footage, and a claim-to-source list the owner approves",
+    audience: ["builders", "startup", "ecosystems", "smb"],
+    unit: "One short: 30–60 seconds at 1080×1920, from one topic and sources you own or may use, with one revision round",
+    intake: [
+      "The topic, and the sources the short may draw on: docs, posts, changelogs or research you own or may use",
+      "Names, products, tickers and places, spelled right, with how each one is said",
+      "Brand kit: logo, colours, and any footage or music you hold a licence for",
+      "Where it will run (TikTok, Reels, Shorts or X) and the one call to action",
+    ],
+    engine:
+      "An LLM writes the script from your sources: a hook, one idea, on-screen text, and every fact with a quote copied from its source; code checks every length, quote and number said aloud; the decision brain runs the content gate and checks each claim against its quote; code voices it with a licensed voice (Azure's Nigerian English voices by default), lays the beats on whole frames, burns in captions and headlines, adds brand visuals, licensed stock or animated scenes for figures, code and flows (HyperFrames, rendered frame by frame), ducks a licensed music bed, levels the audio and writes the publish packet.",
+    rulebook: [
+      "A script is written from the client's sources, never from a topic alone. Every factual sentence carries a quote that code finds word for word in its source.",
+      "Every number said aloud appears in that beat's quotes; a miss blocks the short until a person fixes it. A person checks names against the client's glossary and listens to each one.",
+      "What's on screen follows the same rule. A figure in a scene appears in that beat's quotes, and a line of code appears in a source word for word. The writer fills a scene's data and never writes HTML.",
+      "Each short ships with a claim-to-source list: every beat's narration, the passage each fact rests on, and the page or URL.",
+      "The voice has a commercial licence, recorded with its provider and voice: no edge-tts or other unofficial endpoint, no ElevenLabs Free, no local engine outside the allowlist of commercially licensed weights, so never OmniVoice, VoiceStudio's non-commercial default (research/explainer-shorts.md §6, research/voicestudio.md §3).",
+      "The post says the voice is AI, and the publish packet switches on YouTube's altered-or-synthetic setting, TikTok's AI-generated label and Meta's AI info label; code checks both before approval.",
+      "No signed release and spoken consent, no cloned voice: the release names the person, the one client, the languages, uses, channels and end date, and code refuses to render or approve a clone that no active release covers. Never clone a minor, a public figure, or a voice from media the client doesn't own (research/voicestudio.md §7c).",
+      "A dub keeps every number, name, quote and on-screen figure as the source writes it, a native speaker reads every line against the source, and it ships only in a language a commercially licensed voice speaks; Yoruba, Hausa, Igbo and Pidgin get subtitles or a voice actor (research/voicestudio.md §7d).",
+      "An AI narrator is never presented as a human expert. Health, money, legal and political shorts name the human or institutional source and go to a person, whatever their score.",
+      "Stock footage comes only from Pexels or Pixabay, logged clip by clip with provider, id, page, creator and download date. No identifiable person in a short about health, crime or debt, and no third-party logo in a stock shot.",
+      "Music comes only from the client's licensed library, Pixabay Music with its certificate saved, or a paid library licensed for every platform; never TikTok's or Meta's business libraries in a master, never commercial releases.",
+      "Every short puts at least one sourced number, name or date on screen, and one client's shorts vary hook, structure and footage. A short is never a verbatim reading of a page.",
+      "Audio is measured in code: -14 LUFS integrated and a true peak at or under -1 dBTP; captions run from the first spoken word to the last.",
+      "The client approves every short by name against the exact script that was rendered, and posts it; we never post from a client's account.",
+    ],
+    review:
+      "A person watches each short with the sound on and off, reads every claim the brain flags against its source, listens to every name, and approves by name; an edit after the render needs a new render and a new approval.",
+    delivery:
+      "A vertical MP4 with burned-in captions, an SRT file, a cover frame, post copy with the AI disclosure, and a publish packet with the platform AI labels, the claim-to-source list and the licence ledger.",
+    turnaround: "24 hours per short",
+    price: {
+      label: "$75 per short · $720 for 12 a month",
+      ngn: "₦35,000 per short · ₦360,000 for 12 a month",
+      humanAlternative:
+        "A freelancer scripts, voices and edits a 30–60 second explainer for $130–$550, Fiverr's guide puts one at $200–$400, and agencies charge $1,000–$3,000; in Nigeria a social-media animation costs ₦50,000–₦150,000",
+      model: "per-unit",
+    },
+    distribution: [
+      "Our own channel first: one short from each Shonin research post, 5 before the offer opens",
+      "Ecosystem teams and startups that ship docs, changelogs and launches every month",
+      "A free short made from one of the prospect's public posts, sent to them as the sample",
+    ],
+    split: {
+      llm: "Writes the script from the sources: narration, on-screen text, visuals, claims with quotes, the post",
+      decide: "Runs the content gate on the draft and checks each claim against its quote: ok, check or cut",
+      code: "Checks lengths, quotes and numbers; voices, times beats to whole frames, captions, visuals, music ducking, loudness; gates approval on the voice licence and the AI labels",
+    },
+    tags: ["video", "shorts", "explainer", "content", "captions"],
+  },
+  {
     slug: "decision-router-retrofit",
     name: "Decision Router Retrofit",
     category: "service",

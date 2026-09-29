@@ -22,7 +22,8 @@ research|3007|research/ and content/posts: the research branch and the blog
 gtm|3008|company/gtm and content/threads: outbound, content engine, launches
 ops|3009|company/ops and company/funding: playbooks, rulebook, grants
 agents|3010|packages/agents and packages/mcp: Shonin Check, Shonin Receipt, shonin-mcp
-gtm-harness|3011|GTM Harness for founders: packages/gtm-harness, app/gtm, app/api/gtm'
+gtm-harness|3011|GTM Harness for founders: packages/gtm-harness, app/gtm, app/api/gtm
+video|3012|Video Desk and explainer shorts: packages/video, their playbooks and research; footage stays out of git'
 
 die() { printf 'worktree: %s\n' "$*" >&2; exit 1; }
 

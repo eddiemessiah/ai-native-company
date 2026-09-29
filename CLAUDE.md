@@ -23,6 +23,9 @@ packages/catalog    @repo/catalog: the single source of truth for brand, offers,
 packages/agents     @repo/agents: what agents buy. Shonin Check (pre-payment checks of x402 requests) and
                     Shonin Receipt (on-chain settlement receipts); Shonin Gate's recipe lives in brain
 packages/mcp        @repo/mcp: shonin-mcp, the MCP server that exposes the agent products to any MCP client
+packages/video      @repo/video: the Video Desk pipeline. A recording and its transcript in; brain-scored clips,
+                    trailers, chapters and tightened cuts out. Also explainer shorts: topic + sources in, a sourced
+                    vertical video out. Rendered by ffmpeg
 apps/web            Next.js 16 site: home, directory, intake, study group, agents, research, company pages;
                     agent-payable x402 API under app/api/v1; Stripe Checkout under app/api/checkout
 content/posts       research blog (markdown + frontmatter), rendered at /research
@@ -42,7 +45,13 @@ pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL f
 pnpm --filter @repo/brain test
 pnpm --filter @repo/mcp build     # build the shonin-mcp CLI into packages/mcp/dist
 pnpm worktree <line>              # open a product line in its own worktree (see below)
+pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, the brain keys and the font
+pnpm video short                  # Explainer shorts: topic + sources → a sourced 30–60 s vertical video
 ```
+
+CI (`.github/workflows/check.yml`) runs a frozen `pnpm install` and `pnpm check` on every pull request and every push to main. A lockfile out of step with a `package.json`, or a test that needs the network, fails it.
+
+Video Desk jobs follow `company/ops/playbooks/video-desk.md`: `pnpm video` ingests a recording, scores it, renders drafts, records who approved each clip, and cuts trailers and tighter long-form edits. Explainer shorts follow `company/ops/playbooks/explainer-shorts.md`: every factual sentence quotes a source, code verifies each quote and number, the brain checks each claim, a person approves. Both need ffmpeg with libass on the PATH.
 
 Env vars are documented in `apps/web/.env.example`.
 
@@ -107,6 +116,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 - Pay our own wallets to inflate volume or reputation.
 - Resell raw Jev decisions (`decide-api`) before TypeSafe confirms in writing that its terms allow it.
 - Store raw client state in decision logs. The log keeps a hash unless `includeStateInLogs` is set.
+- Commit client footage, transcripts or renders. Video jobs live in `video-jobs/`, which git ignores.
 - Commit secrets. `.env*` is ignored except `.env.example`.
 - Publish a claim, number or proof that isn't in `brand.proofs`, `research/` or our own data.
 - Apply to Prezenti Boost, or judge a program we compete in. See `company/ops/conflicts-of-interest.md`.
@@ -128,6 +138,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 | ops | 3009 | `company/ops`, `company/funding` |
 | agents | 3010 | `packages/agents`, `packages/mcp` |
 | gtm-harness | 3011 | GTM Harness for founders: `packages/gtm-harness`, `apps/web/app/gtm`, `apps/web/app/api/gtm` |
+| video | 3012 | `packages/video`, `company/ops/playbooks/video-desk.md`, `company/ops/playbooks/explainer-shorts.md`, `research/video-editing.md`, `research/explainer-shorts.md` |
 
 Stay inside your line's files. Changes to the public API of `@repo/brain` or `@repo/catalog` go through their own line. Run `pnpm check` before each commit and merge back through a pull request.
 

@@ -9,6 +9,7 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 | [`seven-day-sprint.md`](seven-day-sprint.md) | This week: Sat 26 Sep → Sat 3 Oct 2026, day by day, aiming for first revenue plus a pipeline |
 | [`strategy.md`](strategy.md) | Thesis, flywheel, horizons, segments, unit economics, moats, risks, metrics |
 | [`ops/setup-checklist.md`](ops/setup-checklist.md) | Day 0: entity, payments, deploy, Telegram alerts, brain providers, x402, ERC-8004 |
+| [`video-line-rollout.md`](video-line-rollout.md) | The video line (Video Desk, Explainer Shorts, dubs): what's built, phases and gates, tests and reviews, decisions |
 
 ## Selling
 
@@ -30,6 +31,8 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 | [`ops/playbooks/agent-ready-website.md`](ops/playbooks/agent-ready-website.md) | Agent-Ready Website |
 | [`ops/playbooks/grant-desk.md`](ops/playbooks/grant-desk.md) | Grant & RFP Desk |
 | [`ops/playbooks/company-brain.md`](ops/playbooks/company-brain.md) | Company Brain |
+| [`ops/playbooks/video-desk.md`](ops/playbooks/video-desk.md) | Video Desk (running on our own shows first) |
+| [`ops/playbooks/explainer-shorts.md`](ops/playbooks/explainer-shorts.md) | Explainer Shorts (running on our own posts first) |
 
 Every correction a person makes to delivered work goes into [`ops/rulebook-log.md`](ops/rulebook-log.md), then into the offer's rulebook in `packages/catalog`.
 

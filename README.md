@@ -19,6 +19,7 @@ Agents come first. They buy Shonin Check (should I pay this?), Shonin Gate (shou
 | [`packages/catalog`](packages/catalog) | The single source of truth: brand, every offer with its unit, rulebook, review layer and price, the paid API routes, Stripe checkout prices, study tracks and chapters. |
 | [`packages/agents`](packages/agents) | What agents buy: Shonin Check (code checks of any x402 payment request against the x402 SDK's own token tables, plus an intent check) and Shonin Receipt (settlement read from the chain, matched and signed). |
 | [`packages/mcp`](packages/mcp) | `shonin-mcp`: the agent products as MCP tools for Claude, Cursor or any MCP client, paid with the operator's wallet. |
+| [`packages/video`](packages/video) | The Video Desk pipeline: a recording and its transcript in; brain-scored clips with burned-in captions, trailers, YouTube chapters and tightened long-form cuts out. Explainer shorts: a topic and its sources in; a sourced 30–60 s vertical video out, with every quote and number checked in code. Rendered with ffmpeg; a person approves everything. |
 | [`apps/web`](apps/web) | The Next.js 16 site: animated home page with a live decision demo, a filterable directory of every product and service, intake with lead routing, the AI Study Group, the agents page, the research blog and the company page. |
 | [`apps/web/app/api/v1`](apps/web/app/api/v1) | Agent-payable endpoints behind x402 v2: check, gate, receipt, triage, lead score, grant fit, content gate. USDC or USDT on Celo; USDC on Base with CDP keys. |
 | [`apps/web/app/api/checkout`](apps/web/app/api/checkout) | Stripe Checkout for people: fixed prices and deposits from the catalog, with a webhook that alerts the founder. |
@@ -80,7 +81,7 @@ The full day-0 list (entity, payments, Telegram bot, x402, ERC-8004) is in [`com
 Each product line gets its own branch and worktree, so several agents can work at once:
 
 ```bash
-pnpm worktree lines     # brain, catalog, web, apis, study, company-brain, research, gtm, ops, agents
+pnpm worktree lines     # brain, catalog, web, apis, study, company-brain, research, gtm, ops, agents, gtm-harness, video
 pnpm worktree apis      # ../ai-native-company-apis on branch line/apis
 ```
 
