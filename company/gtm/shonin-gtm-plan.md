@@ -1,6 +1,6 @@
 # Shonin GTM plan: from live site to launch
 
-**Status:** written 27 Sep 2026; timeline revised 29 Sep. The temple site is on `main` and deploys today on its Vercel URL; the public announcement waits for the domain (`shonin.ai`, next week). Numbers below are either sourced (with the file) or marked as targets.
+**Status:** written 27 Sep 2026; timeline revised 7 Oct. The domain (`shonin.ai`, about $160) moves to the end of October, and the public launch moves with it: the firm and the GTM Harness v2 launch together (`harness-plan.md`). Until then the site runs on its Vercel URL. Numbers below are either sourced (with the file) or marked as targets.
 
 ## 1. What we're launching
 
@@ -33,23 +33,20 @@ Each rung opens the next. Free things earn trust; small paid things prove the wo
 
 ## 3. Launch sequence
 
+Revised 7 Oct. The 29 Sep timeline put the domain and the announcement in early October; the domain now comes at the end of the month, and the GTM Harness v2 launches with it.
+
 | When | Move | Owner | Done when |
 |---|---|---|---|
-| **Tue 29 Sep, morning** | Deploy from the personal Vercel account (`ops/deploy-vercel.md`). The site was merged to `main` on 27 Sep; the deploy moved from Sun 27 | Edidiong; Claude wrote the steps and checked the build | The vercel.app URL serves the temple page, and a test intake reaches Telegram |
-| **Tue 29 Sep, midday** | Soft launch: send the link privately to 10 people whose taste you trust (founders, one designer, two agent builders). One question: "What did you think we do, after 10 seconds?" | Edidiong | 10 answers; fix anything two people misread |
-| **Tue 29 Sep, evening** | **GTM Harness launch** on X (`content/threads/07-gtm-harness.md`), with a 60-second capture of a real run on the live site | Edidiong posts | Thread pinned |
-| **Wed 30 Sep** | Agents day, moved from Mon 28: x402 and CDP keys on (`ops/deploy-vercel.md` §3), `shonin-mcp` to npm and the MCP registry, the three routes on x402scan, five free Check reports (`research/first-customers.md` §5) | Claude prepares; Edidiong sets keys, publishes and approves each report | `/api/v1/check` answers 402 with a Base and a Celo option |
-| **Wed 30 Sep** | Warm outbound, moved from Mon 28 (`gtm/outbound.md` §1–4, §9–10); prep Thursday's demo | Edidiong approves every message | 30 SME, 10 founder, 10 fintech, 10 NGO and 10 acquirer messages sent (`seven-day-sprint.md`, day 2); a volunteer founder confirmed for the demo |
-| **Thu 1 Oct** | **Demo at Celo Devs Office Hours**: the GTM Harness only, as a free tool, no prices, no directory link (`gtm/gtm-harness-launch.md`). Raise `GTM_RUNS_PER_HOUR` for the day | Edidiong | 10-minute run sheet done; corrections collected |
-| **Fri 2 Oct** | Corrections from the demo become rules. Register for the Open Agent Hackathon (deadline 5 Oct) once it's clear Shonin has no judging role there | Edidiong | Rulebook log updated |
-| **Sat 3 Oct** | Week-1 numbers, in public (`seven-day-sprint.md`, day 7) | Edidiong | Post published with real numbers |
-| **Mon 5 – Wed 7 Oct: domain day** | Register `shonin.ai`, attach it, set `NEXT_PUBLIC_SITE_URL=https://shonin.ai` and redeploy (`ops/deploy-vercel.md` §5). Record and cut the trailer (§5) | Edidiong buys; Claude checks the redeploy and prepares the footage | `https://shonin.ai/llms.txt` lists the new URL; trailer approved |
-| **Announcement day** (the day after the domain works) | Post the trailer (§5) with the "Shonin is open" thread (§6); pin it; send it to everyone from the soft launch | Edidiong | Trailer live on X, LinkedIn, YouTube Shorts, Instagram Reels, TikTok |
-| **Announcement +1 to +7** | One post a day from the content calendar (`gtm/content-engine.md`); reply to every comment within a working day | Edidiong, drafts by agents | Seven posts out |
-| **6–10 Oct** | Submit the Prezenti Frontier application (`funding/plan.md`) | Edidiong | Submitted |
+| **Wed 7 – Sat 10 Oct** | Deploy from the Vercel Pro account if it isn't live yet (`ops/deploy-vercel.md`). Submit Frontier (6–10 Oct, `funding/plan.md`) | Edidiong | The vercel.app URL serves the temple page; Frontier submitted |
+| **From Thu 8 Oct, daily** | Run Shonin's own go-to-market on the harness: `pnpm gtm` with Telegram approvals (`harness-plan.md`, stage 1) | Edidiong; agents prepare | 20 approved messages sent from the harness by 16 Oct |
 | **Mon 12 Oct** | First AI Study Group Pro cohort starts | Edidiong | First session held |
+| **Mon 12 – Fri 16 Oct** | Harness: evals on four models, Gmail drafts and a Sheets pipeline (Google app in testing mode); recruit 5 design-partner founders (`harness-plan.md`, stage 2) | Claude builds; Edidiong recruits | Evals published in the repo; 5 founders confirmed |
+| **Mon 19 – Fri 23 Oct** | Design-partner week: each founder runs their own go-to-market on the harness, with approvals; their corrections become rules (stage 3) | Founders; Edidiong reviews | 5 workspaces running; corrections logged |
+| **Mon 26 – Fri 30 Oct** | Domain day: register `shonin.ai`, attach it, set `NEXT_PUBLIC_SITE_URL`, redeploy (`ops/deploy-vercel.md` §5). Record the trailer (§5) and the harness demo | Edidiong buys; Claude checks the redeploy and prepares the footage | `https://shonin.ai/llms.txt` lists the new URL; trailer approved |
+| **The day after the domain works** | Public launch: the trailer, the "Shonin is open" thread (§6) and the GTM Harness v2 thread, pinned | Edidiong | Live on X, LinkedIn, YouTube Shorts, Instagram Reels, TikTok |
+| **Launch +1 to +7** | One post a day (`gtm/content-engine.md`); reply to every comment within a working day; Product Hunt for the harness on a Tuesday after the first 50 public runs | Edidiong, drafts by agents | Seven posts out |
 
-Why the announcement waits for the domain: every link in it, the trailer's end card, llms.txt and the agent card should carry the address we keep. This week's posts can use the vercel.app URL; it keeps working after the domain arrives.
+The past items (deploy, GTM Harness v1 launch on 29 Sep, Office Hours demo on 1 Oct, week-1 numbers on 3 Oct) are recorded in the 29 Sep revision in git history.
 
 ## 4. Channels, in the order they pay
 

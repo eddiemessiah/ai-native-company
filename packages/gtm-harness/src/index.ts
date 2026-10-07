@@ -4,3 +4,4 @@ export * from "./plan";
 export * from "./review";
 export * from "./harness";
 export * from "./tools";
+export * from "./evals";

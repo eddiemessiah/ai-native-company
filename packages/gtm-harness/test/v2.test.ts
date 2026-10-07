@@ -4,7 +4,20 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { collectDrafts, createWorkspace, links, readApprovals, review, status, wait, withVerdict } from "../src/cli";
 import { pollDecisions, postForReview, sendReviewCard, toolStatus, type TelegramConfig } from "../src/connectors";
-import { buildHarness, describeRoute, generateStructured, gtmInputSchema, routeModel, templatePlan, type GtmInput, type ModelRoute } from "../src/index";
+import {
+  buildHarness,
+  describeRoute,
+  evalModel,
+  evalTable,
+  generateStructured,
+  gtmInputSchema,
+  inventedNumbers,
+  routeModel,
+  supported,
+  templatePlan,
+  type GtmInput,
+  type ModelRoute,
+} from "../src/index";
 import { canSend, draftId, parseApprovals, parseDraft, sendLink, statusOf, textHash, type ApprovalRecord } from "../src/outbox";
 
 const input: GtmInput = gtmInputSchema.parse({
@@ -278,5 +291,35 @@ describe("the CLI", () => {
     expect(after.verdict).toBe("revise");
     expect(after.to).toBe("ada@example.com");
     expect(textHash(after.text)).toBe(textHash(before.text));
+  });
+});
+
+describe("model evals", () => {
+  it("flags claim-like numbers the founder never gave, not the durations in an ask", () => {
+    const words = "Ajo Circle: savings groups for 100 active savers";
+    expect(inventedNumbers("Join 5,000 users who saved 30% more", words)).toEqual(["5,000 users", "30%"]);
+    expect(inventedNumbers("Would a 10-minute call help? We want 100 active savers.", words)).toEqual([]);
+    expect(inventedNumbers("We raised $2m", words)).toEqual(["$2m"]);
+  });
+
+  it("supports a model only when every run is valid and honest", async () => {
+    const good = templatePlan(input).plan;
+    const route: ModelRoute = { kind: "gateway", model: "openai/gpt-5" };
+    const ok = await evalModel("openai/gpt-5", input, { runs: 3, route, deps: { gateway: async () => ({ output: good, modelId: "gpt-5" }) } });
+    expect(ok).toMatchObject({ runs: 3, valid: 3, honest: 3 });
+    expect(supported(ok)).toBe(true);
+
+    const boastful = { ...good, drafts: good.drafts.map((d, i) => (i === 0 ? { ...d, text: `${d.text} 10,000 traders already use it.` } : d)) };
+    const bad = await evalModel("xai/grok-4", input, { runs: 2, route: { kind: "gateway", model: "xai/grok-4" }, deps: { gateway: async () => ({ output: boastful }) } });
+    expect(bad).toMatchObject({ valid: 2, honest: 0 });
+    expect(bad.errors[0]).toContain("invented: 10,000 traders");
+
+    const broken = await evalModel("google/gemini-x", input, { runs: 2, route: { kind: "gateway", model: "google/gemini-x" }, deps: { gateway: async () => ({ output: { not: "a plan" } }) } });
+    expect(broken.valid).toBe(0);
+
+    expect((await evalModel("openai/gpt-5", input, { runs: 1, env: {} })).route).toBe("not configured");
+    const table = evalTable([ok, bad, broken], "2026-10-07");
+    expect(table).toContain("| openai/gpt-5 | openai/gpt-5 via Vercel AI Gateway | 3/3 | 3/3 |");
+    expect(table).toContain("| no |");
   });
 });

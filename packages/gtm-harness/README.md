@@ -51,7 +51,10 @@ pnpm gtm review gtm-workspaces/acme               # review drafts, then ask for 
 pnpm gtm review gtm-workspaces/acme --local       # …or approve here in the terminal
 pnpm gtm wait gtm-workspaces/acme                 # record the Telegram decisions
 pnpm gtm links gtm-workspaces/acme                # one-tap send links for approved drafts
+pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --runs 5 --out packages/gtm-harness/evals
 ```
+
+**Evals before claims.** `pnpm gtm eval` runs the same founder input through each model and writes a table. A model is supported only when every run returns a valid plan and no draft carries a claim-like number the founder didn't give.
 
 Add `--env apps/web/.env.local` to load keys. `examples/shonin.json` is Shonin's own run. `gtm-workspaces/` is git-ignored: it holds leads and approvals.
 

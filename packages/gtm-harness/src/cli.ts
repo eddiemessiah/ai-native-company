@@ -5,6 +5,7 @@ import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
 import { pollDecisions, postForReview, sendReviewCard, telegramFromEnv, toolStatus, type TelegramConfig } from "./connectors";
+import { evalModel, evalTable } from "./evals";
 import { buildHarness } from "./harness";
 import { gtmInputSchema, type GtmInput } from "./input";
 import { describeRoute, routeModel } from "./models";
@@ -29,6 +30,8 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
                                or here in the terminal with --local
   wait <dir> [--minutes N]     Collect Telegram decisions into approvals.jsonl (default 10)
   links <dir>                  One-tap send links for every approved draft
+  eval --input <file> --models a,b [--runs N] [--out <dir>]
+                               Run the same input through each model; write the support table
 
 Nothing is ever sent by this tool. Approved drafts become links you tap to send.`;
 
@@ -371,6 +374,27 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         if (!target) throw new Error("Usage: pnpm gtm links <dir>");
         console.log((await links(target)).join("\n"));
         return 0;
+      case "eval": {
+        const inputPath = flag(argv, "input");
+        const models = (flag(argv, "models") ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+        if (!inputPath || !models.length) throw new Error("Usage: pnpm gtm eval --input <answers.json> --models provider/a,provider/b [--runs 5] [--out <dir>]");
+        const input = gtmInputSchema.parse(JSON.parse(await readFile(at(inputPath), "utf8")));
+        const runs = Math.max(1, Math.min(20, Number(flag(argv, "runs") ?? 5) || 5));
+        const rows = [];
+        for (const model of models) {
+          console.log(`Running ${model} ×${runs}…`);
+          rows.push(await evalModel(model, input, { runs }));
+        }
+        const date = new Date().toISOString().slice(0, 10);
+        const table = evalTable(rows, date, runs);
+        const out = flag(argv, "out");
+        if (out) {
+          await mkdir(at(out), { recursive: true });
+          await writeFile(join(at(out), `${date}.md`), table);
+        }
+        console.log(table);
+        return 0;
+      }
       default:
         console.log(HELP);
         return command && command !== "help" && command !== "--help" ? 1 : 0;
