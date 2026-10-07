@@ -82,7 +82,7 @@
   - **Seed:** $7.7M, reported on 6–7 Oct 2026 by three outlets ([search](https://cryptobriefing.com/monid-raises-7-7-million-ai-agents-tools/), [search](https://dealroom.co/news/160477-monid-raises-7-7m-seed-to-be-the-checkout-counter-for-ai-agents/), [search](https://techstartups.com/2026/10/07/startup-funding-news-today-october-7-2026-nous-research-monid-multiply-labs-quanfluence-more/)). Only Crypto Briefing names a lead, Long Journey Ventures.
   - **Pre-seed:** $2.1M on 1 Sep 2026 ([search](https://www.trysignalbase.com/news/funding/monid-raises-2-1m-pre-seed-for-agent-tool-platform)).
 - **Traction:** 4M+ agent transactions, by the company's own count ([search](https://en.wowtale.net/2026/09/01/234971/)). No named customers.
-- **For us:** Monid sells to the same buyers as Shonin Check, Gate and Receipt: agents with a balance. It's a possible place to list those APIs. We haven't confirmed that Monid supports x402.
+- **For us:** Monid sells to the same buyers as Shonin Check, Gate and Receipt: agents with a balance. It's a possible place to list those APIs. It does take x402, on Base and Monad, not Celo: a third party recorded a paid $0.01 run on Base on 12 Sep (`research/agent-tool-gateways.md` §1).
 
 ## 3. Gooseworks and nine more
 
@@ -395,7 +395,7 @@ The workspace now writes its skills to `.agents/skills/`, copies them to `.claud
 
 **Competitors:**
 
-- **Monid:** the lead investor (one outlet), and whether it supports x402 or USDC.
+- **Monid:** the lead investor (one outlet). Its x402 support is now confirmed (`research/agent-tool-gateways.md`).
 - **Undisclosed:** Buffer's and Gooseworks' models, Gooseworks' approval defaults, and whether Athina AI's funding carried over.
 - **Competitor-sourced:** Lindy's review scores, and a "75% three-month churn" figure for 11x. TechCrunch's 70–80% is the sourced figure.
 - **Company data:** AntSeed's usage figures.

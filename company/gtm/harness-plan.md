@@ -4,17 +4,19 @@
 
 - **What's built:** the first build of v2 is on `claude/eager-wozniak-eoex2g`, tested but not yet merged.
 - **Launch:** the public launch goes out with the domain at the end of October (`shonin-gtm-plan.md` §3).
-- **Sources:** `research/gtm-harnesses.md` and our own runs. A number marked "target" is a goal, not a result.
+- **Sources:** `research/gtm-harnesses.md`, `research/harness-engineering.md`, `research/agent-tool-gateways.md` and our own runs. A number marked "target" is a goal, not a result.
+- **Selling per call:** the Monid-style GTM API is in `gtm-api.md`, with decisions 10–18.
 
 ## 1. The decision
 
-Shonin builds the harness founders run their go-to-market in. It has three layers:
+Shonin builds the harness founders run their go-to-market in. It has four layers:
 
 | Layer | What it is | Who pays |
 |---|---|---|
 | **The workspace** (free, MIT) | A folder any agent can run with any model: a marketing brain, workflows, a skill per role, campaigns, approvals and one-tap send links | Nobody. It's the top of the funnel, and it's built |
 | **The hosted runtime** (paid) | The same workspace on shonin.ai, with real connectors, scheduled research, an approval inbox on the phone, an audit log, and model access on the founder's key or ours | Founders and agencies, per workspace per month |
 | **Done for you** (the firm) | A go-to-market sprint run by Shonin's agents and reviewed by a person, priced per campaign | Founders who want the result, not the tool |
+| **Per call** (the GTM API) | Plans, draft reviews, prospect scores and approvals with signed receipts, one call at a time, over x402 or a prepaid balance (`gtm-api.md`) | Agents and the builders behind them |
 
 Three rules hold in every layer:
 
@@ -28,17 +30,22 @@ Three rules hold in every layer:
 |---|---|---|
 | Web run | `/gtm`, `app/api/gtm/run` | Product in, plan and three reviewed drafts out, plus the workspace as a zip |
 | Model router | `src/models.ts` | Claude direct; any `provider/model` through Vercel AI Gateway or OpenRouter; any `/chat/completions` endpoint (xAI, a local model). Records tokens, and cost when the router reports it |
-| Workspace | `src/harness.ts` | 59 files: `AGENTS.md`, the brain (brand, product, audience, positioning, channels, design, assets, templates, history, lessons), rules, workflows, 11 skills, a first campaign, drafts, pipeline, corrections log, sprint, dashboard |
+| Workspace | `src/harness.ts` | 61 files: `AGENTS.md`, the brain (brand, product, audience, positioning, channels, design, assets, templates, history, lessons), rules (with `checks.md`), workflows, 11 skills, a first campaign, drafts, pipeline, corrections log, progress, sprint, dashboard |
 | Any agent | `src/harness.ts`, `pnpm gtm sync` | Skills in `.agents/skills/` (Codex, Cursor, Copilot, Gemini CLI) with a copy in `.claude/skills/` (Claude Code); `.gemini/settings.json` points Gemini CLI at `AGENTS.md` |
 | Reviewer | `src/review.ts` on `@repo/brain` | Ready, revise or blocked for every draft. It can block but never send |
 | Approval gate | `src/outbox.ts` | Approvals bound to a hash of the exact text, in an append-only log. Edit an approved draft and it needs approving again |
 | Opt-outs | `src/outbox.ts`, `src/cli.ts` | Anyone marked `do_not_contact` in `pipeline.csv` gets no approval card and no link, even for a draft approved earlier |
+| Signed decisions | `src/ledger.ts` | Every approval and reviewer verdict is signed with a key kept outside the workspace. An approval an agent writes doesn't verify, so it doesn't count. Terminal approvals need a real terminal; campaigns are approved with `pnpm gtm approve` |
+| Checks | `src/check.ts`, `rules/checks.md` | The workspace's rules as code, each finding with its fix: slots, the word limit, unsourced numbers, opt-outs, banned phrases, the pipeline, campaign approvals. `review` holds drafts that fail, up to 15 cards a day |
+| Scores and dates | `src/pipeline.ts` | The agent judges each scorecard criterion with evidence; code adds the weights, sets the stage and counts working days to the one follow-up |
+| MCP server | `src/mcp.ts` | 15 tools for any MCP client: session start and end, status, read, check, leads, scoring, follow-ups, drafts, approval requests. No tool sends or approves |
+| Trace | `src/trace.ts` | `.shonin/trace.jsonl`: every tool call and command, with personal fields hashed |
 | Telegram approvals | `src/connectors/telegram.ts` | Each draft reaches the founder's phone with Approve and Reject; `GTM_APPROVER_IDS` limits who can approve |
 | Slack copies | `src/connectors/slack.ts` | Review copies to a channel |
 | One-tap sends | `sendLink` in `src/outbox.ts` | WhatsApp click-to-chat, email, an X post, a Telegram share. The founder's tap is the send |
-| CLI | `pnpm gtm` | `doctor`, `new`, `status`, `review`, `wait`, `links`, `sync`, `eval` |
+| CLI | `pnpm gtm` | `doctor`, `new`, `status`, `check`, `due`, `review`, `wait`, `links`, `sent`, `approve`, `sync`, `mcp`, `eval` |
 | Evals | `src/evals.ts` | Per model: valid plans, honest drafts, seconds, tokens, cost |
-| Tests | `packages/gtm-harness/test` | 32 tests; none touch the network |
+| Tests | `packages/gtm-harness/test` | 59 tests; none touch the network |
 
 ## 3. "Works like Grokbot": any model, honestly
 
@@ -202,6 +209,11 @@ Stages 1–3 measure the first two before we commit to the full hosted build.
   - "Auto" runs on our AI Gateway key, with each request tagged by founder and capped by a budget.
   - "My model" uses the founder's endpoint, so a failed key can't fall back to our account. The gateway's per-request key can, so we don't use it without a quota.
 - **Billing.** Stripe subscriptions through the existing client; agents pay per call over x402.
+- **The GTM API** (`gtm-api.md`):
+  - the Approval API, which turns the workspace's signed, hash-bound approvals into a paid call with a signed receipt;
+  - a key-and-balance rail beside x402, for people without a wallet;
+  - a remote MCP with OAuth for chat clients;
+  - receipts on every paid call.
 
 ## 8. Pricing and profit
 
@@ -232,6 +244,7 @@ Stages 1–3 measure the first two before we commit to the full hosted build.
 | **Hosted Team** | 5 workspaces, 3 approvers, Slack approvals, one month | $99 | Small teams and studios |
 | **Hosted Agency** | 20 client workspaces, one month | $249 | Agencies: one approval inbox, a rulebook per client |
 | **Model credits** ("Auto") | Per run | At cost plus a margin you set (proposal: 20%) | Metered by AI Gateway's spend report. "My model" carries no model charge |
+| **GTM API** (agents) | Per call | Plan $1.00; review $0.01 (blocked free); prospect score $0.01; approval $0.05 when collected; claim checks free | `gtm-api.md` §3. Failures and blocked drafts never charge |
 | **WhatsApp Cloud API** | Per message | Meta's fee at cost, on the founder's own WhatsApp Business account | respond.io's pass-through model; our margin stays in the subscription |
 | **GTM Sprint** (done for you) | One two-week campaign: scorecard, 50 sourced leads, 50 reviewed first messages, follow-up drafts, the Monday dashboard | $750 for the first five, then reprice from the delivery time we record | Between the AI Visibility Audit ($150) and the Agent Launch Sprint (from $2,500). The founder approves and sends; Edidiong reviews |
 
@@ -353,6 +366,8 @@ That's about $5,150 that month. Gross margin waits for measured costs: the eval 
 | Replies per 100 messages sent | `pipeline.csv`, logged by the founder |
 | Hosted: waitlist, weekly active workspaces, paying workspaces, revenue, gross margin per workspace | The database, Stripe, the AI Gateway report |
 | Incidents: a send without an approval, an account flagged by a platform | The audit log; founders' reports. **The target for both is zero.** |
+| Approval rate and median decision time: near-total approval in seconds means rubber-stamping | The approval ledger and the Telegram card times |
+| GTM API: paid calls from wallets we don't control, approvals collected, the share of drafts blocked, margin per call | Settlement logs, the approval ledger, decision costs |
 
 **Targets for Mon 30 Nov, not promises:**
 
@@ -379,6 +394,8 @@ That's about $5,150 that month. Gross margin waits for measured costs: the eval 
 | Funded competitors | We don't compete on breadth. We compete on approval first, WhatsApp and Telegram, any model, and an open workspace |
 
 ## 13. Decisions for Edidiong
+
+Decisions 10–18, on selling per call, are in `gtm-api.md` §11.
 
 | # | Decision | Recommendation | By |
 |---|---|---|---|
