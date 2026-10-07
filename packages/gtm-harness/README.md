@@ -51,6 +51,7 @@ The campaign loop is: goal → research → directions → the founder's choice 
 ```bash
 pnpm gtm doctor                                   # what's connected
 pnpm gtm new gtm-workspaces/acme --input acme.json  # build a workspace (any model, or templates)
+pnpm gtm check gtm-workspaces/acme                # check the workspace against its own rules; every finding has a fix
 pnpm gtm review gtm-workspaces/acme               # review drafts, then ask for approval in Telegram
 pnpm gtm review gtm-workspaces/acme --local       # …or approve here in the terminal
 pnpm gtm wait gtm-workspaces/acme                 # record the Telegram decisions
@@ -62,6 +63,15 @@ pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --
 **Evals before claims.** `pnpm gtm eval` runs the same founder input through each model and writes a table. A model is supported only when every run returns a valid plan and no draft carries a claim-like number the founder didn't give. The table also records median seconds, tokens and, when the router reports it (AI Gateway, OpenRouter), the cost per run. Hosted pricing rests on those numbers, not on estimates.
 
 Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. The file's values win over the shell's, so each workspace can carry its own model key, Telegram bot, chat and approvers, and a client's cards never land in someone else's chat. `examples/shonin.json` is Shonin's own run. `gtm-workspaces/` is git-ignored: it holds leads and approvals.
+
+**Checks before approvals.** `pnpm gtm check` runs the workspace's rules as code and prints, for each finding, the rule it breaks and how to fix it. It covers:
+
+- drafts: unfilled [slots], the word limit in `rules/outreach.md`, claim-like numbers that aren't in `brain/products/`, recipients marked `do_not_contact`, the same text sent to many people;
+- pipeline rows with no source, scores outside 0–100, duplicates and broken rows;
+- campaign outputs made before `approval.md` says approved, or approvals with no signature;
+- skills that drifted between `.agents/skills/` and `.claude/skills/`.
+
+`review` holds back any draft with an error, so the founder only sees drafts that pass. `links` refuses an approved draft that still has a slot, because the link would send it as written.
 
 **Approvals.** Each draft goes to the founder's Telegram chat with Approve and Reject (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; `GTM_APPROVER_IDS` limits who can approve). Decisions land in `approvals.jsonl`, bound to a hash of the exact text: edit an approved draft and it needs approving again. `GTM_SLACK_WEBHOOK_URL` posts review copies to Slack.
 

@@ -5,6 +5,8 @@ import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
+import { checkDraft, checkWorkspace, draftContext, formatFindings, type DraftContext, type Finding } from "./check";
+import { unfilledSlots } from "./claims";
 import { pollDecisions, postForReview, sendReviewCard, telegramFromEnv, toolStatus, type TelegramConfig } from "./connectors";
 import { evalModel, evalTable } from "./evals";
 import { buildHarness, CLAUDE_SKILLS_DIR, SKILLS_DIR } from "./harness";
@@ -41,6 +43,7 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
   doctor                       What's connected: the model, the reviewer, Telegram, Slack
   new <dir> --input <file>     Build a workspace from a founder's answers (JSON); --force to overwrite
   status <dir>                 Every draft and where it stands
+  check <dir>                  Check the workspace against its own rules; every finding says how to fix it
   review <dir> [--local]       Review new drafts, then ask for approval: in Telegram (and Slack),
                                or here in the terminal with --local
   wait <dir> [--minutes N]     Collect Telegram decisions into approvals.jsonl (default 10)
@@ -95,6 +98,27 @@ export async function readApprovals(dir: string): Promise<ApprovalRecord[]> {
   return (await exists(path)) ? parseApprovals(await readFile(path, "utf8")) : [];
 }
 
+/** Every text file in the workspace, by its path inside it. Skips .git, node_modules and the CLI's own state. */
+export async function readWorkspace(dir: string): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const walk = async (rel: string): Promise<void> => {
+    for (const entry of await readdir(join(dir, rel), { withFileTypes: true })) {
+      const path = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        if (![".git", "node_modules", ".shonin"].includes(entry.name)) await walk(path);
+      } else if (entry.isFile() && (await stat(join(dir, path))).size <= 1_000_000) {
+        out[path] = await readFile(join(dir, path), "utf8");
+      }
+    }
+  };
+  await walk("");
+  return out;
+}
+
+export async function check(dir: string): Promise<Finding[]> {
+  return checkWorkspace(await readWorkspace(dir));
+}
+
 /** Who asked not to be contacted, from the workspace's pipeline.csv. */
 export async function readDoNotContact(dir: string): Promise<Set<string>> {
   const path = join(dir, "pipeline.csv");
@@ -106,7 +130,7 @@ export async function recordDecision(dir: string, record: ApprovalRecord): Promi
 }
 
 const VERDICT_TEXT: Readonly<Record<OutreachReview["verdict"], string>> = {
-  ready: "READY: the founder can send it after filling the [slots]",
+  ready: "READY: fill any [slots], then it goes to the founder for approval",
   revise: "REVISE: fix the points below first",
   blocked: "BLOCKED: breaks a rule; rewrite before anyone sees it",
 };
@@ -197,7 +221,14 @@ export async function status(dir: string): Promise<string> {
   const drafts = await collectDrafts(dir);
   const approvals = await readApprovals(dir);
   if (!drafts.length) return "No drafts yet.";
-  return drafts.map(({ draft }) => `${statusOf(draft, approvals).padEnd(10)} ${draft.channel.padEnd(12)} ${draft.file}`).join("\n");
+  const ctx = draftContext(await readWorkspace(dir));
+  return drafts
+    .map(({ draft }) => {
+      const s = statusOf(draft, approvals);
+      const errors = s === "pending" || s === "stale" || s === "unreviewed" ? checkDraft(draft, ctx).filter((f) => f.level === "error").length : 0;
+      return `${(errors ? "held" : s).padEnd(10)} ${draft.channel.padEnd(12)} ${draft.file}${errors ? `  (${errors} to fix: pnpm gtm check)` : ""}`;
+    })
+    .join("\n");
 }
 
 /** Reviews unreviewed drafts with the brain, then asks the founder about every draft still waiting. */
@@ -220,16 +251,21 @@ export async function review(
     }
   }
 
-  // 2. The founder: every draft that's pending for its current text, unless its recipient opted out.
+  // 2. The founder: every draft that's pending for its current text, unless its recipient opted out
+  //    or code finds a rule it breaks. The founder's attention goes only to drafts that pass.
   const optedOut = await readDoNotContact(dir);
+  const ctx: DraftContext = draftContext(await readWorkspace(dir));
   const waiting = (await collectDrafts(dir)).filter(({ draft }) => {
     const s = statusOf(draft, approvals);
     if (s === "blocked") log.push(`blocked   ${draft.file}: the reviewer blocked it; rewrite it first`);
-    if ((s === "pending" || s === "stale") && isDoNotContact(draft, optedOut)) {
+    if (s !== "pending" && s !== "stale") return false;
+    if (isDoNotContact(draft, optedOut)) {
       log.push(`skipped   ${draft.file}: ${draft.to} is marked do_not_contact in pipeline.csv`);
       return false;
     }
-    return s === "pending" || s === "stale";
+    const errors = checkDraft(draft, ctx).filter((f) => f.level === "error");
+    for (const f of errors) log.push(`held      ${draft.file}: ${f.problem}. Fix: ${f.fix}`);
+    return errors.length === 0;
   });
   if (!waiting.length) {
     log.push("Nothing waiting for approval.");
@@ -335,6 +371,11 @@ export async function links(dir: string): Promise<string[]> {
     if (!canSend(draft, approvals)) continue;
     if (isDoNotContact(draft, optedOut)) {
       out.push(`${draft.file}\n  Not sent: ${draft.to} is marked do_not_contact in pipeline.csv.`);
+      continue;
+    }
+    const slots = unfilledSlots(draft.text);
+    if (slots.length) {
+      out.push(`${draft.file}\n  Not sent: it still has ${slots.join(", ")}, and the link would send them as written. Fill them, then approve it again.`);
       continue;
     }
     const link = sendLink(draft);
@@ -448,6 +489,12 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         if (!target) throw new Error("Usage: pnpm gtm status <dir>");
         console.log(await status(target));
         return 0;
+      case "check": {
+        if (!target) throw new Error("Usage: pnpm gtm check <dir>");
+        const findings = await check(target);
+        console.log(formatFindings(findings));
+        return findings.some((f) => f.level === "error") ? 1 : 0;
+      }
       case "review":
         if (!target) throw new Error("Usage: pnpm gtm review <dir> [--local]");
         console.log((await review(target, { local: argv.includes("--local") })).join("\n"));

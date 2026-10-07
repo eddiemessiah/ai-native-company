@@ -2,7 +2,8 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { collectDrafts, createWorkspace, links, loadEnv, readApprovals, review, status, sync, wait, withVerdict } from "../src/cli";
+import { check as checkWorkspaceDir, collectDrafts, createWorkspace, links, loadEnv, readApprovals, readWorkspace, review, status, sync, wait, withVerdict } from "../src/cli";
+import { checkWorkspace, formatFindings, wordLimitFrom } from "../src/check";
 import { pollDecisions, postForReview, sendReviewCard, toolStatus, type TelegramConfig } from "../src/connectors";
 import {
   buildHarness,
@@ -253,9 +254,16 @@ describe("the connectors", () => {
 });
 
 describe("the CLI", () => {
-  async function workspace() {
+  /** A fresh workspace. With personalize, the drafts' [slots] are filled, as the preparer would before approval. */
+  async function workspace(opts: { personalize?: boolean } = {}) {
     const dir = await mkdtemp(join(tmpdir(), "gtm-"));
     const result = await createWorkspace(dir, input, { env: {}, now: new Date("2026-10-07T09:00:00Z") });
+    if (opts.personalize) {
+      for (const { draft, content } of await collectDrafts(dir)) {
+        const cut = content.lastIndexOf("\n---\n");
+        await writeFile(join(dir, draft.file), content.slice(0, cut) + content.slice(cut).replace(/\[[^\]\n]+\](?!\()/g, "Ada"));
+      }
+    }
     return { dir, result };
   }
 
@@ -268,7 +276,7 @@ describe("the CLI", () => {
   });
 
   it("records terminal approvals, gives links for approved drafts, and voids them when the text changes", async () => {
-    const { dir } = await workspace();
+    const { dir } = await workspace({ personalize: true });
     const before = await collectDrafts(dir);
     const sendable = before.filter(({ draft }) => draft.verdict !== "blocked");
     expect(sendable.length).toBeGreaterThan(0);
@@ -315,7 +323,7 @@ describe("the CLI", () => {
   });
 
   it("gives no link or approval card for anyone marked do_not_contact", async () => {
-    const { dir } = await workspace();
+    const { dir } = await workspace({ personalize: true });
     const whatsapp = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!;
     const lines = whatsapp.content.split("\n");
     lines.splice(lines.lastIndexOf("---"), 0, "**To:** +234 801 234 5678", "");
@@ -340,7 +348,7 @@ describe("the CLI", () => {
   });
 
   it("sends review cards to Telegram, then records the founder's decision", async () => {
-    const { dir } = await workspace();
+    const { dir } = await workspace({ personalize: true });
     const target = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!.draft;
     let pressed = "";
     const { f } = fakeFetch((url, body) => {
@@ -363,7 +371,7 @@ describe("the CLI", () => {
   });
 
   it("keeps waiting until every card sent to Telegram is decided", async () => {
-    const { dir } = await workspace();
+    const { dir } = await workspace({ personalize: true });
     const pressed: string[] = [];
     let round = 0;
     const { f } = fakeFetch((url, body) => {
@@ -384,6 +392,84 @@ describe("the CLI", () => {
     expect(pressed.length).toBeGreaterThan(1);
     const decided = await wait(dir, { env: {}, telegram, fetch: f, waitSeconds: 1, minutes: 0.1 });
     expect(decided.filter((l) => l.startsWith("approved"))).toHaveLength(pressed.length);
+  });
+
+  it("holds drafts that break a rule before they reach the founder, and says why", async () => {
+    const { dir } = await workspace();
+    const log = await review(dir, { env: {}, local: true, ask: async () => "a" });
+    expect(log.some((l) => /^held {6}drafts\/01-whatsapp\.md: unfilled slots \[name\]/.test(l))).toBe(true);
+    expect(log).not.toContain("approved  drafts/01-whatsapp.md");
+    expect(await status(dir)).toMatch(/^held +WhatsApp +drafts\/01-whatsapp\.md +\(1 to fix: pnpm gtm check\)/m);
+    // Only drafts with no slots reached the founder.
+    for (const a of await readApprovals(dir)) {
+      const d = (await collectDrafts(dir)).find(({ draft }) => draft.file === a.file)!.draft;
+      expect(d.text).not.toMatch(/\[[^\]]+\]/);
+    }
+
+    // A slotted draft approved some other way still gets no link: it would send "[name]" as written.
+    const whatsapp = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!.draft;
+    await writeFile(join(dir, "approvals.jsonl"), `${JSON.stringify({ file: whatsapp.file, hash: textHash(whatsapp.text), decision: "approved", by: "@founder", at: "2026-10-07T10:00:00Z", via: "manual" })}\n`);
+    expect((await links(dir)).join("\n")).toContain("Not sent: it still has [name]");
+  });
+
+  it("checks a whole workspace against its own rules, with a fix for every finding", async () => {
+    const { dir } = await workspace({ personalize: true });
+    expect((await checkWorkspaceDir(dir)).filter((f) => f.level === "error")).toEqual([]);
+
+    const product = Object.keys(await readWorkspace(dir)).find((p) => p.startsWith("brain/products/"))!;
+    await writeFile(join(dir, "drafts/04-email.md"), "# Email · Bola\n\n**To:** bola@example.com\n**Reviewer:** not reviewed yet\n\n---\n\nHi Bola, 5,000 traders already save with us. Want a demo?\n");
+    await writeFile(join(dir, "drafts/05-email.md"), `# Email · Chi\n\n**To:** chi@example.com\n**Reviewer:** not reviewed yet\n\n---\n\n${"word ".repeat(95)}\n`);
+    await writeFile(join(dir, "drafts/06-email.md"), "Hi, no heading and no separator.\n");
+    await writeFile(
+      join(dir, "pipeline.csv"),
+      [
+        "name,handle_or_email,channel,source,score_pct,stage,last_touch,next_step,notes,do_not_contact",
+        "Bola,bola@example.com,email,,85,reach out,,,,",
+        "Chi,chi@example.com,email,https://example.com/chi,140,new,,,,",
+        "Bola again,BOLA@example.com,email,https://example.com/b,80,new,,,,",
+        "Dee,dee@example.com,email,https://example.com/d,80,new",
+      ].join("\n"),
+    );
+    await mkdir(join(dir, "campaigns/first-campaign/outputs"), { recursive: true });
+    await writeFile(join(dir, "campaigns/first-campaign/outputs/post.md"), "A post made before approval.\n");
+    await writeFile(join(dir, ".claude/skills/score-leads/SKILL.md"), "---\nname: score-leads\ndescription: Drifted.\n---\n\nOld.\n");
+
+    const findings = await checkWorkspaceDir(dir);
+    const has = (path: string, text: string) => findings.some((f) => f.path === path && `${f.problem} ${f.rule}`.includes(text) && f.fix.length > 0);
+    expect(has("drafts/04-email.md", '"5,000 traders" isn\'t in brain/products/')).toBe(true);
+    expect(has("drafts/05-email.md", "95 words")).toBe(true);
+    expect(has("drafts/06-email.md", "not a draft")).toBe(true);
+    expect(has("pipeline.csv:2", "has no source")).toBe(true);
+    expect(has("pipeline.csv:3", "isn't 0–100")).toBe(true);
+    expect(has("pipeline.csv:4", "the same person as line 2")).toBe(true);
+    expect(has("pipeline.csv:5", "6 fields where the header has 10")).toBe(true);
+    expect(has("campaigns/first-campaign/outputs/", "before the direction was approved")).toBe(true);
+    expect(has(".claude/skills/score-leads/SKILL.md", "differs from .agents/skills/score-leads/SKILL.md")).toBe(true);
+    expect(findings[0]!.level).toBe("error");
+
+    // A claim with its source in the product file passes.
+    const productFile = join(dir, product);
+    await writeFile(productFile, `${await readFile(productFile, "utf8")}| 5,000 traders save with us | our dashboard, 6 Oct | 2026-10-07 |\n`);
+    expect((await checkWorkspaceDir(dir)).some((f) => f.path === "drafts/04-email.md" && f.problem.includes("5,000"))).toBe(false);
+
+    const text = formatFindings(findings);
+    expect(text).toMatch(/^error {2}/);
+    expect(text).toContain("fix:  ");
+    expect(text).toMatch(/\d+ errors, \d+ warnings?\.$/);
+  });
+
+  it("flags signed-off campaigns with no signature, and the same text sent to many", () => {
+    const base = buildHarness(input, templatePlan(input).plan, []);
+    const files: Record<string, string> = {
+      ...base,
+      "campaigns/first-campaign/approval.md": "# Approval\n\n**Status:** approved\n**Approved by:**\n**Date:**\n",
+      "drafts/07-x.md": "# X · Ada\n\n**Reviewer:** not reviewed yet\n\n---\n\nSame words for everyone.\n",
+      "drafts/08-x.md": "# X · Bola\n\n**Reviewer:** not reviewed yet\n\n---\n\nSame words for everyone.\n",
+    };
+    const findings = checkWorkspace(files);
+    expect(findings.some((f) => f.path === "campaigns/first-campaign/approval.md" && f.problem === "approved, but with no name or date")).toBe(true);
+    expect(findings.some((f) => f.path === "drafts/07-x.md" && f.problem === "the same text as drafts/08-x.md")).toBe(true);
+    expect(wordLimitFrom(files["rules/outreach.md"])).toBe(90);
   });
 
   it("writes the reviewer's verdict without changing the message", async () => {

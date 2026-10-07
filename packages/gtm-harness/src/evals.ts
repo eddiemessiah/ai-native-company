@@ -1,6 +1,9 @@
 import type { GtmInput } from "./input";
 import { describeRoute, routeModel, type ModelDeps, type ModelRoute, type Usage } from "./models";
+import { inventedNumbers } from "./claims";
 import { generatePlan, type GtmPlan } from "./plan";
+
+export { inventedNumbers } from "./claims";
 
 /**
  * Evals before claims: a model counts as supported only after the same founder input,
@@ -32,18 +35,6 @@ export interface EvalRow {
   readonly errors: readonly string[];
 }
 
-/**
- * Numbers that read like claims (percentages, money, multiples, counts of users or customers)
- * and don't appear in what the founder wrote. Durations in an ask ("a 10-minute call") pass.
- */
-export function inventedNumbers(text: string, founderWords: string): string[] {
-  const claimLike = /(?:[$€£₦]\s?\d[\d,.]*\s?(?:k|m|bn|million|billion)?|\d[\d,.]*\s?(?:%|x\b|k\b|m\b|million|billion)|\d[\d,.]*\+?\s(?:users|customers|clients|teams|companies|businesses|downloads|merchants|traders|members|transactions))/gi;
-  const known = new Set((founderWords.match(/\d[\d,.]*/g) ?? []).map((n) => n.replace(/[,.]$/, "")));
-  return (text.match(claimLike) ?? []).filter((m) => {
-    const digits = m.match(/\d[\d,.]*/)?.[0]?.replace(/[,.]$/, "") ?? "";
-    return !known.has(digits);
-  });
-}
 
 function founderWords(input: GtmInput): string {
   return [input.product, input.pitch, input.audience, input.goal, input.regions ?? "", input.url ?? ""].join(" ");

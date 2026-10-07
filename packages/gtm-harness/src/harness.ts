@@ -36,7 +36,7 @@ const slug = (s: string) =>
     .slice(0, 40) || "draft";
 
 const VERDICT_LABEL: Readonly<Record<OutreachReview["verdict"], string>> = {
-  ready: "READY: the founder can send it after filling the [slots]",
+  ready: "READY: fill any [slots], then it goes to the founder for approval",
   revise: "REVISE: fix the points below first",
   blocked: "BLOCKED: breaks a rule; rewrite before anyone sees it",
 };
@@ -150,6 +150,12 @@ Skills live in \`.agents/skills/<name>/SKILL.md\`, with the same files in \`.cla
 ## Keep state
 
 Each campaign keeps its own state.md: completed steps, blockers, the next action. Update it at the end of every session, so the next one starts where you stopped.
+
+## Every session
+
+1. **Start:** read the campaign's state.md and today's part of sprint.md. If the \`pnpm gtm\` CLI is available, run \`pnpm gtm status\` on this folder.
+2. **Before anything goes to the founder:** run \`pnpm gtm check\` on this folder and fix every error. Each finding names the rule it breaks and how to fix it, and drafts with errors are held back from approval.
+3. **End:** update state.md with what's done, any blockers and the next action. If this folder is a git repository, commit with a one-line summary of the session.
 
 ## Today
 
@@ -497,7 +503,7 @@ Find up to 20 people or teams who match the scorecard, starting with the first c
   files[".agents/skills/prepare-drafts/SKILL.md"] = skill(
     "prepare-drafts",
     "Write a first message for every lead ready for outreach, following the rules. Use when leads are at 'reach out' with no draft yet.",
-    `For every lead in pipeline.csv with stage "reach out" and no draft yet, write a draft in ${c}/outbox/<name>.md in the format in ${c}/outbox/README.md, using the closest example in drafts/ as a starting point. Follow every rule in rules/. Use only claims from ${productFile}. Fill the personal line from the lead's public work and cite where it came from. You can't send anything, and you can't mark your own drafts ready.`,
+    `For every lead in pipeline.csv with stage "reach out" and no draft yet, write a draft in ${c}/outbox/<name>.md in the format in ${c}/outbox/README.md, using the closest example in drafts/ as a starting point. Follow every rule in rules/. Use only claims from ${productFile}. Fill the personal line from the lead's public work and cite where it came from. Fill every [slot]: a draft with a slot left is held back from the founder. Then run \`pnpm gtm check\` and fix every error it lists. You can't send anything, and you can't mark your own drafts ready.`,
   );
 
   files[".agents/skills/review-drafts/SKILL.md"] = skill(
@@ -505,7 +511,7 @@ Find up to 20 people or teams who match the scorecard, starting with the first c
     "Check new drafts against the voice, outreach and claims rules and mark each ready, revise or blocked. Use after drafts are written.",
     `Check every new draft in drafts/ and ${c}/outbox/ against rules/voice.md, rules/outreach.md and rules/claims.md. Set its **Reviewer:** line to one verdict:
 
-- **READY**: the founder can send it after filling any [slots].
+- **READY**: it meets every rule; once any [slots] are filled, it can go to the founder.
 - **REVISE**: list each fix, one line each.
 - **BLOCKED**: name the rule it breaks.
 
