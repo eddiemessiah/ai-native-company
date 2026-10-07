@@ -273,6 +273,14 @@ describe("the CLI", () => {
     expect(result.files).toBeGreaterThan(40);
     expect(result.note).toContain("No model is configured");
     await expect(createWorkspace(dir, input, { env: {} })).rejects.toThrow("isn't empty");
+
+    // Opened in Claude Code, the workspace offers its own MCP tools; --silent keeps stdout for the protocol.
+    const mcp = JSON.parse(await readFile(join(dir, ".mcp.json"), "utf8")) as { mcpServers: Record<string, { command: string; args: string[] }> };
+    const server = mcp.mcpServers["shonin-gtm"]!;
+    expect(server.command).toBe("pnpm");
+    expect(server.args.slice(0, 2)).toEqual(["--silent", "--dir"]);
+    expect(await readFile(join(server.args[2]!, "packages/gtm-harness/package.json"), "utf8")).toContain("@repo/gtm-harness");
+    expect(server.args.slice(3)).toEqual(["gtm", "mcp", dir]);
   });
 
   it("records terminal approvals, gives links for approved drafts, and voids them when the text changes", async () => {

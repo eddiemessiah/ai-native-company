@@ -49,6 +49,8 @@ pnpm --filter @repo/mcp build     # build the shonin-mcp CLI into packages/mcp/d
 pnpm worktree <line>              # open a product line in its own worktree (see below)
 pnpm gtm doctor                   # GTM Harness: which model, reviewer and connectors are set up
 pnpm gtm new gtm-workspaces/<name> --input <answers.json>   # a workspace for any agent; see packages/gtm-harness
+pnpm gtm check gtm-workspaces/<name>                        # the workspace's rules as code; every finding has a fix
+pnpm --silent gtm mcp gtm-workspaces/<name>                 # the workspace as MCP tools; no tool sends or approves
 pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, the brain keys and the font
 pnpm video short                  # Explainer shorts: topic + sources → a sourced 30–60 s vertical video
 ```

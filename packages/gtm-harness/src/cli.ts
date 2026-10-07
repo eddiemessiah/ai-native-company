@@ -2,7 +2,7 @@ import { appendFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/p
 import { userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
 import { checkDraft, checkWorkspace, draftContext, formatFindings, type DraftContext, type Finding } from "./check";
@@ -49,6 +49,7 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
   wait <dir> [--minutes N]     Collect Telegram decisions into approvals.jsonl (default 10)
   links <dir>                  One-tap send links for every approved draft
   sync <dir>                   Copy the skills in .agents/skills/ to .claude/skills/ for Claude Code
+  mcp <dir>                    Serve the workspace as MCP tools (stdio) for any agent; no tool sends or approves
   eval --input <file> --models a,b [--runs N] [--out <dir>]
                                Run the same input through each model; write the support table
 
@@ -211,10 +212,20 @@ export async function createWorkspace(
   }
   const brain = brainFromEnv({ env, allowHeuristic: true, sinks: [] });
   const reviews = await Promise.all(generated.plan.drafts.map((d) => reviewOutreach(brain, d).catch(() => null)));
-  const files = buildHarness(input, generated.plan, reviews, opts.now ?? new Date(), { tools: toolStatus(env) });
+  const files = { ...buildHarness(input, generated.plan, reviews, opts.now ?? new Date(), { tools: toolStatus(env) }), ".mcp.json": mcpConfig(dir) };
   await writeFiles(dir, files);
   const planBy = generated.generatedBy.kind === "model" && route ? describeRoute({ ...route, model: generated.generatedBy.model ?? route.model }) : "templates";
   return { files: Object.keys(files).length, planBy, verdicts: reviews.map((r) => r?.verdict ?? "not reviewed"), ...(note ? { note } : {}) };
+}
+
+/**
+ * Project MCP config for a workspace made on this machine: open the folder in Claude Code and it
+ * offers this workspace's tools. Absolute paths, because the workspace and the repo live apart.
+ * `--silent` keeps pnpm's own lines off stdout, where the protocol runs.
+ */
+export function mcpConfig(dir: string, repoRoot = fileURLToPath(new URL("../../..", import.meta.url))): string {
+  const config = { mcpServers: { "shonin-gtm": { command: "pnpm", args: ["--silent", "--dir", repoRoot.replace(/[\\/]+$/, ""), "gtm", "mcp", resolve(dir)] } } };
+  return `${JSON.stringify(config, null, 2)}\n`;
 }
 
 export async function status(dir: string): Promise<string> {
@@ -234,16 +245,25 @@ export async function status(dir: string): Promise<string> {
 /** Reviews unreviewed drafts with the brain, then asks the founder about every draft still waiting. */
 export async function review(
   dir: string,
-  opts: { env?: Env; local?: boolean; ask?: (draft: Draft) => Promise<"a" | "r" | "s">; telegram?: TelegramConfig | null; fetch?: typeof fetch } = {},
+  opts: {
+    env?: Env;
+    local?: boolean;
+    ask?: (draft: Draft) => Promise<"a" | "r" | "s">;
+    telegram?: TelegramConfig | null;
+    fetch?: typeof fetch;
+    /** Only this draft, by its path in the workspace. */
+    only?: string;
+  } = {},
 ): Promise<string[]> {
   const env = opts.env ?? process.env;
+  const inScope = (file: string) => !opts.only || file === opts.only;
   const log: string[] = [];
   const brain = brainFromEnv({ env, allowHeuristic: true, sinks: [] });
   const approvals = await readApprovals(dir);
 
   // 1. The reviewer: drafts without a verdict get one, written into the file.
   for (const { draft, content } of await collectDrafts(dir)) {
-    if (draft.verdict) continue;
+    if (draft.verdict || !inScope(draft.file)) continue;
     const verdict = await reviewOutreach(brain, { channel: draft.channel, audience: draft.to ?? "", text: draft.text }).catch(() => null);
     if (verdict) {
       await writeFile(join(dir, draft.file), withVerdict(content, verdict));
@@ -256,6 +276,7 @@ export async function review(
   const optedOut = await readDoNotContact(dir);
   const ctx: DraftContext = draftContext(await readWorkspace(dir));
   const waiting = (await collectDrafts(dir)).filter(({ draft }) => {
+    if (!inScope(draft.file)) return false;
     const s = statusOf(draft, approvals);
     if (s === "blocked") log.push(`blocked   ${draft.file}: the reviewer blocked it; rewrite it first`);
     if (s !== "pending" && s !== "stale") return false;
@@ -513,6 +534,20 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         if (!target) throw new Error("Usage: pnpm gtm sync <dir>");
         console.log((await sync(target)).join("\n"));
         return 0;
+      case "mcp": {
+        if (!target) throw new Error("Usage: pnpm gtm mcp <dir>");
+        // stdout carries the protocol here: every message to a person goes to stderr.
+        const { createWorkspaceServer } = await import("./mcp");
+        const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
+        const transport = new StdioServerTransport();
+        const closed = new Promise<void>((resolve) => {
+          transport.onclose = () => resolve();
+        });
+        await createWorkspaceServer({ dir: target }).connect(transport);
+        console.error(`shonin-gtm: serving ${target}. No tool sends or approves; the founder does both.`);
+        await closed;
+        return 0;
+      }
       case "eval": {
         const inputPath = flag(argv, "input");
         const models = (flag(argv, "models") ?? "").split(",").map((m) => m.trim()).filter(Boolean);

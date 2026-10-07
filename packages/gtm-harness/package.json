@@ -10,7 +10,8 @@
     "./zip": "./src/zip.ts",
     "./input": "./src/input.ts",
     "./outbox": "./src/outbox.ts",
-    "./connectors": "./src/connectors/index.ts"
+    "./connectors": "./src/connectors/index.ts",
+    "./mcp": "./src/mcp.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
+    "@modelcontextprotocol/sdk": "^1.30.1",
     "@repo/brain": "workspace:*",
     "ai": "^7.0.116",
     "fflate": "^0.8.3",

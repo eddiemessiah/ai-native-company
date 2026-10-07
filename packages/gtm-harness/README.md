@@ -57,6 +57,7 @@ pnpm gtm review gtm-workspaces/acme --local       # …or approve here in the te
 pnpm gtm wait gtm-workspaces/acme                 # record the Telegram decisions
 pnpm gtm links gtm-workspaces/acme                # one-tap send links for approved drafts
 pnpm gtm sync gtm-workspaces/acme                 # copy .agents/skills/ to .claude/skills/ for Claude Code
+pnpm --silent gtm mcp gtm-workspaces/acme         # serve the workspace as MCP tools (below)
 pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --runs 5 --out packages/gtm-harness/evals
 ```
 
@@ -79,6 +80,29 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 
 **Opt-outs.** Anyone marked `do_not_contact` in `pipeline.csv` gets no approval card and no link, even for a draft approved earlier. Code does the lookup, matching an address however it's written (an email, a phone number's digits, a handle).
 
+## MCP: the workspace as tools
+
+`pnpm --silent gtm mcp <dir>` serves a workspace over stdio to any MCP client: Claude Code, Codex, Cursor, Gemini CLI, Claude Desktop, or a chat app that can't read files. Keep `--silent`: without it pnpm prints its own lines on stdout, where the protocol runs. `pnpm gtm new` writes a `.mcp.json` into the workspace, so Claude Code offers the tools when you open the folder.
+
+| Tool | What it does |
+|---|---|
+| `gtm_status` | Every draft with its status (held, pending, approved…), and leads by stage. Start here |
+| `gtm_read` | One file in the workspace, such as `AGENTS.md` or `brain/index.md`. Nothing outside it |
+| `gtm_check` | The workspace's rules as code, each finding with its fix |
+| `gtm_leads`, `gtm_add_lead`, `gtm_update_lead` | The pipeline. A new lead needs a source; nobody is added twice; `do_not_contact` can be set but never unset here |
+| `gtm_drafts`, `gtm_write_draft` | Drafts in the workspace format. A new draft comes back with what the checker found; nobody marked `do_not_contact` gets one |
+| `gtm_request_approval` | The reviewer's verdict, then Telegram cards to the founder; drafts that break a rule are held with the fix |
+| `gtm_approvals` | The founder's recorded decisions |
+| `gtm_log_correction` | A row in `corrections-log.md` |
+
+No tool sends a message or approves one. Approvals come from the founder, in Telegram or the terminal, and the founder taps every send link.
+
+For other clients, use the same command with absolute paths:
+
+```json
+{ "mcpServers": { "shonin-gtm": { "command": "pnpm", "args": ["--silent", "--dir", "/path/to/ai-native-company", "gtm", "mcp", "/path/to/workspace"] } } }
+```
+
 ## Use it in code
 
 ```ts
@@ -91,7 +115,7 @@ const { plan } = route ? await generatePlan(input, { route }) : templatePlan(inp
 const zip = zipHarness(buildHarness(input, plan, []));
 ```
 
-`@repo/gtm-harness/outbox` and `@repo/gtm-harness/connectors` are Node-only; the rest is safe in the browser.
+`@repo/gtm-harness/outbox`, `@repo/gtm-harness/connectors` and `@repo/gtm-harness/mcp` are Node-only; the rest is safe in the browser.
 
 ## Licence
 

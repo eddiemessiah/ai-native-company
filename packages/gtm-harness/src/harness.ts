@@ -73,6 +73,7 @@ Built by Shonin's GTM Harness on ${date}. A workspace your agents research from,
 - **Claude Code:** \`cd gtm-harness && claude\`, then say: *Read AGENTS.md and run today's tasks in sprint.md.*
 - **Codex, Cursor, Copilot or Gemini CLI:** open this folder; they read AGENTS.md and the skills in \`.agents/skills/\` (Gemini CLI through \`.gemini/settings.json\`).
 - **Any other agent:** point it at AGENTS.md. The skills are plain markdown runbooks it can follow.
+- **Any MCP client, even a chat app that can't read files:** \`pnpm --silent gtm mcp <folder>\` serves this folder as tools: leads, drafts, checks and approval requests. No tool sends or approves.
 
 The skills live in \`.agents/skills/\`; \`.claude/skills/\` is the same set, copied for Claude Code. Change a skill in both places, or edit \`.agents/skills/\` and run \`pnpm gtm sync <folder>\`.
 

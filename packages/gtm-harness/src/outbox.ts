@@ -191,6 +191,11 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
+/** One CSV line: fields with a comma, a quote or a line break are quoted, quotes doubled. */
+export function csvRow(fields: readonly string[]): string {
+  return fields.map((f) => (/[",\r\n]/.test(f) ? `"${f.replace(/"/g, '""')}"` : f)).join(",");
+}
+
 /** One key per person, however the address is written: an email, a phone number's digits, or a handle. */
 export function contactKey(raw: string): string {
   const s = raw.trim().toLowerCase();
