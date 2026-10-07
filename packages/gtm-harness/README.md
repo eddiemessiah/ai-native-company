@@ -62,6 +62,8 @@ Add `--env apps/web/.env.local` to load keys. `examples/shonin.json` is Shonin's
 
 **Sending.** An approved draft becomes a link that opens the app with the message filled in: WhatsApp click-to-chat, an email, an X post, a Telegram share. The founder's tap is the send. LinkedIn and Discord have no such link, so the founder copies the text.
 
+**Opt-outs.** Anyone marked `do_not_contact` in `pipeline.csv` gets no approval card and no link, even for a draft approved earlier. Code does the lookup, matching an address however it's written (an email, a phone number's digits, a handle).
+
 ## Use it in code
 
 ```ts

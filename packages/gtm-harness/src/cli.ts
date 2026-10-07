@@ -9,7 +9,21 @@ import { evalModel, evalTable } from "./evals";
 import { buildHarness } from "./harness";
 import { gtmInputSchema, type GtmInput } from "./input";
 import { describeRoute, routeModel } from "./models";
-import { approvalLine, canSend, draftId, parseApprovals, parseDraft, sendLink, statusOf, textHash, type ApprovalRecord, type Draft, type SendLink } from "./outbox";
+import {
+  approvalLine,
+  canSend,
+  doNotContact,
+  draftId,
+  isDoNotContact,
+  parseApprovals,
+  parseDraft,
+  sendLink,
+  statusOf,
+  textHash,
+  type ApprovalRecord,
+  type Draft,
+  type SendLink,
+} from "./outbox";
 import { generatePlan, templatePlan, type GeneratedPlan } from "./plan";
 import { reviewOutreach, type OutreachReview } from "./review";
 
@@ -77,6 +91,12 @@ export async function collectDrafts(dir: string): Promise<{ draft: Draft; conten
 export async function readApprovals(dir: string): Promise<ApprovalRecord[]> {
   const path = join(dir, "approvals.jsonl");
   return (await exists(path)) ? parseApprovals(await readFile(path, "utf8")) : [];
+}
+
+/** Who asked not to be contacted, from the workspace's pipeline.csv. */
+export async function readDoNotContact(dir: string): Promise<Set<string>> {
+  const path = join(dir, "pipeline.csv");
+  return (await exists(path)) ? doNotContact(await readFile(path, "utf8")) : new Set();
 }
 
 export async function recordDecision(dir: string, record: ApprovalRecord): Promise<void> {
@@ -198,10 +218,15 @@ export async function review(
     }
   }
 
-  // 2. The founder: every draft that's pending for its current text.
+  // 2. The founder: every draft that's pending for its current text, unless its recipient opted out.
+  const optedOut = await readDoNotContact(dir);
   const waiting = (await collectDrafts(dir)).filter(({ draft }) => {
     const s = statusOf(draft, approvals);
     if (s === "blocked") log.push(`blocked   ${draft.file}: the reviewer blocked it; rewrite it first`);
+    if ((s === "pending" || s === "stale") && isDoNotContact(draft, optedOut)) {
+      log.push(`skipped   ${draft.file}: ${draft.to} is marked do_not_contact in pipeline.csv`);
+      return false;
+    }
     return s === "pending" || s === "stale";
   });
   if (!waiting.length) {
@@ -268,7 +293,15 @@ export async function wait(
   const log: string[] = [];
   const deadline = Date.now() + (opts.minutes ?? 10) * 60_000;
   // Cards still waiting for a decision; decided ones leave the map and the saved state.
-  const known = new Map(Object.entries(state.cards).map(([id, c]) => [id, c.link] as const));
+  // A recipient who opted out since the card went out gets no link, whatever the decision.
+  const optedOut = await readDoNotContact(dir);
+  const drafts = new Map((await collectDrafts(dir)).map(({ draft }) => [draft.file, draft] as const));
+  const known = new Map(
+    Object.entries(state.cards).map(([id, c]) => {
+      const draft = drafts.get(c.file);
+      return [id, draft && isDoNotContact(draft, optedOut) ? null : c.link] as const;
+    }),
+  );
   while (Date.now() < deadline && known.size > 0) {
     const { decisions, nextOffset } = await pollDecisions(telegram, { ...(state.offset !== undefined ? { offset: state.offset } : {}), waitSeconds: opts.waitSeconds ?? 25, known });
     state.offset = nextOffset;
@@ -294,9 +327,14 @@ export async function wait(
 
 export async function links(dir: string): Promise<string[]> {
   const approvals = await readApprovals(dir);
+  const optedOut = await readDoNotContact(dir);
   const out: string[] = [];
   for (const { draft } of await collectDrafts(dir)) {
     if (!canSend(draft, approvals)) continue;
+    if (isDoNotContact(draft, optedOut)) {
+      out.push(`${draft.file}\n  Not sent: ${draft.to} is marked do_not_contact in pipeline.csv.`);
+      continue;
+    }
     const link = sendLink(draft);
     out.push(link ? `${draft.file}\n  ${link.label}: ${link.url}` : `${draft.file}\n  Copy the text and send it on ${draft.channel} yourself.`);
   }

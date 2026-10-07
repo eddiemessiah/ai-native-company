@@ -155,3 +155,73 @@ export function sendLink(draft: Draft): SendLink | null {
   }
   return null;
 }
+
+// ── Do not contact ───────────────────────────────────────────────────────────
+
+/** A minimal RFC 4180 reader: quoted fields, doubled quotes, commas and newlines inside quotes. */
+export function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  const endRow = () => {
+    row.push(field);
+    if (row.some((f) => f.trim() !== "")) rows.push(row);
+    row = [];
+    field = "";
+  };
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    if (quoted) {
+      if (ch !== '"') field += ch;
+      else if (text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else quoted = false;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") {
+      row.push(field);
+      field = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      endRow();
+    } else field += ch;
+  }
+  if (field !== "" || row.length > 0) endRow();
+  return rows;
+}
+
+/** One key per person, however the address is written: an email, a phone number's digits, or a handle. */
+export function contactKey(raw: string): string {
+  const s = raw.trim().toLowerCase();
+  const email = s.match(/[^\s<>@,;]+@[^\s<>@,;]+\.[a-z]{2,}/);
+  if (email) return email[0];
+  const digits = s.replace(/[^\d]/g, "");
+  if (!/[a-z]/.test(s.replace(/^tel:/, "")) && digits.length >= 8) return digits;
+  return s
+    .replace(/^(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\//, "")
+    .replace(/^@/, "")
+    .replace(/[?#].*$/, "")
+    .replace(/\/+$/, "");
+}
+
+/** The people marked do_not_contact in pipeline.csv. A lookup in code: no model decides who opted out. */
+export function doNotContact(pipelineCsv: string): Set<string> {
+  const [header, ...rows] = parseCsv(pipelineCsv);
+  const columns = (header ?? []).map((h) => h.trim().toLowerCase());
+  const contact = columns.indexOf("handle_or_email");
+  const flag = columns.indexOf("do_not_contact");
+  const out = new Set<string>();
+  if (contact < 0 || flag < 0) return out;
+  for (const row of rows) {
+    const value = (row[flag] ?? "").trim().toLowerCase();
+    if (!value || ["no", "n", "false", "0"].includes(value)) continue;
+    const key = contactKey(row[contact] ?? "");
+    if (key) out.add(key);
+  }
+  return out;
+}
+
+export function isDoNotContact(draft: Draft, blocked: ReadonlySet<string>): boolean {
+  return draft.to !== undefined && blocked.has(contactKey(draft.to));
+}

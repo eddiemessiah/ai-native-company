@@ -18,7 +18,20 @@ import {
   type GtmInput,
   type ModelRoute,
 } from "../src/index";
-import { canSend, draftId, parseApprovals, parseDraft, sendLink, statusOf, textHash, type ApprovalRecord } from "../src/outbox";
+import {
+  canSend,
+  contactKey,
+  doNotContact,
+  draftId,
+  isDoNotContact,
+  parseApprovals,
+  parseCsv,
+  parseDraft,
+  sendLink,
+  statusOf,
+  textHash,
+  type ApprovalRecord,
+} from "../src/outbox";
 
 const input: GtmInput = gtmInputSchema.parse({
   product: "Ajo Circle",
@@ -155,6 +168,30 @@ describe("the outbox", () => {
     expect(sendLink({ ...draft, channel: "X", to: "@ada" })!.url.startsWith("https://x.com/intent/post?text=")).toBe(true);
     expect(sendLink({ ...draft, channel: "LinkedIn" })).toBeNull();
   });
+
+  it("finds everyone marked do_not_contact, however their address is written", () => {
+    expect(parseCsv('a,"b, with comma","say ""no"""\r\n\nc,"two\nlines",d')).toEqual([
+      ["a", "b, with comma", 'say "no"'],
+      ["c", "two\nlines", "d"],
+    ]);
+    expect(contactKey("+234 801 234 5678")).toBe(contactKey("wa.me/2348012345678"));
+    expect(contactKey("Ada <ADA@Example.com>")).toBe("ada@example.com");
+    expect(contactKey("https://x.com/ada_builds/")).toBe(contactKey("@Ada_Builds"));
+    expect(contactKey("linkedin.com/in/ada")).not.toBe(contactKey("linkedin.com/in/bola"));
+
+    const csv = [
+      "name,handle_or_email,channel,source,score_pct,stage,last_touch,next_step,notes,do_not_contact",
+      'Ada,+234 801 234 5678,whatsapp,"https://example.com/ada, the group",80,contacted,2026-10-07,stop,"said ""no thanks""",yes',
+      "Bola,bola@example.com,email,https://example.com/bola,70,new,,,,",
+      "Chi,@chi,x,https://x.com/chi,60,new,,,,no",
+    ].join("\n");
+    const blocked = doNotContact(csv);
+    expect([...blocked]).toEqual(["2348012345678"]);
+    expect(isDoNotContact({ ...draft, to: "+2348012345678" }, blocked)).toBe(true);
+    expect(isDoNotContact({ ...draft, to: "bola@example.com" }, blocked)).toBe(false);
+    expect(isDoNotContact(draft, blocked)).toBe(false);
+    expect(doNotContact("name,notes\nAda,yes").size).toBe(0);
+  });
 });
 
 describe("the connectors", () => {
@@ -238,6 +275,31 @@ describe("the CLI", () => {
     await writeFile(join(dir, whatsapp.draft.file), `${whatsapp.content.trimEnd()} One more line.\n`);
     expect((await links(dir)).join("\n")).not.toContain(whatsapp.draft.file);
     expect(await status(dir)).toContain("stale");
+  });
+
+  it("gives no link or approval card for anyone marked do_not_contact", async () => {
+    const { dir } = await workspace();
+    const whatsapp = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!;
+    const lines = whatsapp.content.split("\n");
+    lines.splice(lines.lastIndexOf("---"), 0, "**To:** +234 801 234 5678", "");
+    await writeFile(join(dir, whatsapp.draft.file), lines.join("\n"));
+
+    await review(dir, { env: {}, local: true, ask: async (d) => (d.channel === "WhatsApp" ? "a" : "s") });
+    expect((await links(dir)).join("\n")).toContain("https://wa.me/2348012345678?text=");
+
+    await writeFile(
+      join(dir, "pipeline.csv"),
+      'name,handle_or_email,channel,source,score_pct,stage,last_touch,next_step,notes,do_not_contact\nAda,2348012345678,whatsapp,"a group, Lagos",80,contacted,2026-10-07,stop,"asked us to stop",yes\n',
+    );
+    const out = (await links(dir)).join("\n");
+    expect(out).toContain("Not sent: +234 801 234 5678 is marked do_not_contact");
+    expect(out).not.toContain("wa.me/2348012345678");
+
+    await writeFile(join(dir, whatsapp.draft.file), `${lines.join("\n").trimEnd()} Thanks.\n`);
+    const before = (await readApprovals(dir)).length;
+    const log = await review(dir, { env: {}, local: true, ask: async () => "a" });
+    expect(log.join("\n")).toContain(`skipped   ${whatsapp.draft.file}: +234 801 234 5678 is marked do_not_contact`);
+    expect((await readApprovals(dir)).slice(before).some((a) => a.file === whatsapp.draft.file)).toBe(false);
   });
 
   it("sends review cards to Telegram, then records the founder's decision", async () => {
