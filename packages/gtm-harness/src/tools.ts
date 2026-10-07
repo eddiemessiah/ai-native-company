@@ -12,6 +12,6 @@ export const DEFAULT_TOOLS: readonly ToolStatus[] = [
   { name: "Telegram approvals", connected: false, does: "Approve drafts from your phone; approved cards turn into the send link", needs: "The Shonin GTM CLI with TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID" },
   { name: "Slack review copies", connected: false, does: "Show drafts to your team in Slack", needs: "The Shonin GTM CLI with GTM_SLACK_WEBHOOK_URL" },
   { name: "Gmail drafts", connected: false, does: "Approved emails land in Gmail as drafts", needs: "Planned" },
-  { name: "Google Sheets pipeline", connected: false, does: "pipeline.csv kept in a shared sheet", needs: "Planned" },
-  { name: "WhatsApp Business", connected: false, does: "Approved template messages through the official Cloud API", needs: "Planned" },
+  { name: "Google Sheets pipeline", connected: false, does: "pipeline.csv kept in a sheet the harness creates", needs: "Planned" },
+  { name: "WhatsApp Business", connected: false, does: "Approved template messages to people who opted in, through the official Cloud API", needs: "Planned" },
 ];

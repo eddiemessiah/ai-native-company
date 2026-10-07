@@ -28,7 +28,12 @@ export function toolStatus(env: Env = process.env): ToolStatus[] {
       : { name: "Slack review copies", connected: false, does: "Show drafts to your team in Slack", needs: "GTM_SLACK_WEBHOOK_URL (an incoming webhook)" },
     { name: "One-tap send links", connected: true, does: "WhatsApp click-to-chat, email, X posts and Telegram share links, filled in for the founder to send" },
     { name: "Gmail drafts", connected: false, does: "Approved emails land in Gmail as drafts", needs: "Planned: Google OAuth (gmail.compose)" },
-    { name: "Google Sheets pipeline", connected: false, does: "pipeline.csv kept in a shared sheet", needs: "Planned: Google OAuth (spreadsheets)" },
-    { name: "WhatsApp Business", connected: false, does: "Approved template messages sent through the official Cloud API", needs: "Planned: a verified Meta business and WhatsApp Cloud API access" },
+    { name: "Google Sheets pipeline", connected: false, does: "pipeline.csv kept in a sheet the harness creates", needs: "Planned: Google OAuth (drive.file, which reaches only that sheet)" },
+    {
+      name: "WhatsApp Business",
+      connected: false,
+      does: "Approved template messages to people who opted in, through the official Cloud API",
+      needs: "Planned: a verified Meta business and WhatsApp Cloud API access",
+    },
   ];
 }

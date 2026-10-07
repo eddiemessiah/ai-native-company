@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { collectDrafts, createWorkspace, links, readApprovals, review, status, sync, wait, withVerdict } from "../src/cli";
+import { collectDrafts, createWorkspace, links, loadEnv, readApprovals, review, status, sync, wait, withVerdict } from "../src/cli";
 import { pollDecisions, postForReview, sendReviewCard, toolStatus, type TelegramConfig } from "../src/connectors";
 import {
   buildHarness,
@@ -285,6 +285,15 @@ describe("the CLI", () => {
     await writeFile(join(dir, whatsapp.draft.file), `${whatsapp.content.trimEnd()} One more line.\n`);
     expect((await links(dir)).join("\n")).not.toContain(whatsapp.draft.file);
     expect(await status(dir)).toContain("stale");
+  });
+
+  it("lets the --env file win over the shell, so a client's cards go to the client's chat", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "gtm-env-"));
+    const file = join(dir, "acme.env");
+    await writeFile(file, "TELEGRAM_CHAT_ID=acme-chat\nGTM_APPROVER_IDS=777\n");
+    const env: Record<string, string | undefined> = { TELEGRAM_CHAT_ID: "edidiong-chat", TELEGRAM_BOT_TOKEN: "T" };
+    expect(await loadEnv(file, env)).toEqual(["GTM_APPROVER_IDS", "TELEGRAM_CHAT_ID"]);
+    expect(env).toEqual({ TELEGRAM_CHAT_ID: "acme-chat", GTM_APPROVER_IDS: "777", TELEGRAM_BOT_TOKEN: "T" });
   });
 
   it("syncs edited skills to Claude Code's folder, and keeps skills only Claude Code has", async () => {

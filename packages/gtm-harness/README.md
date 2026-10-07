@@ -61,7 +61,7 @@ pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --
 
 **Evals before claims.** `pnpm gtm eval` runs the same founder input through each model and writes a table. A model is supported only when every run returns a valid plan and no draft carries a claim-like number the founder didn't give. The table also records median seconds, tokens and, when the router reports it (AI Gateway, OpenRouter), the cost per run. Hosted pricing rests on those numbers, not on estimates.
 
-Add `--env apps/web/.env.local` to load keys. `examples/shonin.json` is Shonin's own run. `gtm-workspaces/` is git-ignored: it holds leads and approvals.
+Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. The file's values win over the shell's, so each workspace can carry its own model key, Telegram bot, chat and approvers, and a client's cards never land in someone else's chat. `examples/shonin.json` is Shonin's own run. `gtm-workspaces/` is git-ignored: it holds leads and approvals.
 
 **Approvals.** Each draft goes to the founder's Telegram chat with Approve and Reject (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; `GTM_APPROVER_IDS` limits who can approve). Decisions land in `approvals.jsonl`, bound to a hash of the exact text: edit an approved draft and it needs approving again. `GTM_SLACK_WEBHOOK_URL` posts review copies to Slack.
 

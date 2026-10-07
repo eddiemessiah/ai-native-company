@@ -3,6 +3,7 @@ import { userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
+import { parseEnv } from "node:util";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
 import { pollDecisions, postForReview, sendReviewCard, telegramFromEnv, toolStatus, type TelegramConfig } from "./connectors";
 import { evalModel, evalTable } from "./evals";
@@ -378,6 +379,18 @@ export async function sync(dir: string): Promise<string[]> {
   ];
 }
 
+/**
+ * Loads an env file over the current environment. Node's own loadEnvFile keeps a variable the
+ * shell already has, so `--env clients/acme.env` would quietly send Acme's review cards to whichever
+ * TELEGRAM_CHAT_ID the shell exported. The file named on the command line wins.
+ */
+export async function loadEnv(path: string, env: Env = process.env): Promise<string[]> {
+  const values = parseEnv(await readFile(path, "utf8"));
+  const keys = Object.keys(values).sort();
+  for (const key of keys) env[key] = values[key];
+  return keys;
+}
+
 // ── Terminal plumbing ────────────────────────────────────────────────────────
 
 function safeUser(): string {
@@ -416,8 +429,8 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   const at = (path: string) => resolve(base, path);
   const target = rawTarget && !rawTarget.startsWith("--") ? at(rawTarget) : undefined;
   const envFile = flag(argv, "env");
-  if (envFile) process.loadEnvFile(at(envFile));
   try {
+    if (envFile) await loadEnv(at(envFile));
     switch (command) {
       case "doctor":
         console.log(await doctor());

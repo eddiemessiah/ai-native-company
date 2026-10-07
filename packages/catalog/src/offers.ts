@@ -164,22 +164,28 @@ export const offers: readonly Offer[] = [
     category: "product",
     status: "beta",
     featured: true,
-    oneLiner: "Your go-to-market, run by agents you can check: a scorecard, sources, reviewed first messages, a 7-day sprint and a folder for Claude Code.",
+    oneLiner: "Your go-to-market, run by agents you can check, with any model: a marketing brain, a skill per role, reviewed drafts, approvals from your phone and one-tap sends.",
     pitch:
-      "A go-to-market harness for founders: describe your product and get your ideal-customer scorecard, where those customers gather, first outreach messages checked by a reviewer that can block but never send, a seven-day launch sprint, and a folder of rules and agent prompts to keep running with Claude Code",
+      "A go-to-market harness for founders: describe your product and get a workspace your agents keep running, with the model you already pay for. It holds a marketing brain (brand, audience and scorecard, positioning, channels, lessons), a skill for every role from sourcing leads to recording what worked, a first campaign, and first messages checked by a reviewer that can block but never send. You approve each message from Telegram and send it with one tap",
     audience: ["startup", "builders"],
     unit: "One harness for one product",
     intake: ["Your product in one or two sentences", "Who it's for, and your goal for the month", "The channels you can use"],
     engine:
-      "An LLM writes the plan and the drafts; the brain reviews every draft (ready, revise or blocked); code packs the folder, the pipeline and the Monday dashboard. The founder sends everything.",
+      "Any model writes the plan and the drafts (Claude, or any provider through Vercel AI Gateway, OpenRouter or a /chat/completions endpoint); the brain reviews every draft (ready, revise or blocked); code packs the workspace, binds each approval to the exact text, enforces opt-outs and builds the one-tap send links. The founder sends everything.",
     rulebook: [
       "The harness never sends anything; the founder does.",
       "No invented traction, numbers, customers or quotes, in the plan or in the drafts.",
       "The reviewer can block a draft but never ship one.",
       "Every edit the founder makes goes in the corrections log; repeated ones become rules.",
+      "An approval covers the exact text it was given for; an edited draft needs approving again.",
+      "Anyone marked do_not_contact gets no approval card and no send link, whatever was approved before.",
+      "The first WhatsApp message to anyone is the founder's own tap; the WhatsApp Business API is only for people who opted in, and outside the 24-hour reply window it sends only approved templates (research/gtm-harnesses.md).",
+      "No bot logs into anyone's WhatsApp, Telegram or LinkedIn, and research reads logged-out public pages only, with no stealth tools or CAPTCHA solving (research/gtm-harnesses.md).",
+      "A model is called supported only after it passes the harness evals on every run.",
     ],
-    review: "Every draft carries the reviewer's verdict and fixes; the founder approves new rules each Monday.",
-    delivery: "A web run in about a minute, and a .zip harness folder: CLAUDE.md, scorecard, sources, rules, prompts, drafts, sprint and dashboard.",
+    review: "Every draft carries the reviewer's verdict and fixes; the founder approves each message, and accepts new rules each Monday.",
+    delivery:
+      "A web run in about a minute, and a workspace any agent can run (Claude Code, Codex, Cursor, Copilot, Gemini CLI): AGENTS.md, the brain, workflows, 11 skills, a first campaign, reviewed drafts, the pipeline, the corrections log, the sprint and the dashboard. The `pnpm gtm` CLI adds Telegram approvals and send links.",
     turnaround: "About a minute",
     price: {
       label: "Free and open source (MIT)",
@@ -188,11 +194,11 @@ export const offers: readonly Offer[] = [
     },
     distribution: ["Founder communities and office hours", "Startup programs and accelerators", "X threads with a live demo"],
     split: {
-      llm: "The plan, the sources and the first messages",
+      llm: "The plan, the research, the campaign directions and the first messages, with any model",
       decide: "Whether each draft is ready, needs a revision, or is blocked",
-      code: "Validation, the scorecard math, the folder, the pipeline and the dashboard",
+      code: "Validation, the scorecard math, the workspace, approvals bound to the text, opt-outs, the send links and the evals",
     },
-    tags: ["gtm", "founders", "agents", "claude-code", "open-source"],
+    tags: ["gtm", "founders", "agents", "any-model", "open-source"],
     links: [{ label: "Run it", href: "/gtm" }],
   },
 

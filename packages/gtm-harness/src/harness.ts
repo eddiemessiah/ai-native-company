@@ -440,6 +440,9 @@ ${tools.map((t) => `| ${cell(t.name)} | ${t.connected ? "yes" : "no"} | ${cell(t
 
 - Research uses public pages only. Save the URL and date.
 - No bot logs into anyone's WhatsApp or Telegram account, and nothing scrapes sites that need a login.
+- Browse at a person's pace: no stealth tools, no CAPTCHA solving.
+- The first WhatsApp message to anyone is the founder's own tap on the link. The WhatsApp Business API is only for people who opted in to hear from this business, and outside the 24-hour reply window it sends only approved templates.
+- A Telegram bot can't message someone first. It reaches the founder; the founder reaches everyone else.
 - Competitors' public ads show what they run, not what works. Use them for hypotheses; judge results with your own data.
 `;
 
