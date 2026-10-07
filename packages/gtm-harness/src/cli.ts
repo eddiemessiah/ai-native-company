@@ -32,6 +32,7 @@ import {
   type SendLink,
 } from "./outbox";
 import { formatDue } from "./pipeline";
+import { trace } from "./trace";
 import { generatePlan, templatePlan, type GeneratedPlan } from "./plan";
 import { reviewOutreach, type OutreachReview } from "./review";
 
@@ -215,6 +216,21 @@ export function withVerdict(content: string, review: OutreachReview): string {
 interface ReviewState {
   offset?: number;
   cards: Record<string, { file: string; hash: string; messageId: number; link: SendLink | null }>;
+  /** Drafts put in front of the founder today, for the daily cap. */
+  daily?: { date: string; count: number };
+}
+
+/**
+ * The founder's attention is the scarce part: past GTM_MAX_CARDS_PER_DAY (15 by default) approvals
+ * turn into rubber stamps, so the rest wait for tomorrow.
+ */
+function dailyCap(env: Env): number {
+  const n = Number(env.GTM_MAX_CARDS_PER_DAY);
+  return Number.isInteger(n) && n > 0 ? n : 15;
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function readState(dir: string): Promise<ReviewState> {
@@ -380,8 +396,16 @@ export async function review(
     }
     const terminal = opts.ask ? null : terminalAsker();
     const ask = opts.ask ?? terminal!.ask;
+    const state = await readState(dir);
+    const cap = dailyCap(env);
+    if (state.daily?.date !== today()) state.daily = { date: today(), count: 0 };
     try {
       for (const { draft } of waiting) {
+        if (state.daily.count >= cap) {
+          log.push(`held      ${draft.file}: today's ${cap} drafts have been in front of you (GTM_MAX_CARDS_PER_DAY); it waits for tomorrow`);
+          continue;
+        }
+        state.daily.count++;
         const answer = await ask(draft);
         if (answer === "s") continue;
         const record: ApprovalRecord = {
@@ -397,6 +421,7 @@ export async function review(
       }
     } finally {
       terminal?.close();
+      await saveState(dir, state);
     }
     return log;
   }
@@ -404,9 +429,16 @@ export async function review(
   const telegram = (opts.telegram ?? telegramFromEnv(env))!;
   const tg = opts.fetch ? { ...telegram, fetch: opts.fetch } : telegram;
   const state = await readState(dir);
+  const cap = dailyCap(env);
+  if (state.daily?.date !== today()) state.daily = { date: today(), count: 0 };
   for (const { draft } of waiting) {
     const id = draftId(draft);
     if (state.cards[id]) continue;
+    if (state.daily.count >= cap) {
+      log.push(`held      ${draft.file}: today's ${cap} cards are out (GTM_MAX_CARDS_PER_DAY); it goes tomorrow`);
+      continue;
+    }
+    state.daily.count++;
     const link = sendLink(draft);
     const messageId = await sendReviewCard(tg, draft, id);
     state.cards[id] = { file: draft.file, hash: textHash(draft.text), messageId, link };
@@ -620,7 +652,22 @@ function flag(args: string[], name: string): string | undefined {
   return i >= 0 ? args[i + 1] : undefined;
 }
 
+/** The commands that act on a workspace leave a line in its trace: the command and its flags, nothing personal. */
+const TRACED = new Set(["status", "check", "due", "review", "wait", "links", "sent", "approve", "sync"]);
+
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+  const code = await run(argv);
+  const [command, rawTarget] = argv;
+  if (command && TRACED.has(command) && rawTarget && !rawTarget.startsWith("--")) {
+    const dir = resolve(process.env.INIT_CWD ?? process.cwd(), rawTarget);
+    if (await exists(join(dir, "AGENTS.md"))) {
+      await trace(dir, { at: new Date().toISOString(), actor: "cli", action: command, ok: code === 0, args: { flags: argv.filter((a) => a.startsWith("--")).join(" ") } });
+    }
+  }
+  return code;
+}
+
+async function run(argv: string[]): Promise<number> {
   const [command, rawTarget] = argv;
   // `pnpm gtm` runs inside packages/gtm-harness; resolve paths from where the founder typed the command.
   const base = process.env.INIT_CWD ?? process.cwd();

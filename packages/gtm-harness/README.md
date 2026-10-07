@@ -74,9 +74,11 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 - drafts: unfilled [slots], the word limit in `rules/outreach.md`, claim-like numbers that aren't in `brain/products/`, recipients marked `do_not_contact`, the same text sent to many people;
 - pipeline rows with no source, scores outside 0–100, duplicates and broken rows;
 - campaign outputs made before `approval.md` says approved, or approvals with no signature;
-- skills that drifted between `.agents/skills/` and `.claude/skills/`.
+- skills that drifted between `.agents/skills/` and `.claude/skills/`;
+- every phrase in `rules/checks.md`: the hype words, filler openers and links seeded from the voice and outreach rules, plus any row the founder adds when a correction comes up twice;
+- env files inside the workspace, where any agent working there can read the keys.
 
-`review` holds back any draft with an error, so the founder only sees drafts that pass. `links` refuses an approved draft that still has a slot, because the link would send it as written.
+`review` holds back any draft with an error, so the founder only sees drafts that pass, and at most `GTM_MAX_CARDS_PER_DAY` (15) a day: approvals at volume turn into rubber stamps. `links` refuses an approved draft that still has a slot, because the link would send it as written.
 
 **Signed decisions.** An agent can write any file in the workspace, so a line in `approvals.jsonl` proves nothing by itself. Every decision (Telegram, terminal, campaign) and every reviewer verdict is signed with a key kept outside the workspace, in `~/.config/shonin-gtm/approval.key` (or `GTM_APPROVAL_KEY_FILE`). A record that doesn't verify counts for nothing, and `check` reports it as an error. Terminal approvals need a real terminal: piped answers are refused. A `Reviewer:` line typed into a draft is display only; `review` re-runs the reviewer on any draft without a signed verdict for its current text.
 
@@ -92,7 +94,8 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 
 | Tool | What it does |
 |---|---|
-| `gtm_status` | Every draft with its status (held, pending, approved…), and leads by stage. Start here |
+| `gtm_session_start`, `gtm_session_end` | The start and end of every session: where things stand, follow-ups due, the checker, the campaign's state, today's sprint, the last handoff; then the new handoff, saved to `progress.md` |
+| `gtm_status` | Every draft with its status (held, pending, approved…), and leads by stage |
 | `gtm_read` | One file in the workspace, such as `AGENTS.md` or `brain/index.md`. Nothing outside it |
 | `gtm_check` | The workspace's rules as code, each finding with its fix |
 | `gtm_leads`, `gtm_add_lead`, `gtm_update_lead` | The pipeline. A new lead needs a source; nobody is added twice; stages come from a fixed list and dates must be dates; `do_not_contact` can be set but never unset here |
@@ -103,6 +106,8 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 | `gtm_log_correction` | A row in `corrections-log.md` |
 
 No tool sends a message or approves one. Approvals come from the founder, in Telegram or the terminal, and the founder taps every send link.
+
+Every tool call, and every CLI command on a workspace, leaves a line in `.shonin/trace.jsonl`. Personal fields (names, handles, messages, evidence, draft paths) and the results are stored only as hashes.
 
 For other clients, use the same command with absolute paths:
 

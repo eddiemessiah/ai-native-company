@@ -95,9 +95,10 @@ The skills live in \`.agents/skills/\`; \`.claude/skills/\` is the same set, cop
 | .claude/skills/ | The same skills, copied for Claude Code |
 | ${c}/ | Your first campaign: state, research, brief, concepts, selections, approval, results, outbox |
 | drafts/ | This week's first messages, already reviewed |
-| rules/ | Voice, outreach and claims rules |
+| rules/ | Voice, outreach and claims rules, and checks.md: the phrases code holds drafts back for |
 | pipeline.csv | One row per lead |
 | corrections-log.md | Every edit you make to a draft: how the rules get better |
+| progress.md | One handoff per agent session: done, blockers, next |
 | sprint.md | Seven days of tasks |
 | dashboard.md | Five numbers, every Monday |
 `;
@@ -156,9 +157,9 @@ Each campaign keeps its own state.md: completed steps, blockers, the next action
 
 ## Every session
 
-1. **Start:** read the campaign's state.md and today's part of sprint.md. If the \`pnpm gtm\` CLI is available, run \`pnpm gtm status\` on this folder.
-2. **Before anything goes to the founder:** run \`pnpm gtm check\` on this folder and fix every error. Each finding names the rule it breaks and how to fix it, and drafts with errors are held back from approval.
-3. **End:** update state.md with what's done, any blockers and the next action. If this folder is a git repository, commit with a one-line summary of the session.
+1. **Start:** call the gtm_session_start tool. It shows where drafts and leads stand, who is due a follow-up, what the checker finds, the campaign's state, today's part of sprint.md and the last handoff. Without the tools, read the campaign's state.md, today's part of sprint.md and the end of progress.md, and run \`pnpm gtm status\` on this folder.
+2. **Before anything goes to the founder:** run \`pnpm gtm check\` (or gtm_check) and fix every error. Each finding names the rule it breaks and how to fix it, and drafts with errors are held back from approval.
+3. **End:** call gtm_session_end with what's done, blockers, the next action, and any mistakes, learnings or wishes for the founder. Without the tools, add the same as a dated section at the end of progress.md. Update the campaign's state.md either way. If this folder is a git repository, commit with a one-line summary.
 
 ## Today
 
@@ -393,6 +394,26 @@ Read the relevant lessons before planning, and say which ones shaped the plan. A
 Edit these to sound like you. Add a rule whenever you correct the same thing twice.
 `;
 
+  files["rules/checks.md"] = `# Checks code runs
+
+Every draft is checked against this table before the founder sees it (\`pnpm gtm check\`, and every review). An error holds the draft back; a warning is shown. Phrases match whole words, in any case; end one with * to match any word that starts with it.
+
+When the same correction comes up twice and the founder accepts it as a rule, add a row here, citing the corrections-log.md row it came from.
+
+| Never write | Rule | Fix | Level |
+|---|---|---|---|
+| revolutionary | rules/voice.md #2: no hype words | Say what it does, plainly | error |
+| game-changing | rules/voice.md #2: no hype words | Say what it does, plainly | error |
+| cutting-edge | rules/voice.md #2: no hype words | Say what it does, plainly | error |
+| seamless | rules/voice.md #2: no hype words | Say what it does, plainly | error |
+| synergy | rules/voice.md #2: no hype words | Say what it does, plainly | error |
+| unlock | rules/voice.md #2: no hype words | Say what changes for them | warning |
+| hope you're well | rules/voice.md #3: no filler openers | Open with the line only they could receive | error |
+| in today's fast-paced world | rules/voice.md #3: no filler openers | Open with the line only they could receive | error |
+| http* | rules/outreach.md #4: no links in a first message unless they asked | Take the link out and offer to send it | warning |
+| www. | rules/outreach.md #4: no links in a first message unless they asked | Take the link out and offer to send it | warning |
+`;
+
   files["rules/outreach.md"] = `# Outreach
 
 1. Under 90 words.
@@ -535,7 +556,7 @@ The reviewer can block. You can't edit a draft and then approve it yourself, and
   files[".agents/skills/weekly-review/SKILL.md"] = skill(
     "weekly-review",
     "Turn the week's corrections into proposed rules and fill the dashboard. Use on Mondays.",
-    `Compare each message the founder sent this week with the draft that was prepared. Classify every change as a factual error, an audience preference, missing information or a style change, and log it in corrections-log.md. Propose a rule for any correction that happened more than once; nothing becomes a rule until the founder approves it, then add it to the right file in rules/ with the original and the sent version as an example.
+    `Compare each message the founder sent this week with the draft that was prepared. Classify every change as a factual error, an audience preference, missing information or a style change, and log it in corrections-log.md. Propose a rule for any correction that happened more than once; nothing becomes a rule until the founder approves it, then add it to the right file in rules/ with the original and the sent version as an example. When a phrase can catch the rule, also add a row to rules/checks.md (the phrase, the rule, the fix, error or warning), so code enforces it on every draft from then on.
 
 Then fill this week's column in dashboard.md and say in three lines what to change next week.`,
   );
@@ -688,6 +709,11 @@ The reviewer fills in the Reviewer line. Nothing here is sent until the founder 
 
   // ── The outreach loop ──────────────────────────────────────────────────────
   files["pipeline.csv"] = "name,handle_or_email,channel,source,score_pct,stage,last_touch,next_step,notes,do_not_contact\n";
+
+  files["progress.md"] = `# Progress
+
+One handoff per session, newest last, so each session starts where the last one stopped: what's done, blockers, the next action, and any mistakes, learnings or wishes the founder should read on Monday.
+`;
 
   files["corrections-log.md"] = `# Corrections log
 

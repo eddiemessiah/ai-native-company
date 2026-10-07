@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, realpath, rename, stat, writeFile } from "node:fs/promises";
 import { dirname, join, normalize, sep } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { check, collectDrafts, readLedgers, readWorkspace, review, status } from
 import { telegramFromEnv, type TelegramConfig } from "./connectors";
 import { contactKey, csvRow, doNotContact, parseCsv, parseDraft } from "./outbox";
 import { formatDue, parseDay, parseScorecard, scoreLead, STAGES } from "./pipeline";
+import { trace } from "./trace";
 
 /**
  * The workspace as MCP tools, for any agent and any MCP client, including chat apps that can't
@@ -53,6 +54,16 @@ export function insideWorkspace(dir: string, path: string): string | null {
   return full.startsWith(root) ? full : null;
 }
 
+/** The same, after following symlinks: a link inside the workspace can't point out of it. */
+export async function resolveInside(dir: string, path: string): Promise<string | null> {
+  const full = insideWorkspace(dir, path);
+  if (!full) return null;
+  const real = await realpath(full).catch(() => null);
+  if (!real) return full;
+  const root = await realpath(dir);
+  return real === root || real.startsWith(root.endsWith(sep) ? root : root + sep) ? real : null;
+}
+
 async function exists(path: string): Promise<boolean> {
   return stat(path).then(
     () => true,
@@ -67,8 +78,27 @@ async function readPipeline(dir: string): Promise<{ header: string[]; rows: stri
   return { header: header ?? PIPELINE_HEADER.split(","), rows };
 }
 
+/** Written whole to a temporary file, then renamed: a crash never leaves half a pipeline. */
 async function writePipeline(dir: string, header: readonly string[], rows: readonly string[][]): Promise<void> {
-  await writeFile(join(dir, "pipeline.csv"), `${[header, ...rows].map(csvRow).join("\n")}\n`);
+  const tmp = join(dir, `.pipeline.csv.${process.pid}.tmp`);
+  await writeFile(tmp, `${[header, ...rows].map(csvRow).join("\n")}\n`);
+  await rename(tmp, join(dir, "pipeline.csv"));
+}
+
+/** The workspace's creation date, from the README the harness writes, or null. */
+function createdOn(readme: string | undefined): Date | null {
+  const m = readme?.match(/on (\d{4})-(\d{2})-(\d{2})\./);
+  return m ? new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))) : null;
+}
+
+/** Today's part of sprint.md: day 1 is the day the workspace was made. */
+export function todaysSprint(sprint: string, created: Date | null, today: Date): string {
+  const days = sprint.split(/^(?=## Day \d+)/m).filter((d) => d.startsWith("## Day"));
+  if (!days.length) return sprint.trim();
+  if (!created) return sprint.trim();
+  const n = Math.floor((Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - created.getTime()) / 86_400_000) + 1;
+  if (n > days.length) return `The ${days.length}-day sprint is over. Run the weekly-review skill, then plan the next one with the founder.`;
+  return days[Math.max(1, n) - 1]!.trim();
 }
 
 const isYes = (v: string | undefined) => !!v && !["", "no", "n", "false", "0"].includes(v.trim().toLowerCase());
@@ -77,6 +107,22 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
   const { dir } = opts;
   const env = opts.env ?? process.env;
   const server = new McpServer({ name: "shonin-gtm", version: opts.version ?? "0.1.0" });
+
+  // Every tool call leaves one line in .shonin/trace.jsonl, personal fields hashed (trace.ts).
+  const register = server.registerTool.bind(server);
+  const traced = (name: string, config: unknown, callback: (...a: unknown[]) => Promise<ToolResult>) =>
+    register(name, config as never, (async (...a: unknown[]) => {
+      let result: ToolResult;
+      try {
+        result = await callback(...a);
+      } catch (error) {
+        result = fail(`${name} failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      const args = (a.length > 1 ? a[0] : {}) as Record<string, unknown>;
+      await trace(dir, { at: new Date().toISOString(), actor: "mcp", action: name, ok: !result.isError, args, result: result.content.map((c) => c.text).join("\n") });
+      return result;
+    }) as never);
+  (server as unknown as { registerTool: typeof traced }).registerTool = traced;
 
   server.registerTool(
     "gtm_status",
@@ -111,7 +157,7 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
       annotations: READ,
     },
     async ({ path }) => {
-      const full = insideWorkspace(dir, path);
+      const full = await resolveInside(dir, path);
       if (!full) return fail(`${path} is outside the workspace. Use a relative path such as brain/index.md.`);
       if (!(await exists(full))) return fail(`${path} doesn't exist. brain/index.md lists the brain's files; workflows/router.md says which file each task reads.`);
       const info = await stat(full);
@@ -416,6 +462,64 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
       const current = await readFile(path, "utf8");
       await writeFile(path, `${current.trimEnd()}\n| ${date} | ${cell(draft)} | ${cell(change)} | ${type} | ${cell(rule ?? "")} |\n`);
       return ok(`Logged in corrections-log.md: ${change}.`);
+    },
+  );
+
+  server.registerTool(
+    "gtm_session_start",
+    {
+      title: "Start a session",
+      description:
+        "Call first in every session. One read: where drafts and leads stand, who is due a follow-up, what the checker finds, the campaign's state, today's part of the sprint, and the last session's handoff.",
+      inputSchema: {},
+      annotations: READ,
+    },
+    async () => {
+      const files = await readWorkspace(dir);
+      const findings = await check(dir);
+      const errors = findings.filter((f) => f.level === "error");
+      const campaigns = Object.keys(files).filter((p) => /^campaigns\/[^/]+\/state\.md$/.test(p));
+      const handoffs = (files["progress.md"] ?? "").split(/^(?=## )/m).filter((b) => b.startsWith("## "));
+      const sections = [
+        `## Where things stand\n\n${await status(dir)}`,
+        `## Follow-ups\n\n${formatDue(await readPipeline(dir), new Date())}`,
+        `## The checker\n\n${errors.length} ${errors.length === 1 ? "error" : "errors"}, ${findings.length - errors.length} warnings.${errors
+          .slice(0, 5)
+          .map((f) => `\n- ${f.path}: ${f.problem}. Fix: ${f.fix}`)
+          .join("")}${errors.length > 5 ? "\n- … run gtm_check for the rest" : ""}`,
+        ...campaigns.map((p) => `## ${p}\n\n${files[p]!.replace(/^# .*\n+/, "").trim()}`),
+        `## Today in sprint.md\n\n${todaysSprint(files["sprint.md"] ?? "", createdOn(files["README.md"]), new Date())}`,
+        `## The last handoff\n\n${handoffs.length ? handoffs[handoffs.length - 1]!.trim() : "None yet: this is the first session."}`,
+      ];
+      return ok(sections.join("\n\n"));
+    },
+  );
+
+  server.registerTool(
+    "gtm_session_end",
+    {
+      title: "End a session",
+      description:
+        "Call last in every session. Saves the handoff to progress.md, so the next session starts where this one stopped: what's done, blockers, the next action, and anything the founder should know (mistakes, learnings, what you wished you had). Returns what the checker still finds.",
+      inputSchema: {
+        done: z.string().min(1).describe("What this session finished"),
+        next: z.string().min(1).describe("The next action, specific enough to start on"),
+        blockers: z.string().optional().describe("What's waiting on the founder or on something else"),
+        mistakes: z.string().optional().describe("What went wrong, so a rule can stop it"),
+        learnings: z.string().optional().describe("What worked, so it can be repeated"),
+        desires: z.string().optional().describe("A tool, file or rule you wished you had"),
+      },
+      annotations: WRITE,
+    },
+    async ({ done, next, blockers, mistakes, learnings, desires }) => {
+      const path = join(dir, "progress.md");
+      const line = (label: string, value: string | undefined) => (value?.trim() ? `**${label}:** ${value.trim()}\n` : "");
+      const block = `\n## ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC\n\n${line("Done", done)}${line("Blockers", blockers)}${line("Next", next)}${line("Mistakes", mistakes)}${line("Learnings", learnings)}${line("Desires", desires)}`;
+      if (!(await exists(path))) await writeFile(path, "# Progress\n");
+      await appendFile(path, block);
+      const findings = await check(dir);
+      const errors = findings.filter((f) => f.level === "error").length;
+      return ok(`Handoff saved to progress.md.${errors ? ` The checker still finds ${errors} ${errors === 1 ? "error" : "errors"}: run gtm_check before the founder reviews anything.` : " The checker finds no errors."}`);
     },
   );
 

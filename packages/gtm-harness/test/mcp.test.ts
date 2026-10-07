@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +11,7 @@ process.env.GTM_APPROVAL_KEY_FILE = join(mkdtempSync(join(tmpdir(), "gtm-key-"))
 import { collectDrafts, createWorkspace } from "../src/cli";
 import type { TelegramConfig } from "../src/connectors";
 import { gtmInputSchema } from "../src/index";
-import { createWorkspaceServer, insideWorkspace } from "../src/mcp";
+import { createWorkspaceServer, insideWorkspace, resolveInside, todaysSprint } from "../src/mcp";
 import { parseCsv, parseDraft } from "../src/outbox";
 import { parseScorecard } from "../src/pipeline";
 
@@ -56,6 +56,8 @@ describe("the workspace MCP server", () => {
       "gtm_read",
       "gtm_request_approval",
       "gtm_score_lead",
+      "gtm_session_end",
+      "gtm_session_start",
       "gtm_status",
       "gtm_update_lead",
       "gtm_write_draft",
@@ -191,6 +193,49 @@ describe("the workspace MCP server", () => {
     const out = await call("gtm_request_approval");
     expect(out.isError).toBe(false);
     expect(out.text).toContain("pnpm gtm review <this folder> --local");
+  });
+
+  it("opens and closes a session, and leaves a trace with personal fields hashed", async () => {
+    const { dir, call } = await connect();
+    const start = (await call("gtm_session_start")).text;
+    for (const heading of ["## Where things stand", "## Follow-ups", "## The checker", "## campaigns/first-campaign/state.md", "## Today in sprint.md", "## The last handoff"]) {
+      expect(start).toContain(heading);
+    }
+    expect(start).toContain("None yet: this is the first session.");
+
+    await call("gtm_add_lead", { name: "Ada Obi", handle: "ada@example.com", channel: "email", source: "https://example.com/ada" });
+    const end = await call("gtm_session_end", { done: "Added Ada", next: "Score Ada", mistakes: "Forgot the source once" });
+    expect(end.text).toContain("Handoff saved to progress.md.");
+    const progress = await readFile(join(dir, "progress.md"), "utf8");
+    expect(progress).toMatch(/## \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\n\n\*\*Done:\*\* Added Ada\n\*\*Next:\*\* Score Ada\n\*\*Mistakes:\*\* Forgot the source once\n/);
+    expect((await call("gtm_session_start")).text).toContain("**Done:** Added Ada");
+
+    const trace = (await readFile(join(dir, ".shonin/trace.jsonl"), "utf8")).trim().split("\n").map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(trace.map((t) => t.action)).toEqual(["gtm_session_start", "gtm_add_lead", "gtm_session_end", "gtm_session_start"]);
+    const add = trace[1]! as { args: Record<string, string>; ok: boolean; actor: string };
+    expect(add).toMatchObject({ actor: "mcp", ok: true, args: { channel: "email" } });
+    expect(add.args.handle).toMatch(/^sha256:[0-9a-f]{12}$/);
+    expect(trace[1]!.result).toMatch(/^sha256:[0-9a-f]{12}$/);
+    expect(JSON.stringify(trace)).not.toContain("ada@example.com");
+    expect(JSON.stringify(trace)).not.toContain("Ada Obi");
+  });
+
+  it("shows today's part of the sprint, counted from the day the workspace was made", () => {
+    const sprint = "# Sprint\n\n## Day 1: List\n\n- [ ] a\n\n## Day 2: Write\n\n- [ ] b\n";
+    const made = new Date(Date.UTC(2026, 9, 7));
+    expect(todaysSprint(sprint, made, new Date(Date.UTC(2026, 9, 8, 15)))).toBe("## Day 2: Write\n\n- [ ] b");
+    expect(todaysSprint(sprint, made, new Date(Date.UTC(2026, 9, 7, 9)))).toContain("## Day 1: List");
+    expect(todaysSprint(sprint, made, new Date(Date.UTC(2026, 9, 20)))).toContain("sprint is over");
+  });
+
+  it("refuses a symlink that points out of the workspace", async () => {
+    const { dir, call } = await connect();
+    const outside = await mkdtemp(join(tmpdir(), "gtm-outside-"));
+    await writeFile(join(outside, "secret.env"), "TELEGRAM_BOT_TOKEN=x\n");
+    await symlink(join(outside, "secret.env"), join(dir, "brain", "leak.md"));
+    expect(insideWorkspace(dir, "brain/leak.md")).toBe(join(dir, "brain", "leak.md"));
+    expect(await resolveInside(dir, "brain/leak.md")).toBeNull();
+    expect(await call("gtm_read", { path: "brain/leak.md" })).toMatchObject({ isError: true });
   });
 
   it("checks the workspace and logs corrections", async () => {

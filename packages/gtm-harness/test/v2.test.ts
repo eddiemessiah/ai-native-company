@@ -13,6 +13,7 @@ import {
   createWorkspace,
   links,
   loadEnv,
+  main,
   markSent,
   readApprovals,
   readWorkspace,
@@ -503,6 +504,49 @@ describe("the CLI", () => {
     expect(text).toMatch(/^error {2}/);
     expect(text).toContain("fix:  ");
     expect(text).toMatch(/\d+ errors, \d+ warnings?\.$/);
+  });
+
+  it("holds drafts for phrases in rules/checks.md, and warns about keys inside the workspace", async () => {
+    const { dir } = await workspace({ personalize: true });
+    await writeFile(join(dir, "drafts/04-email.md"), "# Email · Bola\n\n**To:** bola@example.com\n**Reviewer:** not reviewed yet\n\n---\n\nHi Bola, hope you\u2019re well! Our seamless app: https://ajo.example\n");
+    await writeFile(join(dir, ".env"), "TELEGRAM_BOT_TOKEN=x\n");
+    const findings = await checkWorkspaceDir(dir);
+    const on = (path: string) => findings.filter((f) => f.path === path).map((f) => `${f.level}: ${f.problem}`);
+    expect(on("drafts/04-email.md")).toEqual(expect.arrayContaining(['error: says "seamless"', `error: says "hope you're well"`, 'warning: says "http*"']));
+    expect(on(".env")).toEqual(["warning: an env file inside the workspace, where every agent working here can read it"]);
+    const log = await review(dir, { env: {}, local: true, ask: async () => "s" });
+    expect(log).toContainEqual(expect.stringMatching(/^held {6}drafts\/04-email\.md: says "seamless"/));
+
+    // A founder's new rule is enforced from the next check on.
+    await writeFile(join(dir, "rules/checks.md"), `${await readFile(join(dir, "rules/checks.md"), "utf8")}| mate | corrections-log.md 2026-10-08: too casual | Use their name | error |\n`);
+    await writeFile(join(dir, "drafts/05-x.md"), "# X · Chi\n\n**Reviewer:** not reviewed yet\n\n---\n\nHey mate, quick question about your stall.\n");
+    expect((await checkWorkspaceDir(dir)).some((f) => f.path === "drafts/05-x.md" && f.problem === 'says "mate"')).toBe(true);
+  });
+
+  it("traces CLI commands on a workspace: the command and its flags, nothing personal", async () => {
+    const { dir } = await workspace({ personalize: true });
+    const log = console.log;
+    console.log = () => {};
+    try {
+      expect(await main(["check", dir])).toBe(0);
+      expect(await main(["sent", dir, "drafts/01-whatsapp.md"])).toBe(0);
+    } finally {
+      console.log = log;
+    }
+    const lines = (await readFile(join(dir, ".shonin/trace.jsonl"), "utf8")).trim().split("\n").map((l) => JSON.parse(l) as { actor: string; action: string; args: { flags: string } });
+    expect(lines.map((l) => `${l.actor}:${l.action}`)).toEqual(["cli:check", "cli:sent"]);
+    expect(JSON.stringify(lines)).not.toContain("01-whatsapp");
+  });
+
+  it("puts at most GTM_MAX_CARDS_PER_DAY drafts in front of the founder each day", async () => {
+    const { dir } = await workspace({ personalize: true });
+    const asked: string[] = [];
+    const log = await review(dir, { env: { GTM_MAX_CARDS_PER_DAY: "1" }, local: true, ask: async (d) => (asked.push(d.file), "s") });
+    expect(asked).toHaveLength(1);
+    expect(log.some((l) => l.includes("today's 1 drafts have been in front of you"))).toBe(true);
+    const again: string[] = [];
+    await review(dir, { env: { GTM_MAX_CARDS_PER_DAY: "1" }, local: true, ask: async (d) => (again.push(d.file), "s") });
+    expect(again).toEqual([]);
   });
 
   it("flags signed-off campaigns with no signature, and the same text sent to many", () => {

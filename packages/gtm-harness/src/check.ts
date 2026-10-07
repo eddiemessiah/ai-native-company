@@ -40,11 +40,51 @@ export function isDraftPath(path: string): boolean {
   return /^drafts\/[^/]+\.md$/.test(path) || /^campaigns\/[^/]+\/outbox\/[^/]+\.md$/.test(path);
 }
 
-/** What a draft is checked against: the words the founder approved claims in, the word limit, who opted out. */
+/** What a draft is checked against: the words the founder approved claims in, the word limit, who opted out, the phrase checks. */
 export interface DraftContext {
   readonly claimSources: string;
   readonly wordLimit: number | null;
   readonly optedOut: ReadonlySet<string>;
+  readonly phrases?: readonly PhraseCheck[];
+}
+
+/** One row of rules/checks.md: a phrase code holds drafts back for. */
+export interface PhraseCheck {
+  readonly phrase: string;
+  readonly rule: string;
+  readonly fix: string;
+  readonly level: "error" | "warning";
+}
+
+/** The table in rules/checks.md: | Never write | Rule | Fix | Level |. */
+export function parsePhraseChecks(markdown: string | undefined): PhraseCheck[] {
+  const out: PhraseCheck[] = [];
+  for (const line of (markdown ?? "").split("\n")) {
+    if (!line.trim().startsWith("|")) continue;
+    const cells = line
+      .trim()
+      .replace(/^\||\|$/g, "")
+      .split("|")
+      .map((c) => c.trim());
+    const [phrase, rule, fix, level] = cells;
+    if (!phrase || /^-+$/.test(phrase) || phrase.toLowerCase() === "never write") continue;
+    out.push({ phrase, rule: rule || "rules/checks.md", fix: fix || "Rewrite it without this.", level: level?.toLowerCase() === "warning" ? "warning" : "error" });
+  }
+  return out;
+}
+
+const normalize = (s: string) => s.replace(/[\u2018\u2019]/g, "'").toLowerCase();
+
+/** Whole words, any case, curly or straight apostrophes. A trailing * matches any word that starts with it. */
+export function phraseFound(text: string, phrase: string): boolean {
+  const raw = normalize(phrase).trim();
+  const prefix = raw.endsWith("*");
+  const p = prefix ? raw.slice(0, -1) : raw;
+  if (!p) return false;
+  const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const start = /^[\p{L}\p{N}]/u.test(p) ? "(?<![\\p{L}\\p{N}])" : "";
+  const end = !prefix && /[\p{L}\p{N}]$/u.test(p) ? "(?![\\p{L}\\p{N}])" : "";
+  return new RegExp(`${start}${escaped}${end}`, "u").test(normalize(text));
 }
 
 export function draftContext(files: Readonly<Record<string, string>>): DraftContext {
@@ -55,6 +95,7 @@ export function draftContext(files: Readonly<Record<string, string>>): DraftCont
       .join("\n"),
     wordLimit: wordLimitFrom(files["rules/outreach.md"]),
     optedOut: files["pipeline.csv"] ? doNotContact(files["pipeline.csv"]) : new Set(),
+    phrases: parsePhraseChecks(files["rules/checks.md"]),
   };
 }
 
@@ -106,6 +147,11 @@ export function checkDraft(draft: Draft, ctx: DraftContext): Finding[] {
       problem: `${invented.map((n) => `"${n}"`).join(", ")} ${invented.length === 1 ? "isn't" : "aren't"} in brain/products/`,
       fix: "Add the claim with its source to the Approved claims table in brain/products/, or take the number out.",
     });
+  }
+  for (const check of ctx.phrases ?? []) {
+    if (phraseFound(draft.text, check.phrase)) {
+      out.push({ level: check.level, path, rule: check.rule, problem: `says "${check.phrase}"`, fix: check.fix });
+    }
   }
   const channel = draft.channel.toLowerCase();
   if ((channel.includes("whatsapp") || channel.includes("email")) && !draft.to) {
@@ -166,6 +212,17 @@ export function checkWorkspace(files: Readonly<Record<string, string>>, opts: Ch
     const judged = opts.reviews ? withRecordedVerdict(draft, opts.reviews) : draft;
     drafts.push(judged);
     out.push(...checkDraftInWorkspace(judged, content, ctx, approvals));
+  }
+  for (const path of Object.keys(files)) {
+    if (/(^|\/)\.env(\.[^/]*)?$|\.env$/.test(path)) {
+      out.push({
+        level: "warning",
+        path,
+        rule: "AGENTS.md: keys stay out of the workspace",
+        problem: "an env file inside the workspace, where every agent working here can read it",
+        fix: "Move it outside the workspace and pass it with --env <file>.",
+      });
+    }
   }
   out.push(...duplicateTexts(drafts));
   out.push(...checkCampaigns(files, opts.campaignApprovals));
