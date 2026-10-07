@@ -374,17 +374,17 @@ function Results({ result, product, onDownload, innerRef }: { result: RunResult;
           </ul>
         </section>
         <section className="card p-7 lg:col-span-5">
-          <p className="label">Keep it running with Claude Code</p>
+          <p className="label">Keep it running with your agent</p>
           <pre className="mt-5 overflow-x-auto rounded-2xl border border-line bg-bg-2 p-5 font-mono text-[12.5px] leading-relaxed text-dim">
             <code>
               {`unzip gtm-harness-${slugify(product)}.zip
 cd gtm-harness
-claude
-> Read CLAUDE.md and run today's tasks in sprint.md`}
+claude    # or any agent that reads AGENTS.md
+> Read AGENTS.md and run today's tasks in sprint.md`}
             </code>
           </pre>
           <p className="mt-4 text-sm text-dim">
-            Your agents source, score, draft and review. You send, and log every edit in corrections-log.md. Each Monday, repeated edits become rules.
+            Your agents research, source, score, draft and review. You approve and send, and log every edit in corrections-log.md. Each Monday, repeated edits become rules.
           </p>
         </section>
       </div>

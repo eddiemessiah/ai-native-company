@@ -23,6 +23,8 @@ packages/catalog    @repo/catalog: the single source of truth for brand, offers,
 packages/agents     @repo/agents: what agents buy. Shonin Check (pre-payment checks of x402 requests) and
                     Shonin Receipt (on-chain settlement receipts); Shonin Gate's recipe lives in brain
 packages/mcp        @repo/mcp: shonin-mcp, the MCP server that exposes the agent products to any MCP client
+packages/gtm-harness @repo/gtm-harness (MIT): the GTM Harness. A plan writer for any model, the workspace it packs
+                    (brain, workflows, skills, campaigns), approval-gated connectors and the `pnpm gtm` CLI
 packages/video      @repo/video: the Video Desk pipeline. A recording and its transcript in; brain-scored clips,
                     trailers, chapters and tightened cuts out. Also explainer shorts: topic + sources in, a sourced
                     vertical video out. Rendered by ffmpeg
@@ -45,6 +47,8 @@ pnpm --filter web build           # production build; set NEXT_PUBLIC_SITE_URL f
 pnpm --filter @repo/brain test
 pnpm --filter @repo/mcp build     # build the shonin-mcp CLI into packages/mcp/dist
 pnpm worktree <line>              # open a product line in its own worktree (see below)
+pnpm gtm doctor                   # GTM Harness: which model, reviewer and connectors are set up
+pnpm gtm new gtm-workspaces/<name> --input <answers.json>   # a workspace for any agent; see packages/gtm-harness
 pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, the brain keys and the font
 pnpm video short                  # Explainer shorts: topic + sources → a sourced 30–60 s vertical video
 ```
@@ -117,6 +121,8 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 - Resell raw Jev decisions (`decide-api`) before TypeSafe confirms in writing that its terms allow it.
 - Store raw client state in decision logs. The log keeps a hash unless `includeStateInLogs` is set.
 - Commit client footage, transcripts or renders. Video jobs live in `video-jobs/`, which git ignores.
+- Commit GTM workspaces. They hold leads and approvals; `gtm-workspaces/` is git-ignored.
+- Let the GTM Harness send to a prospect. It prepares, reviews and builds one-tap links; the founder sends.
 - Commit secrets. `.env*` is ignored except `.env.example`.
 - Publish a claim, number or proof that isn't in `brand.proofs`, `research/` or our own data.
 - Apply to Prezenti Boost, or judge a program we compete in. See `company/ops/conflicts-of-interest.md`.

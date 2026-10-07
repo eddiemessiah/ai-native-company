@@ -89,7 +89,7 @@ describe("normalizing model output", () => {
       },
     } as unknown as Anthropic;
     const out = await generatePlan(input, { client });
-    expect(out.generatedBy).toEqual({ kind: "model", model: "claude-opus-5" });
+    expect(out.generatedBy).toEqual({ kind: "model", model: "claude-opus-5", via: "anthropic" });
     expect(request).toMatchObject({ model: "claude-opus-5", fallbacks: "default", output_config: { format: { type: "json_schema" } } });
 
     const previous = process.env.GTM_MODEL;
@@ -135,22 +135,39 @@ describe("the reviewer", () => {
 });
 
 describe("the harness folder", () => {
-  it("writes the operating files, the drafts with their reviews, and zips them", () => {
+  it("writes the workspace, the drafts with their reviews, and zips them", () => {
     const { plan } = templatePlan(input);
     const reviews = plan.drafts.map((_, i) => (i === 0 ? { verdict: "ready" as const, fixes: [], provider: "jev", calibrated: true } : null));
     const files = buildHarness(input, plan, reviews, new Date("2026-09-29T09:00:00Z"));
-    for (const f of ["README.md", "CLAUDE.md", "target-customers.md", "rules/outreach.md", "corrections-log.md", "prompts/reviewer.md", "sprint.md", "dashboard.md", "pipeline.csv"]) {
+    for (const f of [
+      "README.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+      "brain/index.md",
+      "brain/audience.md",
+      "brain/products/ajo-circle.md",
+      "workflows/router.md",
+      "workflows/approvals.md",
+      ".claude/skills/review-drafts/SKILL.md",
+      "campaigns/first-campaign/approval.md",
+      "rules/outreach.md",
+      "corrections-log.md",
+      "sprint.md",
+      "dashboard.md",
+      "pipeline.csv",
+    ]) {
       expect(files[f], f).toBeTruthy();
     }
     const drafts = Object.keys(files).filter((f) => f.startsWith("drafts/"));
     expect(drafts).toHaveLength(3);
     expect(files[drafts[0]!]).toContain("READY");
     expect(files[drafts[1]!]).toContain("not reviewed yet");
-    expect(files["CLAUDE.md"]).toContain("Send, post, email or DM anything yourself");
+    expect(files["AGENTS.md"]).toContain("Send, post, email or DM anything yourself");
+    expect(files["CLAUDE.md"]!.startsWith("@AGENTS.md")).toBe(true);
     expect(files["README.md"]).toContain("2026-09-29");
 
     const unzipped = unzipSync(zipHarness(files));
-    expect(Object.keys(unzipped)).toContain("gtm-harness/CLAUDE.md");
+    expect(Object.keys(unzipped)).toContain("gtm-harness/AGENTS.md");
     expect(strFromU8(unzipped["gtm-harness/sprint.md"]!)).toContain("- [ ]");
   });
 });

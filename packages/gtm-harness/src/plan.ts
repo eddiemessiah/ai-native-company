@@ -1,6 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CHANNEL_LABELS, STAGE_LABELS, type Channel, type GtmInput } from "./input";
+import { DEFAULT_MODEL, generateStructured, ModelError, routeModel, type ModelDeps, type ModelRoute } from "./models";
 
 /**
  * The plan: who to sell to, where they are, what to say, and a week of work.
@@ -109,43 +110,46 @@ export function renderInput(input: GtmInput): string {
   ].join("\n");
 }
 
-function supportsDefaultFallbacks(model: string): boolean {
-  return /^claude-(opus-5|fable-5)/.test(model);
-}
-
 export interface GeneratedPlan {
   readonly plan: GtmPlan;
-  readonly generatedBy: { readonly kind: "model" | "template"; readonly model?: string };
+  readonly generatedBy: { readonly kind: "model" | "template"; readonly model?: string; readonly via?: ModelRoute["kind"] };
 }
 
+/**
+ * The plan from whichever model the route names (see models.ts). With no route, the
+ * Anthropic API with the default model, so a caller that passes only a client still works.
+ */
 export async function generatePlan(
   input: GtmInput,
-  opts: { client?: Anthropic; model?: string; effort?: "low" | "medium" | "high"; signal?: AbortSignal } = {},
+  opts: {
+    route?: ModelRoute;
+    client?: Anthropic;
+    model?: string;
+    effort?: "low" | "medium" | "high";
+    signal?: AbortSignal;
+    deps?: ModelDeps;
+  } = {},
 ): Promise<GeneratedPlan> {
-  const client = opts.client ?? new Anthropic();
-  // `||`, not `??`: a blank GTM_MODEL= copied from .env.example must not become the model name.
-  const model = opts.model || process.env.GTM_MODEL || "claude-opus-5";
-  const response = await client.beta.messages.create(
-    {
-      model,
-      max_tokens: 8000,
-      ...(supportsDefaultFallbacks(model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
-      output_config: { effort: opts.effort ?? "low", format: { type: "json_schema", schema: PLAN_JSON_SCHEMA } },
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: renderInput(input) }],
-    },
-    opts.signal ? { signal: opts.signal } : undefined,
-  );
-  if (response.stop_reason === "refusal") throw new PlanError("the model declined to write this plan");
-  if (response.stop_reason === "max_tokens") throw new PlanError("the plan was cut off");
-  const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  let raw: unknown;
+  const route: ModelRoute = opts.route ??
+    routeModel(process.env, opts.model) ?? { kind: "anthropic", model: opts.model || process.env.GTM_MODEL || DEFAULT_MODEL };
   try {
-    raw = JSON.parse(text);
-  } catch {
-    throw new PlanError("the model returned text that isn't JSON");
+    const { value, model } = await generateStructured(
+      route,
+      {
+        system: SYSTEM_PROMPT,
+        prompt: renderInput(input),
+        schema: PLAN_JSON_SCHEMA,
+        name: "gtm_plan",
+        effort: opts.effort ?? "low",
+        ...(opts.signal ? { signal: opts.signal } : {}),
+      },
+      { ...opts.deps, ...(opts.client ? { anthropic: opts.client } : {}) },
+    );
+    return { plan: normalizePlan(value), generatedBy: { kind: "model", model, via: route.kind } };
+  } catch (error) {
+    if (error instanceof ModelError) throw new PlanError(error.message);
+    throw error;
   }
-  return { plan: normalizePlan(raw), generatedBy: { kind: "model", model: response.model } };
 }
 
 const SOURCE_TEMPLATES: Readonly<Record<Channel, { where: string; howToFind: string; firstStep: string }>> = {
@@ -250,10 +254,10 @@ export function templatePlan(input: GtmInput): GeneratedPlan {
       },
     ],
     sprint: [
-      { day: 1, focus: "Scorecard and list", tasks: ["Fill target-customers.md with 10 real examples", "Start pipeline.csv with 30 names from your first source"] },
+      { day: 1, focus: "Scorecard and list", tasks: ["Fill brain/audience.md with 10 real examples", "Start pipeline.csv with 30 names from your first source"] },
       { day: 2, focus: "First messages", tasks: ["Score the 30 names; keep those above 80%", "Send 10 personal messages from drafts/"] },
       { day: 3, focus: "Show up where they are", tasks: ["Answer 3 questions in your best community", "Post one demo clip"] },
-      { day: 4, focus: "Conversations", tasks: ["Book 3 calls from replies", "Log every objection in corrections-log.md"] },
+      { day: 4, focus: "Conversations", tasks: ["Book 3 calls from replies", "Log every objection in brain/audience.md"] },
       { day: 5, focus: "Second source", tasks: ["Add 20 names from your second source", "Send 10 more messages, improved by what you logged"] },
       { day: 6, focus: "Follow up", tasks: ["Follow up once with everyone who didn't reply", "Ask your best conversation for one referral"] },
       { day: 7, focus: "Review", tasks: ["Fill dashboard.md", "Turn repeated corrections into rules"] },

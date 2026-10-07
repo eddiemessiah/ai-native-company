@@ -13,6 +13,7 @@
     "test": "pnpm -r test",
     "check": "pnpm typecheck && pnpm test",
     "worktree": "bash scripts/worktree.sh",
-    "video": "pnpm --filter @repo/video cli"
+    "video": "pnpm --filter @repo/video cli",
+    "gtm": "pnpm --filter @repo/gtm-harness cli"
   }
 }
