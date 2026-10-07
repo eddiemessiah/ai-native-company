@@ -83,13 +83,19 @@ describe("normalizing model output", () => {
         messages: {
           create: async (body: Record<string, unknown>) => {
             request = body;
-            return { stop_reason: "end_turn", model: "claude-opus-5", content: [{ type: "text", text: JSON.stringify(plan) }] };
+            return {
+              stop_reason: "end_turn",
+              model: "claude-opus-5",
+              content: [{ type: "text", text: JSON.stringify(plan) }],
+              usage: { input_tokens: 1000, output_tokens: 3000, cache_read_input_tokens: 200, cache_creation_input_tokens: null },
+            };
           },
         },
       },
     } as unknown as Anthropic;
     const out = await generatePlan(input, { client });
     expect(out.generatedBy).toEqual({ kind: "model", model: "claude-opus-5", via: "anthropic" });
+    expect(out.usage).toEqual({ inputTokens: 1200, outputTokens: 3000 });
     expect(request).toMatchObject({ model: "claude-opus-5", fallbacks: "default", output_config: { format: { type: "json_schema" } } });
 
     const previous = process.env.GTM_MODEL;

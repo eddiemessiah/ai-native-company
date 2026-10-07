@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CHANNEL_LABELS, STAGE_LABELS, type Channel, type GtmInput } from "./input";
-import { DEFAULT_MODEL, generateStructured, ModelError, routeModel, type ModelDeps, type ModelRoute } from "./models";
+import { DEFAULT_MODEL, generateStructured, ModelError, routeModel, type ModelDeps, type ModelRoute, type Usage } from "./models";
 
 /**
  * The plan: who to sell to, where they are, what to say, and a week of work.
@@ -113,6 +113,8 @@ export function renderInput(input: GtmInput): string {
 export interface GeneratedPlan {
   readonly plan: GtmPlan;
   readonly generatedBy: { readonly kind: "model" | "template"; readonly model?: string; readonly via?: ModelRoute["kind"] };
+  /** Tokens, and cost when the router reports it. Absent for templates. */
+  readonly usage?: Usage;
 }
 
 /**
@@ -133,7 +135,7 @@ export async function generatePlan(
   const route: ModelRoute = opts.route ??
     routeModel(process.env, opts.model) ?? { kind: "anthropic", model: opts.model || process.env.GTM_MODEL || DEFAULT_MODEL };
   try {
-    const { value, model } = await generateStructured(
+    const { value, model, usage } = await generateStructured(
       route,
       {
         system: SYSTEM_PROMPT,
@@ -145,7 +147,7 @@ export async function generatePlan(
       },
       { ...opts.deps, ...(opts.client ? { anthropic: opts.client } : {}) },
     );
-    return { plan: normalizePlan(value), generatedBy: { kind: "model", model, via: route.kind } };
+    return { plan: normalizePlan(value), generatedBy: { kind: "model", model, via: route.kind }, usage };
   } catch (error) {
     if (error instanceof ModelError) throw new PlanError(error.message);
     throw error;

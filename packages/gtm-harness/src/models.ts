@@ -79,9 +79,25 @@ export interface StructuredRequest {
   readonly signal?: AbortSignal;
 }
 
+/** What one call used. Cost only when the router reports it (AI Gateway, OpenRouter); never estimated. */
+export interface Usage {
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly costUsd?: number;
+}
+
 export interface StructuredResult {
   readonly value: unknown;
   readonly model: string;
+  readonly usage: Usage;
+}
+
+function usageOf(inputTokens: unknown, outputTokens: unknown, cost?: unknown): Usage {
+  const count = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n >= 0 ? n : undefined);
+  const usd = cost === null || cost === undefined || cost === "" ? undefined : count(Number(cost));
+  const input = count(inputTokens);
+  const output = count(outputTokens);
+  return { ...(input !== undefined ? { inputTokens: input } : {}), ...(output !== undefined ? { outputTokens: output } : {}), ...(usd !== undefined ? { costUsd: usd } : {}) };
 }
 
 /** The gateway call, injectable so tests never touch the network. */
@@ -93,7 +109,7 @@ export type GatewayCall = (args: {
   name: string;
   maxOutputTokens: number;
   abortSignal?: AbortSignal;
-}) => Promise<{ output: unknown; modelId?: string }>;
+}) => Promise<{ output: unknown; modelId?: string; usage?: Usage }>;
 
 export interface ModelDeps {
   readonly anthropic?: Anthropic;
@@ -132,7 +148,9 @@ async function viaAnthropic(route: Extract<ModelRoute, { kind: "anthropic" }>, r
   if (response.stop_reason === "refusal") throw new ModelError("the model declined to answer");
   if (response.stop_reason === "max_tokens") throw new ModelError("the answer was cut off");
   const text = response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  return { value: parseJson(text), model: response.model };
+  const u = response.usage as Partial<typeof response.usage> | undefined;
+  const input = u?.input_tokens === undefined ? undefined : u.input_tokens + (u.cache_creation_input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0);
+  return { value: parseJson(text), model: response.model, usage: usageOf(input, u?.output_tokens) };
 }
 
 const callGateway: GatewayCall = async (args) => {
@@ -145,11 +163,15 @@ const callGateway: GatewayCall = async (args) => {
     maxRetries: 1,
     ...(args.abortSignal ? { abortSignal: args.abortSignal } : {}),
   });
-  return { output: result.output, modelId: result.response.modelId };
+  return {
+    output: result.output,
+    modelId: result.response.modelId,
+    usage: usageOf(result.usage.inputTokens, result.usage.outputTokens, result.providerMetadata?.gateway?.cost),
+  };
 };
 
 async function viaGateway(route: Extract<ModelRoute, { kind: "gateway" }>, req: StructuredRequest, call: GatewayCall): Promise<StructuredResult> {
-  const { output, modelId } = await call({
+  const { output, modelId, usage } = await call({
     model: route.model,
     instructions: req.system,
     prompt: req.prompt,
@@ -159,7 +181,7 @@ async function viaGateway(route: Extract<ModelRoute, { kind: "gateway" }>, req: 
     ...(req.signal ? { abortSignal: req.signal } : {}),
   });
   if (output === undefined || output === null) throw new ModelError("the model returned no structured output");
-  return { value: output, model: modelId ?? route.model };
+  return { value: output, model: modelId ?? route.model, usage: usage ?? {} };
 }
 
 async function viaOpenAICompatible(
@@ -185,12 +207,17 @@ async function viaOpenAICompatible(
   const body = (await res.json().catch(() => null)) as {
     model?: string;
     choices?: { finish_reason?: string; message?: { content?: string | null; refusal?: string | null } }[];
+    usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number };
   } | null;
   const choice = body?.choices?.[0];
   if (!choice?.message) throw new ModelError(`${route.label} returned no answer`);
   if (choice.message.refusal) throw new ModelError("the model declined to answer");
   if (choice.finish_reason === "length") throw new ModelError("the answer was cut off");
-  return { value: parseJson(choice.message.content ?? ""), model: body?.model ?? route.model };
+  return {
+    value: parseJson(choice.message.content ?? ""),
+    model: body?.model ?? route.model,
+    usage: usageOf(body?.usage?.prompt_tokens, body?.usage?.completion_tokens, body?.usage?.cost),
+  };
 }
 
 /** Parses a JSON answer, tolerating the ```json fences some local models add. */

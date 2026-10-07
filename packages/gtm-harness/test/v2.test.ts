@@ -69,19 +69,23 @@ describe("the model router", () => {
       {
         gateway: async (a) => {
           args = a;
-          return { output: { ok: true }, modelId: "gpt-5-2026-08" };
+          return { output: { ok: true }, modelId: "gpt-5-2026-08", usage: { inputTokens: 1200, outputTokens: 3400, costUsd: 0.05 } };
         },
       },
     );
-    expect(out).toEqual({ value: { ok: true }, model: "gpt-5-2026-08" });
+    expect(out).toEqual({ value: { ok: true }, model: "gpt-5-2026-08", usage: { inputTokens: 1200, outputTokens: 3400, costUsd: 0.05 } });
     expect(args).toMatchObject({ model: "openai/gpt-5", instructions: "s", prompt: "p", name: "gtm_plan", maxOutputTokens: 8000 });
   });
 
   it("speaks /chat/completions with a strict JSON schema, and reports failures plainly", async () => {
     const route: ModelRoute = { kind: "openai-compatible", model: "x-model", baseUrl: "https://api.x.ai/v1", apiKey: "secret", label: "xAI" };
-    const ok = fakeFetch(() => ({ model: "x-model-1", choices: [{ finish_reason: "stop", message: { content: '```json\n{"a":1}\n```' } }] }));
+    const ok = fakeFetch(() => ({
+      model: "x-model-1",
+      choices: [{ finish_reason: "stop", message: { content: '```json\n{"a":1}\n```' } }],
+      usage: { prompt_tokens: 900, completion_tokens: 2100, cost: 0.012 },
+    }));
     const out = await generateStructured(route, { system: "s", prompt: "p", schema: { type: "object" }, name: "n" }, { fetch: ok.f });
-    expect(out).toEqual({ value: { a: 1 }, model: "x-model-1" });
+    expect(out).toEqual({ value: { a: 1 }, model: "x-model-1", usage: { inputTokens: 900, outputTokens: 2100, costUsd: 0.012 } });
     expect(ok.calls[0]!.url).toBe("https://api.x.ai/v1/chat/completions");
     expect(ok.calls[0]!.body).toMatchObject({ model: "x-model", response_format: { type: "json_schema", json_schema: { name: "n", strict: true } } });
 
@@ -305,8 +309,13 @@ describe("model evals", () => {
   it("supports a model only when every run is valid and honest", async () => {
     const good = templatePlan(input).plan;
     const route: ModelRoute = { kind: "gateway", model: "openai/gpt-5" };
-    const ok = await evalModel("openai/gpt-5", input, { runs: 3, route, deps: { gateway: async () => ({ output: good, modelId: "gpt-5" }) } });
-    expect(ok).toMatchObject({ runs: 3, valid: 3, honest: 3 });
+    let call = 0;
+    const metered = async () => {
+      call++;
+      return { output: good, modelId: "gpt-5", usage: { inputTokens: 1000 * call, outputTokens: 3000 * call, costUsd: 0.01 * call } };
+    };
+    const ok = await evalModel("openai/gpt-5", input, { runs: 3, route, deps: { gateway: metered } });
+    expect(ok).toMatchObject({ runs: 3, valid: 3, honest: 3, medianInputTokens: 2000, medianOutputTokens: 6000, medianCostUsd: 0.02 });
     expect(supported(ok)).toBe(true);
 
     const boastful = { ...good, drafts: good.drafts.map((d, i) => (i === 0 ? { ...d, text: `${d.text} 10,000 traders already use it.` } : d)) };
@@ -320,6 +329,8 @@ describe("model evals", () => {
     expect((await evalModel("openai/gpt-5", input, { runs: 1, env: {} })).route).toBe("not configured");
     const table = evalTable([ok, bad, broken], "2026-10-07");
     expect(table).toContain("| openai/gpt-5 | openai/gpt-5 via Vercel AI Gateway | 3/3 | 3/3 |");
-    expect(table).toContain("| no |");
+    expect(table).toContain("| 2000 / 6000 | $0.0200 | yes |");
+    expect(table).toContain("| n/a | n/a | no |");
+    expect(bad.medianCostUsd).toBeUndefined();
   });
 });
