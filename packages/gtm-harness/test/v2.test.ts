@@ -1,8 +1,8 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { collectDrafts, createWorkspace, links, readApprovals, review, status, wait, withVerdict } from "../src/cli";
+import { collectDrafts, createWorkspace, links, readApprovals, review, status, sync, wait, withVerdict } from "../src/cli";
 import { pollDecisions, postForReview, sendReviewCard, toolStatus, type TelegramConfig } from "../src/connectors";
 import {
   buildHarness,
@@ -116,7 +116,7 @@ describe("the workspace", () => {
   });
 
   it("gives every skill valid frontmatter and routes to every skill", () => {
-    const skills = Object.keys(files).filter((f) => f.startsWith(".claude/skills/"));
+    const skills = Object.keys(files).filter((f) => f.startsWith(".agents/skills/"));
     expect(skills.length).toBe(11);
     for (const path of skills) {
       const name = path.split("/")[2]!;
@@ -124,6 +124,16 @@ describe("the workspace", () => {
       expect(content.startsWith(`---\nname: ${name}\ndescription: `), path).toBe(true);
       expect(files["workflows/router.md"], name).toContain(name);
     }
+  });
+
+  it("runs in every agent: the same skills for Claude Code, and AGENTS.md for Gemini CLI", () => {
+    const shared = Object.keys(files).filter((f) => f.startsWith(".agents/skills/"));
+    const claude = Object.keys(files).filter((f) => f.startsWith(".claude/skills/"));
+    expect(claude.map((f) => f.replace(".claude/", ".agents/")).sort()).toEqual(shared.sort());
+    for (const path of shared) expect(files[path.replace(".agents/", ".claude/")]).toBe(files[path]);
+    expect(JSON.parse(files[".gemini/settings.json"]!)).toEqual({ context: { fileName: ["AGENTS.md"] } });
+    expect(files["AGENTS.md"]).toContain("make the same change in both");
+    expect(files["README.md"]).toContain("pnpm gtm sync");
   });
 
   it("keeps facts and approvals honest", () => {
@@ -275,6 +285,24 @@ describe("the CLI", () => {
     await writeFile(join(dir, whatsapp.draft.file), `${whatsapp.content.trimEnd()} One more line.\n`);
     expect((await links(dir)).join("\n")).not.toContain(whatsapp.draft.file);
     expect(await status(dir)).toContain("stale");
+  });
+
+  it("syncs edited skills to Claude Code's folder, and keeps skills only Claude Code has", async () => {
+    const { dir } = await workspace();
+    expect(await sync(dir)).toEqual(["Claude Code's skills already match .agents/skills/"]);
+
+    await writeFile(join(dir, ".agents/skills/score-leads/SKILL.md"), "---\nname: score-leads\ndescription: Edited.\n---\n\nScore them.\n");
+    await mkdir(join(dir, ".agents/skills/win-back"), { recursive: true });
+    await writeFile(join(dir, ".agents/skills/win-back/SKILL.md"), "---\nname: win-back\ndescription: New.\n---\n\nWin them back.\n");
+    await mkdir(join(dir, ".claude/skills/mine"), { recursive: true });
+    await writeFile(join(dir, ".claude/skills/mine/SKILL.md"), "---\nname: mine\ndescription: Claude only.\n---\n\nMine.\n");
+
+    const log = await sync(dir);
+    expect(log).toContain("updated   .claude/skills/score-leads/SKILL.md");
+    expect(log).toContain("added     .claude/skills/win-back/SKILL.md");
+    expect(log.some((l) => l.startsWith("kept      .claude/skills/mine/SKILL.md"))).toBe(true);
+    expect(await readFile(join(dir, ".claude/skills/score-leads/SKILL.md"), "utf8")).toContain("Edited.");
+    expect((await sync(dir))[0]).toBe("Claude Code's skills already match .agents/skills/");
   });
 
   it("gives no link or approval card for anyone marked do_not_contact", async () => {

@@ -33,12 +33,16 @@ AGENTS.md            the manual for any agent (CLAUDE.md imports it)
 brain/               brand, product, audience and scorecard, positioning, channels,
                      design, assets, templates, history, observations, lessons
 workflows/           router.md (task → skill), tools.md (what's connected), approvals.md
-.claude/skills/      source-leads, score-leads, prepare-drafts, review-drafts, follow-up,
+.agents/skills/      source-leads, score-leads, prepare-drafts, review-drafts, follow-up,
                      weekly-review, research-market, plan-campaign, produce-creative,
                      review-campaign, record-learnings
+.claude/skills/      the same skills, copied for Claude Code
+.gemini/settings.json  points Gemini CLI at AGENTS.md
 campaigns/<name>/    state, research, brief, concepts, selections, approval, results, outbox/
 drafts/  rules/  pipeline.csv  corrections-log.md  sprint.md  dashboard.md
 ```
+
+**Any agent.** Codex, Cursor, Copilot and Gemini CLI read AGENTS.md and `.agents/skills/`. Claude Code reads CLAUDE.md, which imports AGENTS.md, and only `.claude/skills/`, so the workspace carries a copy there. After editing a skill in `.agents/skills/`, run `pnpm gtm sync <dir>` to update the copy; a skill only Claude Code has is kept, never deleted.
 
 The campaign loop is: goal → research → directions → the founder's choice → production → review → results → lessons. Production waits for `approval.md`.
 
@@ -51,6 +55,7 @@ pnpm gtm review gtm-workspaces/acme               # review drafts, then ask for 
 pnpm gtm review gtm-workspaces/acme --local       # …or approve here in the terminal
 pnpm gtm wait gtm-workspaces/acme                 # record the Telegram decisions
 pnpm gtm links gtm-workspaces/acme                # one-tap send links for approved drafts
+pnpm gtm sync gtm-workspaces/acme                 # copy .agents/skills/ to .claude/skills/ for Claude Code
 pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --runs 5 --out packages/gtm-harness/evals
 ```
 

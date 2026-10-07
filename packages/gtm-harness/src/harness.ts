@@ -7,13 +7,18 @@ import { DEFAULT_TOOLS, type ToolStatus } from "./tools";
  * The workspace a founder takes home: a marketing brain, workflows, skills and a first
  * campaign, around the outreach loop (pipeline, drafts, rules, corrections). Any agent can
  * run it: AGENTS.md is the manual, CLAUDE.md imports it for Claude Code, and the skills are
- * plain markdown runbooks. Agents prepare; the reviewer can block but never send; the
- * founder approves and sends.
+ * plain markdown runbooks in .agents/skills/ (the folder Codex, Gemini CLI, Cursor and Copilot
+ * read), copied to .claude/skills/ for Claude Code. Agents prepare; the reviewer can block but
+ * never send; the founder approves and sends.
  *
  * Browser-safe: no Node imports, so the server can build it and the page can zip it.
  */
 
 export type HarnessFiles = Record<string, string>;
+
+/** Where the skills live; the copy for Claude Code is generated from it (`pnpm gtm sync`). */
+export const SKILLS_DIR = ".agents/skills/";
+export const CLAUDE_SKILLS_DIR = ".claude/skills/";
 
 export interface HarnessOptions {
   /** Live tool status for workflows/tools.md; defaults to what works without setup. */
@@ -66,7 +71,10 @@ Built by Shonin's GTM Harness on ${date}. A workspace your agents research from,
 ## Start
 
 - **Claude Code:** \`cd gtm-harness && claude\`, then say: *Read AGENTS.md and run today's tasks in sprint.md.*
-- **Codex, Cursor, Gemini CLI or another agent:** open this folder and point it at AGENTS.md. The skills in \`.claude/skills/\` are plain markdown runbooks any agent can follow.
+- **Codex, Cursor, Copilot or Gemini CLI:** open this folder; they read AGENTS.md and the skills in \`.agents/skills/\` (Gemini CLI through \`.gemini/settings.json\`).
+- **Any other agent:** point it at AGENTS.md. The skills are plain markdown runbooks it can follow.
+
+The skills live in \`.agents/skills/\`; \`.claude/skills/\` is the same set, copied for Claude Code. Change a skill in both places, or edit \`.agents/skills/\` and run \`pnpm gtm sync <folder>\`.
 
 ## The two loops
 
@@ -81,7 +89,8 @@ Built by Shonin's GTM Harness on ${date}. A workspace your agents research from,
 | AGENTS.md | The operating manual every agent reads first (CLAUDE.md imports it) |
 | brain/ | What the agents know: brand, product, audience and scorecard, positioning, channels, design, assets, templates, history, lessons |
 | workflows/ | Which skill does which task (router.md), what's connected (tools.md), what needs you (approvals.md) |
-| .claude/skills/ | One runbook per role: source, score, prepare, review, follow up, weekly review, research, plan, produce, review a campaign, record learnings |
+| .agents/skills/ | One runbook per role: source, score, prepare, review, follow up, weekly review, research, plan, produce, review a campaign, record learnings |
+| .claude/skills/ | The same skills, copied for Claude Code |
 | ${c}/ | Your first campaign: state, research, brief, concepts, selections, approval, results, outbox |
 | drafts/ | This week's first messages, already reviewed |
 | rules/ | Voice, outreach and claims rules |
@@ -129,7 +138,7 @@ You run ${p}'s go-to-market with its founder. You research, decide what to propo
 | Producer | produce-creative | Make the approved outputs | Change the approved scope |
 | Founder | | Approve, send, accept new rules | |
 
-Skills live in \`.claude/skills/<name>/SKILL.md\`.
+Skills live in \`.agents/skills/<name>/SKILL.md\`, with the same files in \`.claude/skills/\` for Claude Code. If you change a skill, make the same change in both.
 
 ## How to decide
 
@@ -151,7 +160,7 @@ Open sprint.md, find today's day, do the tasks in order, and stop at anything th
 
 ## In Claude Code
 
-The roles are skills in \`.claude/skills/\`. Ask for one by name ("run score-leads") or describe the task, and the matching skill loads.
+The roles are skills in \`.claude/skills/\`, a copy of \`.agents/skills/\`. Ask for one by name ("run score-leads") or describe the task, and the matching skill loads. If you change a skill, change it in both folders.
 `;
 
   // ── The brain ──────────────────────────────────────────────────────────────
@@ -468,7 +477,7 @@ LinkedIn and Discord have no such link: copy the text and send it yourself.
 `;
 
   // ── Skills ─────────────────────────────────────────────────────────────────
-  files[".claude/skills/source-leads/SKILL.md"] = skill(
+  files[".agents/skills/source-leads/SKILL.md"] = skill(
     "source-leads",
     "Find people who match the scorecard and add them to pipeline.csv with their source. Use when asked to find leads, or when sprint.md says to add names.",
     `Read brain/audience.md and brain/channels.md.
@@ -476,19 +485,19 @@ LinkedIn and Discord have no such link: copy the text and send it yourself.
 Find up to 20 people or teams who match the scorecard, starting with the first channel in brain/channels.md you haven't used this week. For each, add a row to pipeline.csv: name, handle or email, channel, the exact source (a URL or the group name), stage "new". Public information only. Put anything you inferred in notes, starting with "Inference:". Never message anyone.`,
   );
 
-  files[".claude/skills/score-leads/SKILL.md"] = skill(
+  files[".agents/skills/score-leads/SKILL.md"] = skill(
     "score-leads",
     "Score new leads in pipeline.csv against the scorecard and set their stage. Use after sourcing, or when asked who to contact.",
     `Score every lead in pipeline.csv with stage "new" against brain/audience.md. For each criterion, decide met or not met from public evidence and write one line of evidence in notes. Set score_pct to the met weights divided by ${totalWeight}. Set stage to "reach out" (80% or more), "nurture" (60–80%) or "skip" (under 60%). Don't change the scorecard; if a criterion seems wrong, tell the founder instead.`,
   );
 
-  files[".claude/skills/prepare-drafts/SKILL.md"] = skill(
+  files[".agents/skills/prepare-drafts/SKILL.md"] = skill(
     "prepare-drafts",
     "Write a first message for every lead ready for outreach, following the rules. Use when leads are at 'reach out' with no draft yet.",
     `For every lead in pipeline.csv with stage "reach out" and no draft yet, write a draft in ${c}/outbox/<name>.md in the format in ${c}/outbox/README.md, using the closest example in drafts/ as a starting point. Follow every rule in rules/. Use only claims from ${productFile}. Fill the personal line from the lead's public work and cite where it came from. You can't send anything, and you can't mark your own drafts ready.`,
   );
 
-  files[".claude/skills/review-drafts/SKILL.md"] = skill(
+  files[".agents/skills/review-drafts/SKILL.md"] = skill(
     "review-drafts",
     "Check new drafts against the voice, outreach and claims rules and mark each ready, revise or blocked. Use after drafts are written.",
     `Check every new draft in drafts/ and ${c}/outbox/ against rules/voice.md, rules/outreach.md and rules/claims.md. Set its **Reviewer:** line to one verdict:
@@ -500,13 +509,13 @@ Find up to 20 people or teams who match the scorecard, starting with the first c
 You can block. You can't edit a draft and then approve it yourself, and you never send anything.`,
   );
 
-  files[".claude/skills/follow-up/SKILL.md"] = skill(
+  files[".agents/skills/follow-up/SKILL.md"] = skill(
     "follow-up",
     "Write one short follow-up for leads who haven't replied after three working days. Use when sprint.md says to follow up.",
     `For every lead contacted three or more working days ago with no reply and no follow-up yet, write one short follow-up in their draft file: two sentences, a new detail or a smaller ask, no guilt. After one follow-up, set next_step to "stop" in pipeline.csv.`,
   );
 
-  files[".claude/skills/weekly-review/SKILL.md"] = skill(
+  files[".agents/skills/weekly-review/SKILL.md"] = skill(
     "weekly-review",
     "Turn the week's corrections into proposed rules and fill the dashboard. Use on Mondays.",
     `Compare each message the founder sent this week with the draft that was prepared. Classify every change as a factual error, an audience preference, missing information or a style change, and log it in corrections-log.md. Propose a rule for any correction that happened more than once; nothing becomes a rule until the founder approves it, then add it to the right file in rules/ with the original and the sent version as an example.
@@ -514,7 +523,7 @@ You can block. You can't edit a draft and then approve it yourself, and you neve
 Then fill this week's column in dashboard.md and say in three lines what to change next week.`,
   );
 
-  files[".claude/skills/research-market/SKILL.md"] = skill(
+  files[".agents/skills/research-market/SKILL.md"] = skill(
     "research-market",
     "Research a goal, market, channel or competitor and save the evidence. Use before planning any campaign.",
     `Read brain/index.md, brain/audience.md, brain/positioning.md and the relevant files in brain/lessons/. Ask the founder for any missing goal or constraint in one line.
@@ -529,7 +538,7 @@ Collect evidence from public sources and connected tools (workflows/tools.md), s
 End with 2 to 4 opportunities and the questions only the founder can answer.`,
   );
 
-  files[".claude/skills/plan-campaign/SKILL.md"] = skill(
+  files[".agents/skills/plan-campaign/SKILL.md"] = skill(
     "plan-campaign",
     "Propose distinct campaign directions from the research, then turn the chosen one into concepts and a production plan. Use after research-market.",
     `Read ${c}/research.md and the relevant lessons. Propose 2 or 3 distinct directions. For each: the audience, the problem, the evidence, the angle, the channels, what to make, the effort and any cost, and the lessons that shaped it.
@@ -537,7 +546,7 @@ End with 2 to 4 opportunities and the questions only the founder can answer.`,
 Save them to ${c}/brief.md and ask the founder to choose. For the chosen direction, write ${c}/concepts.md (hook, message, format, channel, evidence) and ${c}/selections.md (the assets and templates chosen, and why). Record the scope, deliverables and any budget in ${c}/approval.md with status "awaiting approval". Don't produce anything until the founder marks it approved.`,
   );
 
-  files[".claude/skills/produce-creative/SKILL.md"] = skill(
+  files[".agents/skills/produce-creative/SKILL.md"] = skill(
     "produce-creative",
     "Produce the outputs the founder approved: posts, scripts, email copy, image or video briefs, and messages to people. Use only when the campaign's approval.md says approved.",
     `Check ${c}/approval.md first. If it isn't approved, stop and say so.
@@ -545,7 +554,7 @@ Save them to ${c}/brief.md and ask the founder to choose. For the chosen directi
 Produce exactly the approved scope, following ${c}/selections.md, brain/design.md, brain/assets.md and brain/templates.md. Link every output to its concept and inputs. Save creative under ${c}/outputs/ and messages to people in ${c}/outbox/ (format in ${c}/outbox/README.md). Check every claim against ${productFile}. Then run review-drafts on the outbox. Update ${c}/state.md.`,
   );
 
-  files[".claude/skills/review-campaign/SKILL.md"] = skill(
+  files[".agents/skills/review-campaign/SKILL.md"] = skill(
     "review-campaign",
     "Prepare the campaign for the founder's review and apply corrections as new versions. Use after production.",
     `Write ${c}/review.md: each output with its concept, version and the reviewer's verdict. Check product accuracy, whether the concept comes through, readability on a phone, and every rule in rules/.
@@ -553,7 +562,7 @@ Produce exactly the approved scope, following ${c}/selections.md, brain/design.m
 Apply the founder's corrections as new versions (keep the old ones) and log every correction in corrections-log.md. Update ${c}/state.md with what's approved and the next action.`,
   );
 
-  files[".claude/skills/record-learnings/SKILL.md"] = skill(
+  files[".agents/skills/record-learnings/SKILL.md"] = skill(
     "record-learnings",
     "Save the campaign's results and the founder's comments, and propose dated lessons. Use when results come in.",
     `Save raw observations in brain/observations/<date>-${campaign}.md. Keep review comments (preferences) and measured results apart, and give each number its source: channel, dates, reach, replies, conversions.
@@ -708,6 +717,14 @@ ${plan.metrics.map((m) => `| ${cell(m.name)} | ${cell(m.target)} | ${cell(m.why)
 
 ${plan.risks.map((r) => `- ${r}`).join("\n")}
 `;
+
+  // ── Every agent ────────────────────────────────────────────────────────────
+  // Claude Code reads skills only from .claude/skills/; Codex, Gemini CLI, Cursor and Copilot read
+  // .agents/skills/. Gemini CLI reads AGENTS.md once its settings name it (research/gtm-harnesses.md).
+  for (const [path, content] of Object.entries(files)) {
+    if (path.startsWith(SKILLS_DIR)) files[`${CLAUDE_SKILLS_DIR}${path.slice(SKILLS_DIR.length)}`] = content;
+  }
+  files[".gemini/settings.json"] = `${JSON.stringify({ context: { fileName: ["AGENTS.md"] } }, null, 2)}\n`;
 
   return files;
 }

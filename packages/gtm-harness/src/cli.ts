@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
 import { pollDecisions, postForReview, sendReviewCard, telegramFromEnv, toolStatus, type TelegramConfig } from "./connectors";
 import { evalModel, evalTable } from "./evals";
-import { buildHarness } from "./harness";
+import { buildHarness, CLAUDE_SKILLS_DIR, SKILLS_DIR } from "./harness";
 import { gtmInputSchema, type GtmInput } from "./input";
 import { describeRoute, routeModel } from "./models";
 import {
@@ -44,6 +44,7 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
                                or here in the terminal with --local
   wait <dir> [--minutes N]     Collect Telegram decisions into approvals.jsonl (default 10)
   links <dir>                  One-tap send links for every approved draft
+  sync <dir>                   Copy the skills in .agents/skills/ to .claude/skills/ for Claude Code
   eval --input <file> --models a,b [--runs N] [--out <dir>]
                                Run the same input through each model; write the support table
 
@@ -341,6 +342,42 @@ export async function links(dir: string): Promise<string[]> {
   return out.length ? out : ["No approved drafts yet. Run `pnpm gtm review <dir>`."];
 }
 
+/** Every file under root, as sorted paths relative to it. */
+async function filesUnder(root: string, rel = ""): Promise<string[]> {
+  const out: string[] = [];
+  for (const entry of await readdir(join(root, rel), { withFileTypes: true })) {
+    const path = rel ? `${rel}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...(await filesUnder(root, path)));
+    else if (entry.isFile()) out.push(path);
+  }
+  return out.sort();
+}
+
+/**
+ * Claude Code reads skills only from .claude/skills/, every other agent from .agents/skills/.
+ * This copies the second over the first. A skill only Claude Code has is reported, never deleted.
+ */
+export async function sync(dir: string): Promise<string[]> {
+  const from = join(dir, SKILLS_DIR);
+  if (!(await exists(from))) return [`Nothing to sync: ${dir} has no ${SKILLS_DIR}`];
+  const sources = await filesUnder(from);
+  const changes: string[] = [];
+  for (const rel of sources) {
+    const content = await readFile(join(from, rel));
+    const target = join(dir, CLAUDE_SKILLS_DIR, rel);
+    const current = await readFile(target).catch(() => null);
+    if (current?.equals(content)) continue;
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, content);
+    changes.push(`${current ? "updated" : "added  "}   ${CLAUDE_SKILLS_DIR}${rel}`);
+  }
+  const claudeOnly = (await exists(join(dir, CLAUDE_SKILLS_DIR))) ? (await filesUnder(join(dir, CLAUDE_SKILLS_DIR))).filter((rel) => !sources.includes(rel)) : [];
+  return [
+    ...(changes.length ? changes : [`Claude Code's skills already match ${SKILLS_DIR}`]),
+    ...claudeOnly.map((rel) => `kept      ${CLAUDE_SKILLS_DIR}${rel}: only Claude Code has it; add it to ${SKILLS_DIR} to share it`),
+  ];
+}
+
 // ── Terminal plumbing ────────────────────────────────────────────────────────
 
 function safeUser(): string {
@@ -411,6 +448,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
       case "links":
         if (!target) throw new Error("Usage: pnpm gtm links <dir>");
         console.log((await links(target)).join("\n"));
+        return 0;
+      case "sync":
+        if (!target) throw new Error("Usage: pnpm gtm sync <dir>");
+        console.log((await sync(target)).join("\n"));
         return 0;
       case "eval": {
         const inputPath = flag(argv, "input");
