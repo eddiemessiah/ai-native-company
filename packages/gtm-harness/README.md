@@ -51,11 +51,15 @@ The campaign loop is: goal → research → directions → the founder's choice 
 ```bash
 pnpm gtm doctor                                   # what's connected
 pnpm gtm new gtm-workspaces/acme --input acme.json  # build a workspace (any model, or templates)
+pnpm gtm status gtm-workspaces/acme               # every draft and where it stands
 pnpm gtm check gtm-workspaces/acme                # check the workspace against its own rules; every finding has a fix
+pnpm gtm due gtm-workspaces/acme                  # who is due their one follow-up, counted in working days by code
 pnpm gtm review gtm-workspaces/acme               # review drafts, then ask for approval in Telegram
 pnpm gtm review gtm-workspaces/acme --local       # …or approve here in the terminal
 pnpm gtm wait gtm-workspaces/acme                 # record the Telegram decisions
 pnpm gtm links gtm-workspaces/acme                # one-tap send links for approved drafts
+pnpm gtm sent gtm-workspaces/acme drafts/01-whatsapp.md   # record a send (at your terminal)
+pnpm gtm approve gtm-workspaces/acme --campaign first-campaign   # approve a campaign's direction and budget
 pnpm gtm sync gtm-workspaces/acme                 # copy .agents/skills/ to .claude/skills/ for Claude Code
 pnpm --silent gtm mcp gtm-workspaces/acme         # serve the workspace as MCP tools (below)
 pnpm gtm eval --input acme.json --models anthropic/claude-opus-5,openai/gpt-5 --runs 5 --out packages/gtm-harness/evals
@@ -74,6 +78,8 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 
 `review` holds back any draft with an error, so the founder only sees drafts that pass. `links` refuses an approved draft that still has a slot, because the link would send it as written.
 
+**Signed decisions.** An agent can write any file in the workspace, so a line in `approvals.jsonl` proves nothing by itself. Every decision (Telegram, terminal, campaign) and every reviewer verdict is signed with a key kept outside the workspace, in `~/.config/shonin-gtm/approval.key` (or `GTM_APPROVAL_KEY_FILE`). A record that doesn't verify counts for nothing, and `check` reports it as an error. Terminal approvals need a real terminal: piped answers are refused. A `Reviewer:` line typed into a draft is display only; `review` re-runs the reviewer on any draft without a signed verdict for its current text.
+
 **Approvals.** Each draft goes to the founder's Telegram chat with Approve and Reject (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`; `GTM_APPROVER_IDS` limits who can approve). Decisions land in `approvals.jsonl`, bound to a hash of the exact text: edit an approved draft and it needs approving again. `GTM_SLACK_WEBHOOK_URL` posts review copies to Slack.
 
 **Sending.** An approved draft becomes a link that opens the app with the message filled in: WhatsApp click-to-chat, an email, an X post, a Telegram share. The founder's tap is the send. LinkedIn and Discord have no such link, so the founder copies the text.
@@ -89,7 +95,8 @@ Add `--env <file>` to load keys, for example `--env gtm-workspaces/acme.env`. Th
 | `gtm_status` | Every draft with its status (held, pending, approved…), and leads by stage. Start here |
 | `gtm_read` | One file in the workspace, such as `AGENTS.md` or `brain/index.md`. Nothing outside it |
 | `gtm_check` | The workspace's rules as code, each finding with its fix |
-| `gtm_leads`, `gtm_add_lead`, `gtm_update_lead` | The pipeline. A new lead needs a source; nobody is added twice; `do_not_contact` can be set but never unset here |
+| `gtm_leads`, `gtm_add_lead`, `gtm_update_lead` | The pipeline. A new lead needs a source; nobody is added twice; stages come from a fixed list and dates must be dates; `do_not_contact` can be set but never unset here |
+| `gtm_score_lead`, `gtm_due` | The agent judges each scorecard criterion with evidence; code adds the weights and sets the stage. Code counts the working days to the one follow-up |
 | `gtm_drafts`, `gtm_write_draft` | Drafts in the workspace format. A new draft comes back with what the checker found; nobody marked `do_not_contact` gets one |
 | `gtm_request_approval` | The reviewer's verdict, then Telegram cards to the founder; drafts that break a rule are held with the fix |
 | `gtm_approvals` | The founder's recorded decisions |

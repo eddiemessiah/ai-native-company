@@ -1,6 +1,20 @@
 import { inventedNumbers, unfilledSlots, wordCount } from "./claims";
+import { parseDay, STAGES } from "./pipeline";
 import { CLAUDE_SKILLS_DIR, SKILLS_DIR } from "./harness";
-import { contactKey, doNotContact, isDoNotContact, parseApprovals, parseCsv, parseDraft, statusOf, type ApprovalRecord, type Draft } from "./outbox";
+import {
+  contactKey,
+  doNotContact,
+  isDoNotContact,
+  parseApprovals,
+  parseCsv,
+  parseDraft,
+  statusOf,
+  textHash,
+  withRecordedVerdict,
+  type ApprovalRecord,
+  type Draft,
+  type ReviewRecord,
+} from "./outbox";
 
 /**
  * The workspace's rules, checked by code. Agents read AGENTS.md and rules/; this makes sure what
@@ -106,8 +120,20 @@ export function checkDraft(draft: Draft, ctx: DraftContext): Finding[] {
   return out;
 }
 
-export function checkWorkspace(files: Readonly<Record<string, string>>): Finding[] {
-  const out: Finding[] = [];
+/** What the CLI knows beyond the files: which decisions and verdicts verify (ledger.ts). */
+export interface CheckOptions {
+  /** The founder's decisions that verify. Without this, approvals.jsonl is read as written. */
+  readonly approvals?: readonly ApprovalRecord[];
+  /** The reviewer's verdicts that verify. Without this, a draft's Reviewer line is read as written. */
+  readonly reviews?: readonly ReviewRecord[];
+  /** The latest verified decision on each campaign's approval.md: the approved text's hash, or null. */
+  readonly campaignApprovals?: ReadonlyMap<string, string | null>;
+  /** Findings from outside the files, such as ledger lines that don't verify. */
+  readonly extra?: readonly Finding[];
+}
+
+export function checkWorkspace(files: Readonly<Record<string, string>>, opts: CheckOptions = {}): Finding[] {
+  const out: Finding[] = [...(opts.extra ?? [])];
   for (const path of MANUALS) {
     if (files[path] === undefined) {
       out.push({ level: "warning", path, rule: "AGENTS.md: read first", problem: "missing", fix: `Restore ${path}; agents read it before they work.` });
@@ -122,7 +148,7 @@ export function checkWorkspace(files: Readonly<Record<string, string>>): Finding
   }
 
   const ctx = draftContext(files);
-  const approvals = files["approvals.jsonl"] ? parseApprovals(files["approvals.jsonl"]) : [];
+  const approvals = opts.approvals ?? (files["approvals.jsonl"] ? parseApprovals(files["approvals.jsonl"]) : []);
   const drafts: Draft[] = [];
   for (const [path, content] of Object.entries(files)) {
     if (!isDraftPath(path)) continue;
@@ -137,11 +163,12 @@ export function checkWorkspace(files: Readonly<Record<string, string>>): Finding
       });
       continue;
     }
-    drafts.push(draft);
-    out.push(...checkDraftInWorkspace(draft, content, ctx, approvals));
+    const judged = opts.reviews ? withRecordedVerdict(draft, opts.reviews) : draft;
+    drafts.push(judged);
+    out.push(...checkDraftInWorkspace(judged, content, ctx, approvals));
   }
   out.push(...duplicateTexts(drafts));
-  out.push(...checkCampaigns(files));
+  out.push(...checkCampaigns(files, opts.campaignApprovals));
   out.push(...skillsDrift(files));
   return out.sort((a, b) => (a.level === b.level ? a.path.localeCompare(b.path) : a.level === "error" ? -1 : 1));
 }
@@ -215,6 +242,14 @@ function checkPipeline(csv: string): Finding[] {
     if (score && !(Number.isFinite(Number(score.replace(/%$/, ""))) && Number(score.replace(/%$/, "")) >= 0 && Number(score.replace(/%$/, "")) <= 100)) {
       out.push({ level: "error", path: at, rule: "brain/audience.md: the scorecard", problem: `score_pct "${score}" isn't 0–100`, fix: "Score the lead again with the score-leads skill." });
     }
+    const stage = row[col("stage")]?.trim().toLowerCase() ?? "";
+    if (stage && !(STAGES as readonly string[]).includes(stage)) {
+      out.push({ level: "warning", path: at, rule: "pipeline.csv: the stages", problem: `stage "${stage}" isn't one code knows`, fix: `Use one of: ${STAGES.join(", ")}.` });
+    }
+    const touched = col("last_touch") >= 0 ? (row[col("last_touch")]?.trim() ?? "") : "";
+    if (touched && !parseDay(touched)) {
+      out.push({ level: "warning", path: at, rule: "pipeline.csv: dates", problem: `last_touch "${touched}" isn't a date code can count from`, fix: "Write it as YYYY-MM-DD." });
+    }
     const key = handle ? contactKey(handle) : "";
     if (key) {
       const first = seen.get(key);
@@ -247,7 +282,7 @@ function duplicateTexts(drafts: readonly Draft[]): Finding[] {
     );
 }
 
-function checkCampaigns(files: Readonly<Record<string, string>>): Finding[] {
+function checkCampaigns(files: Readonly<Record<string, string>>, recorded?: ReadonlyMap<string, string | null>): Finding[] {
   const out: Finding[] = [];
   const campaigns = new Set(Object.keys(files).flatMap((p) => p.match(/^campaigns\/([^/]+)\//)?.[1] ?? []));
   for (const name of campaigns) {
@@ -255,7 +290,17 @@ function checkCampaigns(files: Readonly<Record<string, string>>): Finding[] {
     const approval = files[path];
     const field = (label: string) => approval?.match(new RegExp(`^\\*\\*${label}:\\*\\*(.*)$`, "m"))?.[1]?.trim() ?? "";
     const approved = /^approved\b/i.test(field("Status"));
-    if (approved && (!field("Approved by") || !field("Date"))) {
+    if (approved && recorded && approval !== undefined && recorded.get(path) !== textHash(approval)) {
+      out.push({
+        level: "error",
+        path,
+        rule: `${path}: only the founder approves a campaign`,
+        problem: recorded.get(path)
+          ? "edited after the founder approved it"
+          : "says approved, but no approval is recorded for it on this machine",
+        fix: `Set the status back to not approved. The founder approves with pnpm gtm approve <folder> --campaign ${name}, at a terminal.`,
+      });
+    } else if (approved && (!field("Approved by") || !field("Date"))) {
       out.push({
         level: "error",
         path,

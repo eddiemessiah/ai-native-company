@@ -38,11 +38,57 @@ export interface ApprovalRecord {
   readonly file: string;
   readonly hash: string;
   readonly decision: Decision;
-  /** Who decided: a Telegram username or id, or "cli:<user>", or "manual". */
+  /** Who decided: a Telegram username or id, or "cli:<user>" at the founder's terminal. */
   readonly by: string;
   readonly at: string;
-  readonly via: "cli" | "telegram" | "manual";
+  /** Only two ways to decide: Telegram, or the founder's own terminal. */
+  readonly via: "cli" | "telegram";
   readonly note?: string;
+  /** The signature with the founder's approval key (ledger.ts); unsigned records don't count. */
+  readonly sig?: string;
+}
+
+/** The reviewer's verdict on one exact text, as recorded by code when the brain gave it. */
+export interface ReviewRecord {
+  readonly file: string;
+  readonly hash: string;
+  readonly verdict: Verdict;
+  readonly provider: string;
+  readonly calibrated: boolean;
+  readonly at: string;
+  readonly sig?: string;
+}
+
+export function isApprovalRecord(value: Record<string, unknown>): value is ApprovalRecord & Record<string, unknown> {
+  return (
+    typeof value.file === "string" &&
+    typeof value.hash === "string" &&
+    (value.decision === "approved" || value.decision === "rejected" || value.decision === "sent") &&
+    typeof value.by === "string" &&
+    typeof value.at === "string" &&
+    (value.via === "cli" || value.via === "telegram")
+  );
+}
+
+export function isReviewRecord(value: Record<string, unknown>): value is ReviewRecord & Record<string, unknown> {
+  return (
+    typeof value.file === "string" &&
+    typeof value.hash === "string" &&
+    (value.verdict === "ready" || value.verdict === "revise" || value.verdict === "blocked") &&
+    typeof value.provider === "string" &&
+    typeof value.at === "string"
+  );
+}
+
+/**
+ * The draft with only the verdict code recorded for its current text. A Reviewer line typed into
+ * the file is display only: it never stands in for the reviewer.
+ */
+export function withRecordedVerdict(draft: Draft, reviews: readonly ReviewRecord[]): Draft {
+  const hash = textHash(draft.text);
+  const record = [...reviews].reverse().find((r) => r.file === draft.file && r.hash === hash);
+  const { verdict: _typed, ...rest } = draft;
+  return record ? { ...rest, verdict: record.verdict } : rest;
 }
 
 export type DraftStatus = "unreviewed" | "blocked" | "pending" | "approved" | "rejected" | "stale" | "sent";
@@ -88,15 +134,14 @@ export function parseDraft(file: string, content: string): Draft | null {
   };
 }
 
+/** Parses approvals.jsonl without checking signatures; the CLI reads through the ledger instead. */
 export function parseApprovals(jsonl: string): ApprovalRecord[] {
   const out: ApprovalRecord[] = [];
   for (const line of jsonl.split("\n")) {
     if (!line.trim()) continue;
     try {
-      const r = JSON.parse(line) as Partial<ApprovalRecord>;
-      if (r.file && r.hash && (r.decision === "approved" || r.decision === "rejected" || r.decision === "sent") && r.by && r.at && r.via) {
-        out.push(r as ApprovalRecord);
-      }
+      const r = JSON.parse(line) as Record<string, unknown>;
+      if (r && typeof r === "object" && isApprovalRecord(r)) out.push(r);
     } catch {
       // A torn last line from a crash is skipped, never guessed at.
     }

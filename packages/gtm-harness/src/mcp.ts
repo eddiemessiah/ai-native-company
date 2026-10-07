@@ -3,9 +3,10 @@ import { dirname, join, normalize, sep } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { checkDraft, draftContext, formatFindings, PIPELINE_HEADER } from "./check";
-import { check, collectDrafts, readApprovals, readWorkspace, review, status } from "./cli";
+import { check, collectDrafts, readLedgers, readWorkspace, review, status } from "./cli";
 import { telegramFromEnv, type TelegramConfig } from "./connectors";
 import { contactKey, csvRow, doNotContact, parseCsv, parseDraft } from "./outbox";
+import { formatDue, parseDay, parseScorecard, scoreLead, STAGES } from "./pipeline";
 
 /**
  * The workspace as MCP tools, for any agent and any MCP client, including chat apps that can't
@@ -199,13 +200,16 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
     {
       title: "Update a lead",
       description:
-        "Update one lead in pipeline.csv, found by its handle, email or number. Set the stage, the score (0–100, from the scorecard), the next step, notes or the last touch, or mark them do_not_contact when they ask you to stop. Marking do_not_contact can't be undone here: only the founder edits that by hand.",
+        "Update one lead in pipeline.csv, found by its handle, email or number. Set the stage, the next step, notes or the last touch (YYYY-MM-DD), or mark them do_not_contact when they ask you to stop. Scores come only from gtm_score_lead. Marking do_not_contact can't be undone here: only the founder edits that by hand.",
       inputSchema: {
         handle: z.string().min(1).describe("Their handle, email or number, as in pipeline.csv"),
-        stage: z.string().optional(),
-        score_pct: z.number().min(0).max(100).optional(),
-        next_step: z.string().optional(),
-        last_touch: z.string().optional().describe("A date, YYYY-MM-DD"),
+        stage: z.enum(STAGES).optional().describe("Where they are now; scores set reach out, nurture or skip through gtm_score_lead"),
+        next_step: z.string().optional().describe('"stop" after the one follow-up'),
+        last_touch: z
+          .string()
+          .refine((v) => parseDay(v) !== null, "a date written YYYY-MM-DD")
+          .optional()
+          .describe("When the founder last messaged them, YYYY-MM-DD"),
         notes: z.string().optional(),
         do_not_contact: z.literal(true).optional().describe("Set when they ask not to be contacted"),
       },
@@ -223,7 +227,6 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
         if (v !== undefined && col(c) >= 0) row[col(c)] = String(v);
       };
       set("stage", args.stage);
-      set("score_pct", args.score_pct);
       set("next_step", args.next_step);
       set("last_touch", args.last_touch);
       set("notes", args.notes);
@@ -233,6 +236,59 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
       await writePipeline(dir, header, next);
       return ok(`Updated ${args.handle} (pipeline.csv line ${i + 2}).${args.do_not_contact ? " They're marked do_not_contact: no card or link will ever be made for them." : ""}`);
     },
+  );
+
+  server.registerTool(
+    "gtm_score_lead",
+    {
+      title: "Score a lead against the scorecard",
+      description:
+        "Judge each criterion in brain/audience.md met or not, with the public evidence for each one met. Code adds the weights, sets score_pct and the stage (reach out, nurture or skip), and notes the evidence. Never add up weights yourself.",
+      inputSchema: {
+        handle: z.string().min(1).describe("Their handle, email or number, as in pipeline.csv"),
+        criteria: z
+          .array(z.object({ criterion: z.string().min(1), met: z.boolean(), evidence: z.string().optional().describe("The public source; required when met") }))
+          .min(1)
+          .describe("One judgement per scorecard criterion"),
+        disqualifier: z.string().optional().describe("A disqualifier from brain/audience.md they match; it makes the stage skip"),
+      },
+      annotations: WRITE,
+    },
+    async ({ handle, criteria, disqualifier }) => {
+      const audiencePath = join(dir, "brain", "audience.md");
+      const scorecard = (await exists(audiencePath)) ? parseScorecard(await readFile(audiencePath, "utf8")) : [];
+      const result = scoreLead(scorecard, criteria, disqualifier);
+      if (!result.ok) return fail(`Not scored: ${result.problem}.`);
+      const { header, rows } = await readPipeline(dir);
+      const col = (c: string) => header.indexOf(c);
+      const key = contactKey(handle);
+      const i = rows.findIndex((r) => contactKey(r[col("handle_or_email")] ?? "") === key);
+      if (i < 0) return fail(`${handle} isn't in pipeline.csv. Add them with gtm_add_lead, with a source.`);
+      const row = [...rows[i]!];
+      while (row.length < header.length) row.push("");
+      if (isYes(row[col("do_not_contact")])) return fail(`${handle} is marked do_not_contact. There's nothing to score.`);
+      const evidence = criteria.filter((c) => c.met).map((c) => `${c.criterion}: ${c.evidence}`);
+      const note = `Scored ${new Date().toISOString().slice(0, 10)}: ${result.score}%${disqualifier ? `, disqualified (${disqualifier})` : ""}${evidence.length ? `. Met: ${evidence.join("; ")}` : ""}`;
+      row[col("score_pct")] = String(result.score);
+      row[col("stage")] = result.stage;
+      if (col("notes") >= 0) row[col("notes")] = [row[col("notes")]?.trim(), note].filter(Boolean).join(" | ");
+      const next = [...rows];
+      next[i] = row;
+      await writePipeline(dir, header, next);
+      return ok(`${handle}: ${result.score}%, so "${result.stage}".${result.stage === "reach out" ? " Next: gtm_write_draft." : ""}`);
+    },
+  );
+
+  server.registerTool(
+    "gtm_due",
+    {
+      title: "Who is due a follow-up",
+      description:
+        "Code counts the working days: leads contacted with no reply, last touched 3 or more working days ago and not stopped are due their one follow-up. Lists who must not get another message too.",
+      inputSchema: {},
+      annotations: READ,
+    },
+    async () => ok(formatDue(await readPipeline(dir), new Date())),
   );
 
   server.registerTool(
@@ -329,9 +385,12 @@ export function createWorkspaceServer(opts: WorkspaceServerOptions): McpServer {
       annotations: READ,
     },
     async () => {
-      const approvals = await readApprovals(dir);
-      if (!approvals.length) return ok("No decisions recorded yet. The founder records them with `pnpm gtm wait` (Telegram) or `pnpm gtm review --local`.");
-      return ok(approvals.map((a) => `${a.at} ${a.decision.padEnd(9)} ${a.file} by ${a.by} (${a.via})`).join("\n"));
+      const { approvals } = await readLedgers(dir);
+      const ignored = approvals.untrusted.length
+        ? `\n\n${approvals.untrusted.length} line${approvals.untrusted.length === 1 ? "" : "s"} in approvals.jsonl didn't verify and don't count. Only the founder decides.`
+        : "";
+      if (!approvals.trusted.length) return ok(`No decisions recorded yet. The founder records them with \`pnpm gtm wait\` (Telegram) or \`pnpm gtm review --local\`.${ignored}`);
+      return ok(`${approvals.trusted.map((a) => `${a.at} ${a.decision.padEnd(9)} ${a.file} by ${a.by} (${a.via})`).join("\n")}${ignored}`);
     },
   );
 

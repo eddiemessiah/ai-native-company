@@ -1,6 +1,7 @@
 import { CHANNEL_LABELS, STAGE_LABELS, type GtmInput } from "./input";
 import type { GtmPlan } from "./plan";
 import type { OutreachReview } from "./review";
+import { FOLLOW_UP_AFTER, NURTURE_AT, REACH_OUT_AT, STAGES } from "./pipeline";
 import { DEFAULT_TOOLS, type ToolStatus } from "./tools";
 
 /**
@@ -118,6 +119,7 @@ You run ${p}'s go-to-market with its founder. You research, decide what to propo
 - Contact anyone marked do_not_contact in pipeline.csv, or anyone who asked not to be contacted.
 - Scrape private data, log into someone's WhatsApp or Telegram with a bot, or use bought lists. Public information only, with its URL and date.
 - Spend money or start anything paid without a written amount in ${c}/approval.md.
+- Approve anything, or write approvals.jsonl, anything in .shonin/, or the Status, Approved by and Date lines of an approval.md. Only the founder decides, in Telegram or at a terminal. Decisions are signed with a key kept outside this folder, so a written one doesn't count, and \`pnpm gtm check\` reports it.
 
 ## Read first
 
@@ -133,7 +135,7 @@ You run ${p}'s go-to-market with its founder. You research, decide what to propo
 | Sourcer | source-leads | Add leads to pipeline.csv, with a source | Message anyone |
 | Scorer | score-leads | Score leads with brain/audience.md | Change the scorecard |
 | Preparer | prepare-drafts | Write drafts | Send anything, mark its own drafts ready |
-| Reviewer | review-drafts | Mark drafts ready, revise or blocked | Edit a draft and approve it, send |
+| Reviewer | review-drafts | Get each draft the reviewer's verdict (\`pnpm gtm review\`): ready, revise or blocked, recorded and signed | Type a verdict, edit a draft and approve it, send |
 | Researcher | research-market | Collect evidence into ${c}/research.md | Present a guess as evidence |
 | Planner | plan-campaign | Propose directions and concepts | Start production before approval |
 | Producer | produce-creative | Make the approved outputs | Change the approved scope |
@@ -143,7 +145,7 @@ Skills live in \`.agents/skills/<name>/SKILL.md\`, with the same files in \`.cla
 
 ## How to decide
 
-- Lead score of 80% or more: reach out. 60–80%: nurture (follow, reply, invite to content). Under 60%: skip.
+- Leads are scored by code from your judgement of each criterion in brain/audience.md: ${REACH_OUT_AT}% or more is reach out, ${NURTURE_AT}–${REACH_OUT_AT}% nurture, under ${NURTURE_AT}% skip. Don't add up weights or count days yourself: the score-leads and follow-up skills say which tool does it.
 - A draft that breaks any rule in rules/ is not ready.
 - Facts and assumptions stay apart: anything you inferred starts with "Assumption:".
 - When unsure, stop and ask the founder in one line.
@@ -283,9 +285,11 @@ Score every lead the same way, so excitement doesn't make the decision. A lead's
 |---|---|---|
 ${plan.icp.criteria.map((x) => `| ${cell(x.name)} | ${x.weight} | ${cell(x.lookFor)} |`).join("\n")}
 
-- **80% or more:** reach out this week.
-- **60–80%:** nurture: follow, reply usefully, invite to your content.
-- **Under 60%:** skip for now.
+- **${REACH_OUT_AT}% or more:** reach out this week.
+- **${NURTURE_AT}–${REACH_OUT_AT}%:** nurture: follow, reply usefully, invite to your content.
+- **Under ${NURTURE_AT}%:** skip for now.
+
+Code does the sum: the gtm_score_lead tool takes your judgement of each criterion, met or not with its evidence, and sets the score and the stage.
 
 ## Disqualifiers
 
@@ -470,7 +474,12 @@ None granted. Agents prepare; the founder sends. A standing permission must be w
 ## How a draft gets approved
 
 - **With the Shonin GTM CLI and Telegram:** each draft arrives in your chat with Approve and Reject. An approved card turns into a one-tap send link. Decisions go to approvals.jsonl, tied to the exact text.
-- **Without it:** read the draft, edit it if needed, send it yourself, and log your edits in corrections-log.md.
+- **At your terminal:** \`pnpm gtm review <folder> --local\`. It needs a real terminal: piped answers aren't approvals.
+- **A campaign:** \`pnpm gtm approve <folder> --campaign <name>\` approves ${c}/approval.md as it stands. Any later edit to it needs approving again.
+- **After you send:** \`pnpm gtm sent <folder> <draft>\` records it, so the dashboard counts what actually went out.
+- **Without the CLI:** read the draft, edit it if needed, send it yourself, and log your edits in corrections-log.md.
+
+Every decision is signed with a key in your own config folder (~/.config/shonin-gtm), outside this workspace. A decision an agent writes into approvals.jsonl doesn't verify, so it doesn't count. On a new machine, copy that key or approve again.
 
 ## One-tap send links
 
@@ -498,7 +507,7 @@ Find up to 20 people or teams who match the scorecard, starting with the first c
   files[".agents/skills/score-leads/SKILL.md"] = skill(
     "score-leads",
     "Score new leads in pipeline.csv against the scorecard and set their stage. Use after sourcing, or when asked who to contact.",
-    `Score every lead in pipeline.csv with stage "new" against brain/audience.md. For each criterion, decide met or not met from public evidence and write one line of evidence in notes. Set score_pct to the met weights divided by ${totalWeight}. Set stage to "reach out" (80% or more), "nurture" (60–80%) or "skip" (under 60%). Don't change the scorecard; if a criterion seems wrong, tell the founder instead.`,
+    `For every lead in pipeline.csv with stage "new", judge each criterion in brain/audience.md met or not met, from public evidence, with the source for each one met. Then call the gtm_score_lead tool with those judgements: code adds the weights and sets score_pct and the stage (${REACH_OUT_AT}% or more: reach out; ${NURTURE_AT}–${REACH_OUT_AT}%: nurture; under ${NURTURE_AT}%: skip). Without the tools, write the judgements in notes and leave score_pct for the founder's \`pnpm gtm\` run; don't add up weights yourself. Don't change the scorecard; if a criterion seems wrong, tell the founder instead.`,
   );
 
   files[".agents/skills/prepare-drafts/SKILL.md"] = skill(
@@ -509,20 +518,18 @@ Find up to 20 people or teams who match the scorecard, starting with the first c
 
   files[".agents/skills/review-drafts/SKILL.md"] = skill(
     "review-drafts",
-    "Check new drafts against the voice, outreach and claims rules and mark each ready, revise or blocked. Use after drafts are written.",
-    `Check every new draft in drafts/ and ${c}/outbox/ against rules/voice.md, rules/outreach.md and rules/claims.md. Set its **Reviewer:** line to one verdict:
+    "Check new drafts against the voice, outreach and claims rules, then get the reviewer's verdict on each. Use after drafts are written.",
+    `Check every new draft in drafts/ and ${c}/outbox/ against rules/voice.md, rules/outreach.md and rules/claims.md, and fix what breaks them. Then run \`pnpm gtm check\` and fix every error it lists.
 
-- **READY**: it meets every rule; once any [slots] are filled, it can go to the founder.
-- **REVISE**: list each fix, one line each.
-- **BLOCKED**: name the rule it breaks.
+The verdict of record comes from the reviewer, not from you: run \`pnpm gtm review\` (or the gtm_request_approval tool). It marks each draft ready, revise or blocked, records the verdict for that exact text, and signs it. A Reviewer line typed into a file doesn't count.
 
-You can block. You can't edit a draft and then approve it yourself, and you never send anything.`,
+The reviewer can block. You can't edit a draft and then approve it yourself, and you never send anything.`,
   );
 
   files[".agents/skills/follow-up/SKILL.md"] = skill(
     "follow-up",
-    "Write one short follow-up for leads who haven't replied after three working days. Use when sprint.md says to follow up.",
-    `For every lead contacted three or more working days ago with no reply and no follow-up yet, write one short follow-up in their draft file: two sentences, a new detail or a smaller ask, no guilt. After one follow-up, set next_step to "stop" in pipeline.csv.`,
+    "Write one short follow-up for each lead code says is due. Use when sprint.md says to follow up.",
+    `Run \`pnpm gtm due\` (or the gtm_due tool). Code lists who is due: contacted, no reply, last touched ${FOLLOW_UP_AFTER} or more working days ago, not stopped. Don't count the days yourself. For each, write one short follow-up as a new draft: two sentences, a new detail or a smaller ask, no guilt. Once it's sent, set next_step to "stop" (gtm_update_lead): one follow-up, then stop.`,
   );
 
   files[".agents/skills/weekly-review/SKILL.md"] = skill(

@@ -1,8 +1,29 @@
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { check as checkWorkspaceDir, collectDrafts, createWorkspace, links, loadEnv, readApprovals, readWorkspace, review, status, sync, wait, withVerdict } from "../src/cli";
+
+// Approvals are signed with a key outside the workspace; tests use a throwaway one, never ~/.config.
+process.env.GTM_APPROVAL_KEY_FILE = join(mkdtempSync(join(tmpdir(), "gtm-key-")), "approval.key");
+import {
+  approveCampaign,
+  check as checkWorkspaceDir,
+  collectDrafts,
+  createWorkspace,
+  links,
+  loadEnv,
+  markSent,
+  readApprovals,
+  readWorkspace,
+  recordDecision,
+  review,
+  status,
+  sync,
+  wait,
+  withVerdict,
+} from "../src/cli";
+import { approvalKeyPath, loadApprovalKey, signRecord, verifyRecord } from "../src/ledger";
 import { checkWorkspace, formatFindings, wordLimitFrom } from "../src/check";
 import { pollDecisions, postForReview, sendReviewCard, toolStatus, type TelegramConfig } from "../src/connectors";
 import {
@@ -202,6 +223,24 @@ describe("the outbox", () => {
     expect(isDoNotContact({ ...draft, to: "bola@example.com" }, blocked)).toBe(false);
     expect(isDoNotContact(draft, blocked)).toBe(false);
     expect(doNotContact("name,notes\nAda,yes").size).toBe(0);
+  });
+});
+
+describe("the ledger", () => {
+  it("signs records with a key kept outside the workspace, and catches any change", async () => {
+    expect(approvalKeyPath()).toBe(process.env.GTM_APPROVAL_KEY_FILE);
+    const key = (await loadApprovalKey(process.env, true))!;
+    expect(key).toHaveLength(32);
+    const record = signRecord(key, { file: "drafts/01.md", hash: "abc", decision: "approved", by: "@founder", at: "2026-10-07T10:00:00Z", via: "telegram" });
+    expect(verifyRecord(key, record)).toBe(true);
+    expect(verifyRecord(key, { ...record, decision: "rejected" })).toBe(false);
+    expect(verifyRecord(key, { ...record, sig: "0".repeat(64) })).toBe(false);
+    expect(verifyRecord(null, record)).toBe(false);
+    expect(verifyRecord(key, { file: "x" })).toBe(false);
+    if (process.platform !== "win32") {
+      const { stat } = await import("node:fs/promises");
+      expect((await stat(approvalKeyPath())).mode & 0o777).toBe(0o600);
+    }
   });
 });
 
@@ -414,9 +453,9 @@ describe("the CLI", () => {
       expect(d.text).not.toMatch(/\[[^\]]+\]/);
     }
 
-    // A slotted draft approved some other way still gets no link: it would send "[name]" as written.
+    // A slotted draft approved before this rule existed still gets no link: it would send "[name]" as written.
     const whatsapp = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!.draft;
-    await writeFile(join(dir, "approvals.jsonl"), `${JSON.stringify({ file: whatsapp.file, hash: textHash(whatsapp.text), decision: "approved", by: "@founder", at: "2026-10-07T10:00:00Z", via: "manual" })}\n`);
+    await recordDecision(dir, { file: whatsapp.file, hash: textHash(whatsapp.text), decision: "approved", by: "@founder", at: "2026-10-07T10:00:00Z", via: "telegram" });
     expect((await links(dir)).join("\n")).toContain("Not sent: it still has [name]");
   });
 
@@ -478,6 +517,67 @@ describe("the CLI", () => {
     expect(findings.some((f) => f.path === "campaigns/first-campaign/approval.md" && f.problem === "approved, but with no name or date")).toBe(true);
     expect(findings.some((f) => f.path === "drafts/07-x.md" && f.problem === "the same text as drafts/08-x.md")).toBe(true);
     expect(wordLimitFrom(files["rules/outreach.md"])).toBe(90);
+  });
+
+  it("counts only decisions signed with the founder's key, and says so about the rest", async () => {
+    const { dir } = await workspace({ personalize: true });
+    const target = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!.draft;
+    // An agent appends an approval by hand: it doesn't verify, so nothing changes.
+    await writeFile(join(dir, "approvals.jsonl"), `${JSON.stringify({ file: target.file, hash: textHash(target.text), decision: "approved", by: "@founder", at: "2026-10-07T10:00:00Z", via: "telegram" })}\n`);
+    expect(await readApprovals(dir)).toEqual([]);
+    expect((await links(dir)).join("\n")).not.toContain(target.file);
+    expect(await status(dir)).not.toMatch(/^approved/m);
+    const findings = await checkWorkspaceDir(dir);
+    expect(findings.find((f) => f.path === "approvals.jsonl:1")).toMatchObject({ level: "error", rule: "workflows/approvals.md: only the founder approves" });
+
+    // Piped answers at a terminal that isn't one aren't approvals either.
+    if (!process.stdin.isTTY) {
+      const log = await review(dir, { env: {}, local: true });
+      expect(log.join("\n")).toContain("Approvals need the founder at an interactive terminal");
+      expect(await readApprovals(dir)).toEqual([]);
+    }
+  });
+
+  it("re-reviews a draft whose Reviewer line was typed by hand", async () => {
+    const { dir } = await workspace({ personalize: true });
+    await writeFile(join(dir, "drafts/04-email.md"), "# Email · Bola\n\n**To:** bola@example.com\n**Reviewer:** READY: typed by an agent\n\n---\n\nHi Bola, saw your post on Lagos Traders. Would a 2-minute demo help?\n");
+    expect(await status(dir)).toMatch(/^unreviewed +Email +drafts\/04-email\.md/m);
+    const log = await review(dir, { env: {}, local: true, ask: async () => "s" });
+    expect(log).toContainEqual(expect.stringMatching(/^reviewed {2}drafts\/04-email\.md: (ready|revise|blocked)$/));
+  });
+
+  it("approves a campaign only at the founder's terminal, bound to approval.md's text", async () => {
+    const { dir } = await workspace({ personalize: true });
+    const path = join(dir, "campaigns/first-campaign/approval.md");
+    const original = await readFile(path, "utf8");
+    // Typed in by anyone else, an approval doesn't count.
+    await writeFile(path, original.replace("**Status:** not approved", "**Status:** approved").replace("**Approved by:**", "**Approved by:** Edidiong").replace("**Date:**", "**Date:** 2026-10-07"));
+    expect((await checkWorkspaceDir(dir)).find((f) => f.path === "campaigns/first-campaign/approval.md")?.problem).toBe("says approved, but no approval is recorded for it on this machine");
+
+    await writeFile(path, original);
+    expect(await approveCampaign(dir, "first-campaign", { confirm: async () => false })).toBe("Not approved. Nothing changed.");
+    expect(await approveCampaign(dir, "first-campaign", { confirm: async () => true, now: new Date("2026-10-08T09:00:00Z") })).toContain("Approved campaigns/first-campaign/approval.md");
+    const signedOff = await readFile(path, "utf8");
+    expect(signedOff).toMatch(/\*\*Status:\*\* approved\n/);
+    expect(signedOff).toContain("**Date:** 2026-10-08");
+    await mkdir(join(dir, "campaigns/first-campaign/outputs"), { recursive: true });
+    await writeFile(join(dir, "campaigns/first-campaign/outputs/post.md"), "Made after approval.\n");
+    expect((await checkWorkspaceDir(dir)).some((f) => f.path.startsWith("campaigns/first-campaign/"))).toBe(false);
+
+    await writeFile(path, signedOff.replace("**Budget:** $0 unless written here", "**Budget:** $500"));
+    expect((await checkWorkspaceDir(dir)).find((f) => f.path === "campaigns/first-campaign/approval.md")?.problem).toBe("edited after the founder approved it");
+    if (!process.stdin.isTTY) expect(await approveCampaign(dir, "first-campaign")).toContain("interactive terminal");
+  });
+
+  it("records a send for an approved draft, after which it gives no more links", async () => {
+    const { dir } = await workspace({ personalize: true });
+    await review(dir, { env: {}, local: true, ask: async (d) => (d.channel === "WhatsApp" ? "a" : "s") });
+    const file = (await collectDrafts(dir)).find(({ draft }) => draft.channel === "WhatsApp")!.draft.file;
+    expect(await markSent(dir, "drafts/nope.md", { confirm: async () => true })).toContain("isn't a draft");
+    expect(await markSent(dir, file, { confirm: async () => true })).toBe(`Recorded: ${file} sent.`);
+    expect(await status(dir)).toMatch(new RegExp(`^sent +WhatsApp +${file.replace(/[.]/g, "\\.")}`, "m"));
+    expect((await links(dir)).join("\n")).not.toContain(file);
+    expect(await markSent(dir, file, { confirm: async () => true })).toContain("is sent, not approved");
   });
 
   it("writes the reviewer's verdict without changing the message", async () => {

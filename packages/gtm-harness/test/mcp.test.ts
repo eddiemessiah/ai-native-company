@@ -1,14 +1,19 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
+
+// Approvals are signed with a key outside the workspace; tests use a throwaway one, never ~/.config.
+process.env.GTM_APPROVAL_KEY_FILE = join(mkdtempSync(join(tmpdir(), "gtm-key-")), "approval.key");
 import { collectDrafts, createWorkspace } from "../src/cli";
 import type { TelegramConfig } from "../src/connectors";
 import { gtmInputSchema } from "../src/index";
 import { createWorkspaceServer, insideWorkspace } from "../src/mcp";
 import { parseCsv, parseDraft } from "../src/outbox";
+import { parseScorecard } from "../src/pipeline";
 
 const input = gtmInputSchema.parse({
   product: "Ajo Circle",
@@ -45,10 +50,12 @@ describe("the workspace MCP server", () => {
       "gtm_approvals",
       "gtm_check",
       "gtm_drafts",
+      "gtm_due",
       "gtm_leads",
       "gtm_log_correction",
       "gtm_read",
       "gtm_request_approval",
+      "gtm_score_lead",
       "gtm_status",
       "gtm_update_lead",
       "gtm_write_draft",
@@ -75,14 +82,62 @@ describe("the workspace MCP server", () => {
     expect(await call("gtm_add_lead", { name: "Bola", handle: "bola@example.com", channel: "email", source: "" })).toMatchObject({ isError: true });
     expect((await add("2348012345678")).text).toContain("already in pipeline.csv (line 2");
 
-    await call("gtm_update_lead", { handle: "+2348012345678", stage: "reach out", score_pct: 85, do_not_contact: true });
+    expect(await call("gtm_update_lead", { handle: "+2348012345678", stage: "hot lead" })).toMatchObject({ isError: true });
+    expect(await call("gtm_update_lead", { handle: "+2348012345678", last_touch: "last Tuesday" })).toMatchObject({ isError: true });
+    await call("gtm_update_lead", { handle: "+2348012345678", stage: "reach out", last_touch: "2026-10-05", do_not_contact: true });
     const rows = parseCsv(await readFile(join(dir, "pipeline.csv"), "utf8"));
-    expect(rows[1]).toEqual(["Ada, Lagos", "+234 801 234 5678", "whatsapp", "https://example.com/ada", "85", "reach out", "", "", "", "yes"]);
+    expect(rows[1]).toEqual(["Ada, Lagos", "+234 801 234 5678", "whatsapp", "https://example.com/ada", "", "reach out", "2026-10-05", "", "", "yes"]);
     expect((await add("wa.me/2348012345678")).text).toContain("marked do_not_contact");
     expect(await call("gtm_update_lead", { handle: "+2348012345678", do_not_contact: false })).toMatchObject({ isError: true });
     expect(await call("gtm_update_lead", { handle: "nobody@example.com", stage: "new" })).toMatchObject({ isError: true });
     expect((await call("gtm_leads", { stage: "reach out" })).text).toContain("DO NOT CONTACT");
     expect((await call("gtm_status")).text).toContain("Leads (1): do_not_contact: 1");
+  });
+
+  it("scores leads in code from the agent's judgement of each criterion", async () => {
+    const { dir, call } = await connect();
+    const scorecard = parseScorecard(await readFile(join(dir, "brain/audience.md"), "utf8"));
+    expect(scorecard.length).toBeGreaterThan(1);
+    await call("gtm_add_lead", { name: "Ada", handle: "ada@example.com", channel: "email", source: "https://example.com/ada" });
+
+    const judge = (metUpTo: number) => scorecard.map((c, i) => ({ criterion: c.name, met: i < metUpTo, ...(i < metUpTo ? { evidence: `https://example.com/ada#${i}` } : {}) }));
+    expect((await call("gtm_score_lead", { handle: "ada@example.com", criteria: judge(1).slice(1) })).text).toContain("missing");
+    expect((await call("gtm_score_lead", { handle: "ada@example.com", criteria: [...judge(0), { criterion: "Vibes", met: true, evidence: "x" }] })).text).toContain("isn't on the scorecard");
+    expect((await call("gtm_score_lead", { handle: "ada@example.com", criteria: judge(0).map((j) => ({ ...j, met: true })) })).text).toContain("no evidence");
+
+    const all = await call("gtm_score_lead", { handle: "ada@example.com", criteria: judge(scorecard.length) });
+    expect(all.text).toBe('ada@example.com: 100%, so "reach out". Next: gtm_write_draft.');
+    const row = parseCsv(await readFile(join(dir, "pipeline.csv"), "utf8"))[1]!;
+    expect(row.slice(4, 6)).toEqual(["100", "reach out"]);
+    expect(row[8]).toContain(`Met: ${scorecard[0]!.name}: https://example.com/ada#0`);
+
+    const total = scorecard.reduce((sum, c) => sum + c.weight, 0);
+    const first = await call("gtm_score_lead", { handle: "ada@example.com", criteria: judge(1) });
+    expect(first.text).toContain(`${Math.round((scorecard[0]!.weight / total) * 100)}%`);
+    expect((await call("gtm_score_lead", { handle: "ada@example.com", criteria: judge(scorecard.length), disqualifier: "Already uses a rival" })).text).toContain('"skip"');
+  });
+
+  it("lists who is due a follow-up, counting working days in code", async () => {
+    const { dir, call } = await connect();
+    const today = new Date();
+    const daysAgo = (n: number) => new Date(today.getTime() - n * 86_400_000).toISOString().slice(0, 10);
+    await writeFile(
+      join(dir, "pipeline.csv"),
+      [
+        "name,handle_or_email,channel,source,score_pct,stage,last_touch,next_step,notes,do_not_contact",
+        `Ada,ada@example.com,email,https://e.com/a,90,contacted,${daysAgo(10)},,,`,
+        `Bola,bola@example.com,email,https://e.com/b,90,contacted,${daysAgo(0)},,,`,
+        `Chi,chi@example.com,email,https://e.com/c,90,contacted,${daysAgo(10)},stop,,`,
+        "Dee,dee@example.com,email,https://e.com/d,90,contacted,,,,",
+        `Eko,eko@example.com,email,https://e.com/e,90,contacted,${daysAgo(10)},,,yes`,
+      ].join("\n"),
+    );
+    const out = (await call("gtm_due")).text;
+    expect(out).toContain("Due their one follow-up today:\n- Ada (ada@example.com, pipeline.csv line 2)");
+    expect(out).toContain("Not yet (under 3 working days): Bola");
+    expect(out).toContain("no more messages: Chi");
+    expect(out).toContain("can't count: Dee");
+    expect(out).not.toContain("Eko");
   });
 
   it("writes drafts in the workspace format and reports what the checker finds", async () => {

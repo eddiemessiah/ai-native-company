@@ -1,4 +1,4 @@
-import { appendFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { userInfo } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -12,21 +12,26 @@ import { evalModel, evalTable } from "./evals";
 import { buildHarness, CLAUDE_SKILLS_DIR, SKILLS_DIR } from "./harness";
 import { gtmInputSchema, type GtmInput } from "./input";
 import { describeRoute, routeModel } from "./models";
+import { appendSigned, readSigned } from "./ledger";
 import {
-  approvalLine,
   canSend,
   doNotContact,
   draftId,
+  isApprovalRecord,
   isDoNotContact,
-  parseApprovals,
+  isReviewRecord,
+  parseCsv,
   parseDraft,
   sendLink,
   statusOf,
   textHash,
+  withRecordedVerdict,
   type ApprovalRecord,
   type Draft,
+  type ReviewRecord,
   type SendLink,
 } from "./outbox";
+import { formatDue } from "./pipeline";
 import { generatePlan, templatePlan, type GeneratedPlan } from "./plan";
 import { reviewOutreach, type OutreachReview } from "./review";
 
@@ -48,6 +53,10 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
                                or here in the terminal with --local
   wait <dir> [--minutes N]     Collect Telegram decisions into approvals.jsonl (default 10)
   links <dir>                  One-tap send links for every approved draft
+  due <dir>                    Who is due their one follow-up today, counted in working days by code
+  sent <dir> <draft>           Record that you sent an approved draft (at your terminal)
+  approve <dir> --campaign <name>
+                               Approve a campaign's direction, deliverables and budget (at your terminal)
   sync <dir>                   Copy the skills in .agents/skills/ to .claude/skills/ for Claude Code
   mcp <dir>                    Serve the workspace as MCP tools (stdio) for any agent; no tool sends or approves
   eval --input <file> --models a,b [--runs N] [--out <dir>]
@@ -94,9 +103,44 @@ export async function collectDrafts(dir: string): Promise<{ draft: Draft; conten
   return out;
 }
 
+// ── The ledgers: signed decisions and verdicts (ledger.ts) ────────────────────
+
+const APPROVALS = "approvals.jsonl";
+const REVIEWS = join(".shonin", "reviews.jsonl");
+
+/** Both ledgers, each split into what this machine's key signed and what it didn't. */
+export async function readLedgers(dir: string) {
+  const [approvals, reviews] = await Promise.all([
+    readSigned<ApprovalRecord>(join(dir, APPROVALS), isApprovalRecord),
+    readSigned<ReviewRecord>(join(dir, REVIEWS), isReviewRecord),
+  ]);
+  return { approvals, reviews };
+}
+
+/** The founder's decisions that verify. A line nobody signed counts for nothing. */
 export async function readApprovals(dir: string): Promise<ApprovalRecord[]> {
-  const path = join(dir, "approvals.jsonl");
-  return (await exists(path)) ? parseApprovals(await readFile(path, "utf8")) : [];
+  return (await readSigned<ApprovalRecord>(join(dir, APPROVALS), isApprovalRecord)).trusted;
+}
+
+/** The reviewer's verdicts that verify. */
+export async function readReviews(dir: string): Promise<ReviewRecord[]> {
+  return (await readSigned<ReviewRecord>(join(dir, REVIEWS), isReviewRecord)).trusted;
+}
+
+export async function recordDecision(dir: string, record: ApprovalRecord): Promise<void> {
+  const { sig: _sig, ...unsigned } = record;
+  await appendSigned(join(dir, APPROVALS), { ...unsigned });
+}
+
+export async function recordReview(dir: string, record: ReviewRecord): Promise<void> {
+  const { sig: _sig, ...unsigned } = record;
+  await appendSigned(join(dir, REVIEWS), { ...unsigned });
+}
+
+/** Every draft, carrying only the verdict the reviewer recorded for its current text. */
+export async function reviewedDrafts(dir: string): Promise<{ draft: Draft; content: string }[]> {
+  const reviews = await readReviews(dir);
+  return (await collectDrafts(dir)).map(({ draft, content }) => ({ draft: withRecordedVerdict(draft, reviews), content }));
 }
 
 /** Every text file in the workspace, by its path inside it. Skips .git, node_modules and the CLI's own state. */
@@ -117,17 +161,35 @@ export async function readWorkspace(dir: string): Promise<Record<string, string>
 }
 
 export async function check(dir: string): Promise<Finding[]> {
-  return checkWorkspace(await readWorkspace(dir));
+  const files = await readWorkspace(dir);
+  const { approvals, reviews } = await readLedgers(dir);
+  const extra: Finding[] = [
+    ...approvals.untrusted.map(({ line, value }) => ({
+      level: "error" as const,
+      path: `${APPROVALS}:${line}`,
+      rule: "workflows/approvals.md: only the founder approves",
+      problem: `${String(value.decision ?? "a decision")} on ${String(value.file ?? "a draft")} that this machine's approval key didn't sign, so it doesn't count`,
+      fix: "Delete the line. The founder decides in Telegram, or at a terminal with pnpm gtm review --local.",
+    })),
+    ...reviews.untrusted.map(({ line }) => ({
+      level: "warning" as const,
+      path: `.shonin/reviews.jsonl:${line}`,
+      rule: "AGENTS.md: roles",
+      problem: "a verdict this machine's key didn't sign, so it doesn't count",
+      fix: "Delete the line and run pnpm gtm review: the reviewer gives its own verdict.",
+    })),
+  ];
+  const campaignApprovals = new Map<string, string | null>();
+  for (const a of approvals.trusted) {
+    if (/^campaigns\/[^/]+\/approval\.md$/.test(a.file)) campaignApprovals.set(a.file, a.decision === "approved" ? a.hash : null);
+  }
+  return checkWorkspace(files, { approvals: approvals.trusted, reviews: reviews.trusted, campaignApprovals, extra });
 }
 
 /** Who asked not to be contacted, from the workspace's pipeline.csv. */
 export async function readDoNotContact(dir: string): Promise<Set<string>> {
   const path = join(dir, "pipeline.csv");
   return (await exists(path)) ? doNotContact(await readFile(path, "utf8")) : new Set();
-}
-
-export async function recordDecision(dir: string, record: ApprovalRecord): Promise<void> {
-  await appendFile(join(dir, "approvals.jsonl"), approvalLine(record));
 }
 
 const VERDICT_TEXT: Readonly<Record<OutreachReview["verdict"], string>> = {
@@ -214,6 +276,13 @@ export async function createWorkspace(
   const reviews = await Promise.all(generated.plan.drafts.map((d) => reviewOutreach(brain, d).catch(() => null)));
   const files = { ...buildHarness(input, generated.plan, reviews, opts.now ?? new Date(), { tools: toolStatus(env) }), ".mcp.json": mcpConfig(dir) };
   await writeFiles(dir, files);
+  // The verdicts given at creation count like any other: recorded and signed, for the exact text.
+  const reviewedAt = new Date().toISOString();
+  for (const { draft } of await collectDrafts(dir)) {
+    const i = generated.plan.drafts.findIndex((d) => d.text.trim() === draft.text);
+    const r = i >= 0 ? reviews[i] : null;
+    if (r) await recordReview(dir, { file: draft.file, hash: textHash(draft.text), verdict: r.verdict, provider: r.provider, calibrated: r.calibrated, at: reviewedAt });
+  }
   const planBy = generated.generatedBy.kind === "model" && route ? describeRoute({ ...route, model: generated.generatedBy.model ?? route.model }) : "templates";
   return { files: Object.keys(files).length, planBy, verdicts: reviews.map((r) => r?.verdict ?? "not reviewed"), ...(note ? { note } : {}) };
 }
@@ -229,7 +298,7 @@ export function mcpConfig(dir: string, repoRoot = fileURLToPath(new URL("../../.
 }
 
 export async function status(dir: string): Promise<string> {
-  const drafts = await collectDrafts(dir);
+  const drafts = await reviewedDrafts(dir);
   const approvals = await readApprovals(dir);
   if (!drafts.length) return "No drafts yet.";
   const ctx = draftContext(await readWorkspace(dir));
@@ -261,12 +330,22 @@ export async function review(
   const brain = brainFromEnv({ env, allowHeuristic: true, sinks: [] });
   const approvals = await readApprovals(dir);
 
-  // 1. The reviewer: drafts without a verdict get one, written into the file.
+  // 1. The reviewer: every draft with no recorded verdict for its current text gets one, recorded
+  //    and signed, and shown in the file. A verdict typed into the file doesn't count.
+  const recorded = await readReviews(dir);
   for (const { draft, content } of await collectDrafts(dir)) {
-    if (draft.verdict || !inScope(draft.file)) continue;
+    if (!inScope(draft.file) || withRecordedVerdict(draft, recorded).verdict) continue;
     const verdict = await reviewOutreach(brain, { channel: draft.channel, audience: draft.to ?? "", text: draft.text }).catch(() => null);
     if (verdict) {
       await writeFile(join(dir, draft.file), withVerdict(content, verdict));
+      await recordReview(dir, {
+        file: draft.file,
+        hash: textHash(draft.text),
+        verdict: verdict.verdict,
+        provider: verdict.provider,
+        calibrated: verdict.calibrated,
+        at: new Date().toISOString(),
+      });
       log.push(`reviewed  ${draft.file}: ${verdict.verdict}`);
     }
   }
@@ -275,7 +354,7 @@ export async function review(
   //    or code finds a rule it breaks. The founder's attention goes only to drafts that pass.
   const optedOut = await readDoNotContact(dir);
   const ctx: DraftContext = draftContext(await readWorkspace(dir));
-  const waiting = (await collectDrafts(dir)).filter(({ draft }) => {
+  const waiting = (await reviewedDrafts(dir)).filter(({ draft }) => {
     if (!inScope(draft.file)) return false;
     const s = statusOf(draft, approvals);
     if (s === "blocked") log.push(`blocked   ${draft.file}: the reviewer blocked it; rewrite it first`);
@@ -295,6 +374,10 @@ export async function review(
 
   if (opts.local || !(opts.telegram ?? telegramFromEnv(env))) {
     if (!opts.local) log.push("Telegram isn't connected, so approve here (or set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID).");
+    if (!opts.ask && !process.stdin.isTTY) {
+      log.push("Approvals need the founder at an interactive terminal, or in Telegram. Piped or scripted answers aren't accepted.");
+      return log;
+    }
     const terminal = opts.ask ? null : terminalAsker();
     const ask = opts.ask ?? terminal!.ask;
     try {
@@ -388,7 +471,7 @@ export async function links(dir: string): Promise<string[]> {
   const approvals = await readApprovals(dir);
   const optedOut = await readDoNotContact(dir);
   const out: string[] = [];
-  for (const { draft } of await collectDrafts(dir)) {
+  for (const { draft } of await reviewedDrafts(dir)) {
     if (!canSend(draft, approvals)) continue;
     if (isDoNotContact(draft, optedOut)) {
       out.push(`${draft.file}\n  Not sent: ${draft.to} is marked do_not_contact in pipeline.csv.`);
@@ -403,6 +486,50 @@ export async function links(dir: string): Promise<string[]> {
     out.push(link ? `${draft.file}\n  ${link.label}: ${link.url}` : `${draft.file}\n  Copy the text and send it on ${draft.channel} yourself.`);
   }
   return out.length ? out : ["No approved drafts yet. Run `pnpm gtm review <dir>`."];
+}
+
+/** Records that the founder sent an approved draft, for its exact text. Only at the founder's terminal. */
+export async function markSent(dir: string, file: string, opts: { confirm?: () => Promise<boolean> } = {}): Promise<string> {
+  const entry = (await reviewedDrafts(dir)).find(({ draft }) => draft.file === file);
+  if (!entry) return `${file} isn't a draft in this workspace.`;
+  const approvals = await readApprovals(dir);
+  const status = statusOf(entry.draft, approvals);
+  if (status !== "approved") return `${file} is ${status}, not approved, so it can't have been sent from the harness.`;
+  if (!opts.confirm && !process.stdin.isTTY) return "Only the founder records a send, at an interactive terminal.";
+  const ok = opts.confirm ? await opts.confirm() : await terminalConfirm(`Did you send ${file} as approved? [y/N] `);
+  if (!ok) return "Nothing recorded.";
+  await recordDecision(dir, { file, hash: textHash(entry.draft.text), decision: "sent", by: `cli:${safeUser()}`, at: new Date().toISOString(), via: "cli" });
+  return `Recorded: ${file} sent.`;
+}
+
+/** Sets one "**Field:** value" line in a markdown file, or adds it at the end. */
+function setField(content: string, field: string, value: string): string {
+  const line = new RegExp(`^\\*\\*${field}:\\*\\*.*$`, "m");
+  return line.test(content) ? content.replace(line, () => `**${field}:** ${value}`) : `${content.trimEnd()}\n**${field}:** ${value}\n`;
+}
+
+/**
+ * The founder approves a campaign's direction, deliverables and budget at the terminal. The decision
+ * is signed and bound to approval.md's exact text, so any later edit to it needs approving again.
+ */
+export async function approveCampaign(
+  dir: string,
+  campaign: string,
+  opts: { confirm?: (content: string) => Promise<boolean>; now?: Date } = {},
+): Promise<string> {
+  const file = `campaigns/${campaign}/approval.md`;
+  const path = join(dir, file);
+  if (!(await exists(path))) return `There's no ${file}.`;
+  if (!opts.confirm && !process.stdin.isTTY) return "Campaign approvals need the founder at an interactive terminal. Piped or scripted answers aren't accepted.";
+  const content = await readFile(path, "utf8");
+  const ok = opts.confirm ? await opts.confirm(content) : await terminalConfirm(`${content}\nApprove this direction, these deliverables and this budget? [y/N] `);
+  if (!ok) return "Not approved. Nothing changed.";
+  const by = `cli:${safeUser()}`;
+  const date = (opts.now ?? new Date()).toISOString().slice(0, 10);
+  const signedOff = setField(setField(setField(content, "Status", "approved"), "Approved by", by), "Date", date);
+  await writeFile(path, signedOff);
+  await recordDecision(dir, { file, hash: textHash(signedOff), decision: "approved", by, at: new Date().toISOString(), via: "cli" });
+  return `Approved ${file}. Production can start; any edit to approval.md needs approving again.`;
 }
 
 /** Every file under root, as sorted paths relative to it. */
@@ -479,6 +606,15 @@ function terminalAsker(): { ask: (draft: Draft) => Promise<"a" | "r" | "s">; clo
   };
 }
 
+async function terminalConfirm(question: string): Promise<boolean> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    return /^y(es)?$/i.test((await rl.question(question)).trim());
+  } finally {
+    rl.close();
+  }
+}
+
 function flag(args: string[], name: string): string | undefined {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? args[i + 1] : undefined;
@@ -530,6 +666,25 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
         if (!target) throw new Error("Usage: pnpm gtm links <dir>");
         console.log((await links(target)).join("\n"));
         return 0;
+      case "due": {
+        if (!target) throw new Error("Usage: pnpm gtm due <dir>");
+        const csv = (await exists(join(target, "pipeline.csv"))) ? await readFile(join(target, "pipeline.csv"), "utf8") : "";
+        const [header = [], ...rows] = parseCsv(csv);
+        console.log(formatDue({ header, rows }, new Date()));
+        return 0;
+      }
+      case "sent": {
+        const file = argv[2];
+        if (!target || !file) throw new Error("Usage: pnpm gtm sent <dir> <draft>");
+        console.log(await markSent(target, file));
+        return 0;
+      }
+      case "approve": {
+        const campaign = flag(argv, "campaign");
+        if (!target || !campaign) throw new Error("Usage: pnpm gtm approve <dir> --campaign <name>");
+        console.log(await approveCampaign(target, campaign));
+        return 0;
+      }
       case "sync":
         if (!target) throw new Error("Usage: pnpm gtm sync <dir>");
         console.log((await sync(target)).join("\n"));
