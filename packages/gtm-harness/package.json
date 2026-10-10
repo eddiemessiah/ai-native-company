@@ -11,7 +11,9 @@
     "./input": "./src/input.ts",
     "./outbox": "./src/outbox.ts",
     "./connectors": "./src/connectors/index.ts",
-    "./mcp": "./src/mcp.ts"
+    "./mcp": "./src/mcp.ts",
+    "./check": "./src/check.ts",
+    "./pipeline": "./src/pipeline.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
