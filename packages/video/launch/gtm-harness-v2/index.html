@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GTM Harness v2 launch film</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Fonts are served by render.mjs from the repo's fontsource packages (no network). -->
+<link rel="stylesheet" href="fonts/bricolage/index.css">
+<link rel="stylesheet" href="fonts/mono/index.css">
+<link rel="stylesheet" href="fonts/serif/400-italic.css">
+<link rel="stylesheet" href="fonts/mincho/700.css">
+<style>
+  /* The site's tokens (apps/web/app/globals.css): the four split colours carry the meaning. */
+  :root {
+    --bg: #0b0b0a; --bg-2: #121210; --bg-3: #1a1916;
+    --fg: #ede8dc; --dim: #a8a293; --faint: #6f6a60;
+    --line: rgb(237 232 220 / 0.09); --line-2: rgb(237 232 220 / 0.18);
+    --write: #ffb000; --decide: #7480ff; --code: #ede8dc; --human: #ff5a36; --live: #4fd08c;
+    --gold: #d9a441;
+    --u: min(1vw, 1vh);
+    --sans: "Bricolage Grotesque Variable", system-ui, sans-serif;
+    --mono: "JetBrains Mono Variable", ui-monospace, monospace;
+    --serif: "Instrument Serif", Georgia, serif;
+    --kanji: "Shippori Mincho B1", serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--bg); color: var(--fg); overflow: hidden; }
+  body { font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+  #stage { position: fixed; inset: 0; overflow: hidden; background: radial-gradient(120% 90% at 50% 40%, #16140f 0%, var(--bg) 62%); }
+  .scene { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; padding: calc(var(--u) * 7); text-align: center; }
+  .grain { position: absolute; inset: -50%; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(100% 80% at 50% 50%, transparent 55%, rgb(0 0 0 / .55) 100%); }
+
+  .eyebrow { font-family: var(--mono); font-size: calc(var(--u) * 1.9); letter-spacing: .28em; text-transform: uppercase; color: var(--dim); }
+  .h1 { font-size: calc(var(--u) * 8.4); font-weight: 700; letter-spacing: -0.035em; line-height: .98; }
+  .h2 { font-size: calc(var(--u) * 5.6); font-weight: 650; letter-spacing: -0.03em; line-height: 1.04; }
+  .h3 { font-size: calc(var(--u) * 3.6); font-weight: 560; letter-spacing: -0.02em; line-height: 1.15; }
+  .body { font-size: calc(var(--u) * 2.7); color: var(--dim); line-height: 1.35; }
+  .serif { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+  .mono { font-family: var(--mono); }
+  .kanji { font-family: var(--kanji); font-weight: 700; }
+  .w { color: var(--write); } .d { color: var(--decide); } .c { color: var(--code); } .h { color: var(--human); } .g { color: var(--live); } .gold { color: var(--gold); }
+  .word { display: inline-block; will-change: transform, opacity; }
+
+  /* 1: the flood of drafts */
+  #flood { position: absolute; inset: 0; }
+  .chip { position: absolute; width: calc(var(--u) * 13); height: calc(var(--u) * 4.2); border-radius: calc(var(--u) * .9); border: 1px solid rgb(255 176 0 / .35); background: rgb(255 176 0 / .07); padding: calc(var(--u) * .8) calc(var(--u) * 1); display: flex; flex-direction: column; gap: calc(var(--u) * .5); }
+  .chip i { display: block; height: calc(var(--u) * .55); border-radius: 9px; background: rgb(255 176 0 / .45); }
+  .chip i:nth-child(2) { width: 70%; background: rgb(255 176 0 / .25); }
+  #count { font-family: var(--mono); font-size: calc(var(--u) * 13); font-weight: 600; color: var(--write); letter-spacing: -0.04em; line-height: 1; text-shadow: 0 0 calc(var(--u) * 4) rgb(255 176 0 / .35); }
+
+  /* the seal */
+  .seal { position: absolute; width: calc(var(--u) * 15); height: calc(var(--u) * 15); border-radius: calc(var(--u) * 1.6); background: var(--human); color: #1a0703; display: grid; place-items: center; font-family: var(--kanji); font-weight: 700; font-size: calc(var(--u) * 10); box-shadow: 0 0 0 calc(var(--u) * .5) rgb(255 90 54 / .25), 0 calc(var(--u) * 2) calc(var(--u) * 6) rgb(255 90 54 / .35); opacity: 0; }
+  .seal::after { content: ""; position: absolute; inset: calc(var(--u) * 1); border: calc(var(--u) * .35) solid rgb(26 7 3 / .55); border-radius: calc(var(--u) * 1); }
+
+  /* 3: the title */
+  .tags { display: flex; gap: calc(var(--u) * 1.4); flex-wrap: wrap; justify-content: center; margin-top: calc(var(--u) * 3.4); }
+  .tag { font-family: var(--mono); font-size: calc(var(--u) * 2); padding: calc(var(--u) * .9) calc(var(--u) * 1.8); border: 1px solid var(--line-2); border-radius: 999px; color: var(--fg); }
+  .rule { height: 2px; width: calc(var(--u) * 40); background: linear-gradient(90deg, transparent, var(--write), var(--decide), var(--code), var(--human), transparent); margin: calc(var(--u) * 3) auto; transform-origin: center; }
+
+  /* 4: the split */
+  .split { display: grid; gap: calc(var(--u) * 1.6); width: min(100%, calc(var(--u) * 120)); margin-top: calc(var(--u) * 4); }
+  .lane { display: grid; grid-template-columns: calc(var(--u) * 1) 1fr auto; align-items: center; gap: calc(var(--u) * 2.4); text-align: left; padding: calc(var(--u) * 2) calc(var(--u) * 2.6); border-radius: calc(var(--u) * 1.4); background: rgb(237 232 220 / .03); border: 1px solid var(--line); }
+  .lane .bar { width: calc(var(--u) * .8); height: calc(var(--u) * 6); border-radius: 9px; }
+  .lane b { display: block; font-size: calc(var(--u) * 3.4); font-weight: 650; letter-spacing: -0.02em; }
+  .lane span { display: block; font-size: calc(var(--u) * 2.1); color: var(--dim); margin-top: calc(var(--u) * .5); }
+  .lane em { font-family: var(--mono); font-style: normal; font-size: calc(var(--u) * 1.8); color: var(--faint); }
+
+  /* terminals */
+  .term { width: min(100%, calc(var(--u) * 118)); text-align: left; border-radius: calc(var(--u) * 1.6); background: #0f0e0c; border: 1px solid var(--line-2); box-shadow: 0 calc(var(--u) * 3) calc(var(--u) * 10) rgb(0 0 0 / .6); overflow: hidden; }
+  .term .bar { display: flex; gap: calc(var(--u) * .9); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.8); border-bottom: 1px solid var(--line); align-items: center; }
+  .term .bar i { width: calc(var(--u) * 1.2); height: calc(var(--u) * 1.2); border-radius: 50%; background: var(--line-2); }
+  .term .bar span { margin-left: auto; font-family: var(--mono); font-size: calc(var(--u) * 1.6); color: var(--faint); }
+  .term pre { font-family: var(--mono); font-size: calc(var(--u) * 2.15); line-height: 1.55; padding: calc(var(--u) * 2.4) calc(var(--u) * 2.8); color: var(--fg); white-space: pre-wrap; min-height: calc(var(--u) * 34); }
+  .term .p { color: var(--live); }
+  .term .f { color: var(--faint); }
+  .caret { display: inline-block; width: .6em; height: 1.1em; vertical-align: -0.2em; background: var(--fg); }
+  .cap { margin-top: calc(var(--u) * 3.4); }
+  .models { display: flex; flex-wrap: wrap; gap: calc(var(--u) * 1.2); justify-content: center; margin-top: calc(var(--u) * 2.6); }
+
+  /* phone */
+  .duo { display: flex; align-items: center; justify-content: center; gap: calc(var(--pu) * 7); width: 100%; }
+  .duo .copy { text-align: left; max-width: calc(var(--u) * 62); }
+  .phone { --pu: var(--u); position: relative; width: calc(var(--pu) * 44); height: calc(var(--pu) * 86); border-radius: calc(var(--pu) * 6); background: #080807; border: calc(var(--pu) * .6) solid #2a2823; box-shadow: 0 calc(var(--pu) * 4) calc(var(--pu) * 12) rgb(0 0 0 / .7), inset 0 0 0 1px rgb(255 255 255 / .04); overflow: hidden; flex: none; }
+  .notch { position: absolute; top: calc(var(--pu) * 1.4); left: 50%; width: calc(var(--pu) * 12); height: calc(var(--pu) * 3); transform: translateX(-50%); border-radius: 99px; background: #000; z-index: 5; }
+  .app { position: absolute; inset: 0; display: flex; flex-direction: column; text-align: left; }
+  .apphead { padding: calc(var(--pu) * 6.4) calc(var(--pu) * 2.6) calc(var(--pu) * 1.8); display: flex; gap: calc(var(--pu) * 1.6); align-items: center; border-bottom: 1px solid rgb(255 255 255 / .06); }
+  .avatar { width: calc(var(--pu) * 5); height: calc(var(--pu) * 5); border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: calc(var(--pu) * 2.2); flex: none; }
+  .apphead b { font-size: calc(var(--pu) * 2.3); display: block; }
+  .apphead small { font-size: calc(var(--pu) * 1.6); color: var(--dim); }
+  .tg { background: linear-gradient(#17212b, #0e1621); }
+  .tg .apphead { background: #17212b; }
+  .tg .avatar { background: var(--human); color: #1a0703; font-family: var(--kanji); }
+  .msgs { flex: 1; padding: calc(var(--pu) * 2.2); display: flex; flex-direction: column; justify-content: flex-end; gap: calc(var(--pu) * 1.4); }
+  .card { position: relative; background: #182533; border-radius: calc(var(--pu) * 2) calc(var(--pu) * 2) calc(var(--pu) * 2) calc(var(--pu) * .5); padding: calc(var(--pu) * 2) calc(var(--pu) * 2.2); font-size: calc(var(--pu) * 1.95); line-height: 1.4; color: #e9eef3; }
+  .card .meta { font-family: var(--mono); font-size: calc(var(--pu) * 1.45); color: #8ea4b8; margin-bottom: calc(var(--pu) * 1); letter-spacing: .02em; }
+  .card .quote { border-left: calc(var(--pu) * .35) solid var(--write); padding-left: calc(var(--pu) * 1.4); }
+  .card .rev { margin-top: calc(var(--pu) * 1.2); font-family: var(--mono); font-size: calc(var(--pu) * 1.5); color: var(--decide); }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--pu) * 1); }
+  .btn { text-align: center; padding: calc(var(--pu) * 1.5); border-radius: calc(var(--pu) * 1.2); background: #22303e; font-size: calc(var(--pu) * 2); font-weight: 600; color: #e9eef3; }
+  .btn.ok { position: relative; overflow: hidden; }
+  .ripple { position: absolute; left: 50%; top: 50%; width: calc(var(--pu) * 4); height: calc(var(--pu) * 4); margin: calc(var(--pu) * -2); border-radius: 50%; background: rgb(79 208 140 / .5); opacity: 0; }
+  .finger { position: absolute; width: calc(var(--pu) * 6); height: calc(var(--pu) * 6); border-radius: 50%; background: rgb(237 232 220 / .25); border: 2px solid rgb(237 232 220 / .7); opacity: 0; z-index: 6; }
+  .stamp { position: absolute; right: calc(var(--pu) * -1); top: calc(var(--pu) * -2.4); width: calc(var(--pu) * 8); height: calc(var(--pu) * 8); border-radius: calc(var(--pu) * 1); background: var(--human); color: #1a0703; display: grid; place-items: center; font-family: var(--kanji); font-weight: 700; font-size: calc(var(--pu) * 5.4); opacity: 0; box-shadow: 0 calc(var(--pu) * 1) calc(var(--pu) * 3) rgb(255 90 54 / .45); }
+  .hash { font-family: var(--mono); font-size: calc(var(--pu) * 1.45); color: var(--live); opacity: 0; }
+  .wa { background: #0b141a; }
+  .wa .apphead { background: #1f2c34; }
+  .wa .avatar { background: #3b4a54; color: #e9edef; }
+  .wa .msgs { background: radial-gradient(circle at 30% 20%, rgb(255 255 255 / .02), transparent 60%), #0b141a; }
+  .wa .sys { align-self: center; font-size: calc(var(--pu) * 1.5); color: #8696a0; background: #182229; padding: calc(var(--pu) * .7) calc(var(--pu) * 1.4); border-radius: calc(var(--pu) * 1); }
+  .compose { display: flex; gap: calc(var(--pu) * 1.2); align-items: flex-end; padding: calc(var(--pu) * 1.6) calc(var(--pu) * 1.6) calc(var(--pu) * 3); background: #0b141a; }
+  .input { flex: 1; background: #1f2c34; border-radius: calc(var(--pu) * 2.6); padding: calc(var(--pu) * 1.5) calc(var(--pu) * 2); font-size: calc(var(--pu) * 1.9); line-height: 1.4; color: #e9edef; }
+  .send { width: calc(var(--pu) * 5.6); height: calc(var(--pu) * 5.6); border-radius: 50%; background: #00a884; display: grid; place-items: center; flex: none; }
+  .send svg { width: 46%; height: 46%; }
+  .noes { display: grid; gap: calc(var(--u) * 1.2); margin-top: calc(var(--u) * 3); }
+  .noes div { font-family: var(--mono); font-size: calc(var(--u) * 2); color: var(--dim); }
+  .noes div::before { content: "× "; color: var(--human); }
+
+  /* MCP grid */
+  .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * 1.2); width: min(100%, calc(var(--u) * 120)); margin-top: calc(var(--u) * 3.6); }
+  .tool { font-family: var(--mono); font-size: calc(var(--u) * 1.85); padding: calc(var(--u) * 1.4) calc(var(--u) * 1.6); border: 1px solid var(--line-2); border-radius: calc(var(--u) * 1); background: rgb(116 128 255 / .05); color: var(--fg); text-align: left; }
+  .tool::before { content: "◆ "; color: var(--decide); }
+  .tool.no { border-style: dashed; border-color: rgb(255 90 54 / .5); background: rgb(255 90 54 / .06); color: var(--human); text-decoration: line-through; text-decoration-thickness: 2px; }
+  .tool.no::before { content: "× "; color: var(--human); }
+
+  /* kintsugi */
+  .bowl { position: relative; width: calc(var(--u) * 100); max-width: 100%; margin-top: calc(var(--u) * 3); }
+  .log { font-family: var(--mono); font-size: calc(var(--u) * 2.1); text-align: left; padding: calc(var(--u) * 2) calc(var(--u) * 2.6); border-radius: calc(var(--u) * 1.4); border: 1px solid var(--line-2); background: #0f0e0c; line-height: 1.6; }
+  .log + .log { margin-top: calc(var(--u) * 4.4); border-color: rgb(217 164 65 / .55); box-shadow: 0 0 calc(var(--u) * 4) rgb(217 164 65 / .15); }
+  .seam { position: absolute; left: 0; right: 0; height: calc(var(--u) * 4.4); pointer-events: none; overflow: visible; }
+
+  /* end card */
+  .bigkanji { position: absolute; font-family: var(--kanji); font-weight: 700; font-size: calc(var(--u) * 46); color: rgb(255 90 54 / .07); letter-spacing: -0.04em; line-height: 1; white-space: nowrap; }
+  .cta { margin-top: calc(var(--u) * 4.4); font-size: calc(var(--u) * 3.4); font-weight: 600; padding: calc(var(--u) * 1.8) calc(var(--u) * 3.6); border-radius: 999px; background: var(--fg); color: var(--bg); letter-spacing: -0.01em; }
+  .sign { margin-top: calc(var(--u) * 4.4); font-family: var(--mono); font-size: calc(var(--u) * 1.9); color: var(--faint); letter-spacing: .06em; }
+
+  /* the progress line along the bottom */
+  #progress { position: absolute; left: 0; bottom: 0; height: calc(var(--u) * .45); background: linear-gradient(90deg, var(--write), var(--decide), var(--code), var(--human)); transform-origin: left; }
+  #mark { position: absolute; top: calc(var(--u) * 4); left: calc(var(--u) * 4.6); display: flex; align-items: center; gap: calc(var(--u) * 1.2); font-family: var(--mono); font-size: calc(var(--u) * 1.7); letter-spacing: .2em; color: var(--dim); opacity: 0; }
+  #mark b { display: grid; place-items: center; width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); border-radius: calc(var(--u) * .6); background: var(--human); color: #1a0703; font-family: var(--kanji); font-size: calc(var(--u) * 2.4); letter-spacing: 0; }
+
+  @media (orientation: portrait) {
+    :root { --u: 10.8px; }
+    .scene { padding: calc(var(--u) * 14) calc(var(--u) * 5.5) calc(var(--u) * 9); }
+    .h1 { font-size: calc(var(--u) * 14); }
+    .h2 { font-size: calc(var(--u) * 9.4); }
+    .h3 { font-size: calc(var(--u) * 6); }
+    .body { font-size: calc(var(--u) * 4.4); }
+    .eyebrow { font-size: calc(var(--u) * 3); }
+    .tag { font-size: calc(var(--u) * 3.3); padding: calc(var(--u) * 1.3) calc(var(--u) * 2.4); }
+    .duo { flex-direction: column; gap: calc(var(--u) * 5); }
+    .duo .copy { text-align: center; max-width: 100%; }
+    .duo .h2 { font-size: calc(var(--u) * 8); }
+    .duo .body { font-size: calc(var(--u) * 3.8); }
+    .phone { --pu: calc(var(--u) * 1.26); }
+    .term pre { font-size: calc(var(--u) * 3); min-height: calc(var(--u) * 78); }
+    .term .desc { display: none; }
+    .term .bar span { font-size: calc(var(--u) * 2.4); }
+    .split { gap: calc(var(--u) * 2.4); }
+    .lane { padding: calc(var(--u) * 3) calc(var(--u) * 3.4); }
+    .lane .bar { height: calc(var(--u) * 10); }
+    .lane b { font-size: calc(var(--u) * 6); }
+    .lane span { font-size: calc(var(--u) * 3.6); }
+    .lane em { display: none; }
+    .tools { grid-template-columns: repeat(2, 1fr); gap: calc(var(--u) * 1.6); }
+    .tool { font-size: calc(var(--u) * 3.1); padding: calc(var(--u) * 1.8) calc(var(--u) * 2); }
+    .log { font-size: calc(var(--u) * 3.3); }
+    .bigkanji { font-size: calc(var(--u) * 64); writing-mode: vertical-rl; }
+    #count { font-size: calc(var(--u) * 26); }
+    .chip { width: calc(var(--u) * 20); height: calc(var(--u) * 6.4); }
+    .noes div { font-size: calc(var(--u) * 3.4); }
+    .cta { font-size: calc(var(--u) * 4.8); padding: calc(var(--u) * 2.4) calc(var(--u) * 4.4); }
+    .sign { font-size: calc(var(--u) * 2.5); line-height: 1.6; }
+    #mark { font-size: calc(var(--u) * 2.6); top: calc(var(--u) * 6); left: calc(var(--u) * 6); }
+    #mark b { width: calc(var(--u) * 5.4); height: calc(var(--u) * 5.4); font-size: calc(var(--u) * 3.6); }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grain"></div>
+
+  <!-- 1. The flood -->
+  <section class="scene" id="s1">
+    <div id="flood"></div>
+    <div class="eyebrow" data-a="eyebrow1">Your agents can write</div>
+    <div id="count">0</div>
+    <div class="h3" style="margin-top: calc(var(--u) * 1.6)" data-a="msgs1">messages before lunch.</div>
+  </section>
+
+  <!-- 2. Not one leaves without you -->
+  <section class="scene" id="s2">
+    <div class="h1" id="s2line"><span class="word">Not</span> <span class="word">one</span> <span class="word">should</span> <span class="word">leave</span><br><span class="word">without</span> <span class="word serif h">you.</span></div>
+    <div class="seal" id="seal2">承</div>
+  </section>
+
+  <!-- 3. Title -->
+  <section class="scene" id="s3">
+    <div class="eyebrow" id="presents3">Shonin presents</div>
+    <div class="rule" id="rule3"></div>
+    <div class="h1" id="title3">GTM Harness <span class="serif w">v2</span></div>
+    <div class="body" id="sub3" style="margin-top: calc(var(--u) * 2.4); max-width: calc(var(--u) * 90)">Your go-to-market, in a folder any agent can run.</div>
+    <div class="tags" id="tags3">
+      <span class="tag">Free</span><span class="tag">Open source · MIT</span><span class="tag">Any model</span><span class="tag">Any agent</span>
+    </div>
+  </section>
+
+  <!-- 4. The split -->
+  <section class="scene" id="s4">
+    <div class="eyebrow">Every step is exactly one of four</div>
+    <div class="split">
+      <div class="lane"><i class="bar" style="background: var(--write)"></i><div><b class="w">An LLM writes</b><span>the plan, the brief, the first drafts</span></div><em>any model</em></div>
+      <div class="lane"><i class="bar" style="background: var(--decide)"></i><div><b class="d">The brain reviews</b><span>ready, revise or blocked; it can block, never send</span></div><em>@repo/brain</em></div>
+      <div class="lane"><i class="bar" style="background: var(--code)"></i><div><b class="c">Code checks</b><span>numbers, slots, banned phrases, dates, opt-outs</span></div><em>pnpm gtm check</em></div>
+      <div class="lane"><i class="bar" style="background: var(--human)"></i><div><b class="h">You approve and send</b><span>every message, one tap at a time</span></div><em>Telegram</em></div>
+    </div>
+  </section>
+
+  <!-- 5. The workspace -->
+  <section class="scene" id="s5">
+    <div class="term"><div class="bar"><i></i><i></i><i></i><span>~/acme</span></div><pre id="t5"></pre></div>
+    <div class="models" id="models5">
+      <span class="tag">Claude</span><span class="tag">any model via AI Gateway</span><span class="tag">OpenRouter</span><span class="tag">your own endpoint</span><span class="tag">a model on your laptop</span>
+    </div>
+    <div class="body cap" id="cap5">Plain markdown and an <span class="mono c">AGENTS.md</span>: Claude Code, Codex, Cursor and Gemini CLI all read it.</div>
+  </section>
+
+  <!-- 6. The checks -->
+  <section class="scene" id="s6">
+    <div class="term"><div class="bar"><i></i><i></i><i></i><span>~/acme</span></div><pre id="t6"></pre></div>
+    <div class="h3 cap" id="cap6">Rules as code. <span class="serif w">Every finding comes with its fix.</span></div>
+  </section>
+
+  <!-- 7. Telegram approval -->
+  <section class="scene" id="s7">
+    <div class="duo">
+      <div class="copy">
+        <div class="eyebrow">Step four</div>
+        <div class="h2" style="margin-top: calc(var(--u) * 2)" id="s7h">Every draft comes to <span class="h">your</span> Telegram.</div>
+        <div class="body" style="margin-top: calc(var(--u) * 2.4)" id="s7b">The yes is bound to a hash of the exact text, and signed. Change one word and it needs your yes again.</div>
+      </div>
+      <div class="phone" id="phone7">
+        <div class="notch"></div>
+        <div class="app tg">
+          <div class="apphead"><div class="avatar">承</div><div><b>Shonin GTM</b><small>bot · your approvals</small></div></div>
+          <div class="msgs">
+            <div class="card" id="pre7"><div class="meta">SHONIN GTM · TODAY</div>4 drafts checked. 1 ready for you; 3 held back with their fixes.</div>
+            <div class="card" id="card7">
+              <div class="stamp" id="stamp7">承</div>
+              <div class="meta">DRAFT 01 · WHATSAPP · TO ADA O.</div>
+              <div class="quote">Ada, I saw Kola Pay's merchant launch in Yaba. We built a free tool that drafts and checks a founder's first outreach. Want me to run it on Kola Pay this week?</div>
+              <div class="rev">reviewer: ready · checks: all clear</div>
+            </div>
+            <div class="btns" id="btns7"><div class="btn ok">Approve<span class="ripple" id="ripple7"></span></div><div class="btn">Reject</div></div>
+            <div class="hash" id="hash7">approved · sha256:3f9a1c…e2b7 · signed</div>
+          </div>
+          <div class="finger" id="finger7"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. WhatsApp: the tap is the send -->
+  <section class="scene" id="s8">
+    <div class="duo">
+      <div class="copy">
+        <div class="eyebrow">Then</div>
+        <div class="h2" style="margin-top: calc(var(--u) * 2)">One tap opens WhatsApp with it <span class="serif w">filled in.</span></div>
+        <div class="h3" style="margin-top: calc(var(--u) * 2.4)">Your tap is the send.</div>
+        <div class="noes" id="noes8"><div>no bot in your WhatsApp</div><div>nothing sent in bulk</div><div>no scraping behind a login</div></div>
+      </div>
+      <div class="phone" id="phone8">
+        <div class="notch"></div>
+        <div class="app wa">
+          <div class="apphead"><div class="avatar">A</div><div><b>Ada O.</b><small>opened from your approved link</small></div></div>
+          <div class="msgs"><div class="sys">wa.me link · message filled in</div></div>
+          <div class="compose"><div class="input" id="input8"></div><div class="send" id="send8"><svg viewBox="0 0 24 24" fill="#fff"><path d="M3 20.5 21 12 3 3.5 3 10l12 2-12 2z"/></svg></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. MCP -->
+  <section class="scene" id="s9">
+    <div class="eyebrow"><span class="mono">pnpm gtm mcp</span> · the workspace as tools</div>
+    <div class="h2" style="margin-top: calc(var(--u) * 2)">15 tools for any agent.</div>
+    <div class="tools" id="tools9"></div>
+    <div class="h3 cap" id="cap9">Not one sends. <span class="h">Not one approves.</span></div>
+  </section>
+
+  <!-- 10. Corrections become rules -->
+  <section class="scene" id="s10">
+    <div class="h2">Every correction becomes <span class="serif gold">a rule.</span></div>
+    <div class="bowl">
+      <div class="log" id="log10a"><span class="f">corrections-log.md</span><br>you changed <span class="h">"Dear Sir"</span> → <span class="g">"Ada,"</span> · twice</div>
+      <svg class="seam" id="seam10" viewBox="0 0 1000 44" preserveAspectRatio="none"><path id="seampath" d="M500 0 C 470 10, 540 18, 505 26 S 470 38, 500 44" stroke="#d9a441" stroke-width="3" fill="none"/></svg>
+      <div class="log" id="log10b"><span class="f">rules/checks.md</span><br>| Dear Sir | voice #3 | open with their name | <span class="h">error</span> |</div>
+    </div>
+    <div class="body cap" id="cap10">Code enforces it on every draft from then on.</div>
+  </section>
+
+  <!-- 11. End card -->
+  <section class="scene" id="s11">
+    <div class="bigkanji" id="kanji11">承認</div>
+    <div class="h1">GTM Harness <span class="serif w">v2</span></div>
+    <div class="body" style="margin-top: calc(var(--u) * 2.2)">Free · open source (MIT) · any model · any agent</div>
+    <div class="cta" id="cta11">Try it free · link in the post</div>
+    <div class="sign" id="sign11">SHONIN · AGENTS DO THE WORK · A PERSON SEALS WHAT MATTERS</div>
+  </section>
+
+  <div id="mark"><b>承</b>SHONIN</div>
+  <div id="progress"></div>
+  <div class="vignette"></div>
+</div>
+
+<script>
+// A deterministic timeline: seek(t) sets every style from the time alone, so any frame renders the same
+// way whether the film plays live or a headless browser captures it frame by frame.
+const params = new URLSearchParams(location.search);
+if (params.get("cta")) document.getElementById("cta11").textContent = params.get("cta");
+// ?plain=1: the unbranded cut, for builder communities where only free tools are shared (no Shonin mark).
+const PLAIN = params.has("plain");
+if (PLAIN) { document.getElementById("presents3").textContent = "Free and open source"; document.getElementById("sign11").textContent = "AGENTS DO THE WORK · A PERSON SEALS WHAT MATTERS"; }
+
+const DURATION = 60;
+const SCENES = { s1: [0, 4.6], s2: [4.6, 8.6], s3: [8.6, 13.6], s4: [13.6, 20.2], s5: [20.2, 27.4], s6: [27.4, 34], s7: [34, 41.4], s8: [41.4, 46.6], s9: [46.6, 51], s10: [51, 54.8], s11: [54.8, 60] };
+const FADE = 0.45;
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outCubic = (x) => 1 - Math.pow(1 - x, 3);
+const outExpo = (x) => (x >= 1 ? 1 : 1 - Math.pow(2, -10 * x));
+const inOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const outBack = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const $ = (id) => document.getElementById(id);
+const set = (el, o, y = 0, s = 1, extra = "") => { el.style.opacity = o; el.style.transform = `translateY(${y}px) scale(${s}) ${extra}`; };
+const vmin = () => Math.min(innerWidth, innerHeight) / 100;
+// Reveal: fade and rise in over d seconds starting at a.
+const reveal = (el, t, a, d = 0.6, rise = 3) => { const p = outCubic(prog(t, a, a + d)); set(el, p, (1 - p) * rise * vmin()); };
+
+// Scene 1: the flood of chips, laid out once with a seeded random so every render matches.
+let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const flood = $("flood"); const chips = [];
+for (let i = 0; i < 90; i++) { const c = document.createElement("div"); c.className = "chip"; c.innerHTML = "<i></i><i></i>"; c.dataset.x = rnd() * 100; c.dataset.y = rnd() * 100; c.dataset.at = rnd() * 3.4; c.dataset.r = (rnd() - 0.5) * 16; flood.appendChild(c); chips.push(c); }
+
+// Scene 5 and 6: terminal scripts, typed by time.
+const T5 = [
+  { at: 0.3, type: "pnpm gtm new gtm-workspaces/acme --input acme.json", prompt: true },
+  { at: 2.0, text: '<span class="f">plan written by claude-opus-5 · reviewer ready</span>' },
+  { at: 2.5, text: "  <span class='w'>AGENTS.md</span><span class='desc'>            the manual for any agent</span>" },
+  { at: 2.8, text: "  <span class='w'>brain/</span><span class='desc'>               brand, audience, scorecard, lessons</span>" },
+  { at: 3.1, text: "  <span class='w'>workflows/</span><span class='desc'>           router, tools, approvals</span>" },
+  { at: 3.4, text: "  <span class='w'>.agents/skills/</span><span class='desc'>      11 skills: source, score, draft, review…</span>" },
+  { at: 3.7, text: "  <span class='w'>campaigns/</span><span class='desc'>           research → your choice → production</span>" },
+  { at: 4.0, text: "  <span class='w'>drafts/</span>  <span class='w'>pipeline.csv</span>  <span class='w'>corrections-log.md</span>" },
+  { at: 4.5, text: '<span class="g">✓ 61 files · 3 first messages · 1 campaign</span>' },
+];
+const T6 = [
+  { at: 0.2, type: "pnpm gtm check gtm-workspaces/acme", prompt: true },
+  { at: 1.3, text: '<span class="h">error  </span> drafts/02-email.md: "40%" isn\'t in brain/products/' },
+  { at: 1.5, text: '<span class="f">        fix:  add the claim with its source, or take the number out.</span>' },
+  { at: 2.1, text: '<span class="h">error  </span> drafts/03-linkedin.md: unfilled slot [first name]' },
+  { at: 2.3, text: '<span class="f">        fix:  fill every slot from their public work, citing where.</span>' },
+  { at: 2.9, text: '<span class="h">error  </span> drafts/04-x.md: says "game-changing"' },
+  { at: 3.1, text: '<span class="f">        fix:  say what it does, plainly.</span>' },
+  { at: 3.8, text: '<span class="w">3 errors.</span> Held back from review: <span class="g">only drafts that pass reach you.</span>' },
+];
+function typeTerm(el, script, local, cps = 34) {
+  let out = "";
+  for (const line of script) {
+    if (local < line.at) break;
+    if (line.type) {
+      const n = Math.floor((local - line.at) * cps);
+      const shown = line.type.slice(0, n);
+      const done = n >= line.type.length;
+      out += `<span class="p">$</span> ${shown}${done ? "" : '<span class="caret"></span>'}\n`;
+    } else out += line.text + "\n";
+  }
+  const blink = Math.floor(local * 2) % 2 === 0;
+  const last = script[script.length - 1];
+  if (local >= last.at + (last.type ? last.type.length / cps : 0.3)) out += `<span class="p">$</span> ${blink ? '<span class="caret"></span>' : ""}`;
+  el.innerHTML = out;
+}
+
+const TOOLS = ["gtm_session_start", "gtm_session_end", "gtm_status", "gtm_read", "gtm_check", "gtm_leads", "gtm_add_lead", "gtm_update_lead", "gtm_score_lead", "gtm_due", "gtm_drafts", "gtm_write_draft", "gtm_request_approval", "gtm_approvals", "gtm_log_correction"];
+const tools9 = $("tools9");
+for (const name of TOOLS) { const d = document.createElement("div"); d.className = "tool"; d.textContent = name; tools9.appendChild(d); }
+for (const name of ["gtm_send", "gtm_approve"]) { const d = document.createElement("div"); d.className = "tool no"; d.textContent = name; tools9.appendChild(d); }
+
+const MESSAGE = "Ada, I saw Kola Pay's merchant launch in Yaba. We built a free tool that drafts and checks a founder's first outreach. Want me to run it on Kola Pay this week?";
+
+function seek(t) {
+  const u = vmin();
+  for (const [id, [a, b]] of Object.entries(SCENES)) {
+    const el = $(id);
+    const o = Math.min(prog(t, a - FADE / 2, a + FADE / 2), 1 - prog(t, b - FADE / 2, b + FADE / 2));
+    el.style.opacity = id === "s1" && t < a + FADE ? Math.min(1, 1 - prog(t, b - FADE / 2, b + FADE / 2)) : id === "s11" ? prog(t, a - FADE / 2, a + FADE / 2) : o;
+    el.style.visibility = o > 0.001 || (id === "s1" && t < b) || (id === "s11" && t >= a - FADE) ? "visible" : "hidden";
+  }
+  $("progress").style.transform = `scaleX(${t / DURATION})`;
+  $("mark").style.opacity = PLAIN ? 0 : clamp(prog(t, 8.6, 9.4)) * (1 - prog(t, 54.4, 55));
+
+  // 1. The flood: chips rain in, the counter runs to 1,000.
+  const l1 = t - SCENES.s1[0];
+  for (const c of chips) {
+    const at = +c.dataset.at, p = outBack(prog(l1, at, at + 0.5));
+    const leave = prog(t, 4.1, 4.7);
+    c.style.left = `calc(${c.dataset.x}% - ${6.5 * u}px)`; c.style.top = `calc(${c.dataset.y}% - ${2 * u}px)`;
+    c.style.opacity = clamp(p) * 0.55 * (1 - leave);
+    c.style.transform = `translateY(${(1 - p) * 6 * u + leave * 8 * u}px) rotate(${c.dataset.r}deg) scale(${0.6 + 0.4 * clamp(p)})`;
+  }
+  const n = Math.round(1000 * outExpo(prog(l1, 0.5, 3.6)));
+  $("count").textContent = n.toLocaleString("en-US");
+  reveal(document.querySelector('[data-a="eyebrow1"]'), l1, 0.1);
+  reveal(document.querySelector('[data-a="msgs1"]'), l1, 1.0);
+  set($("count"), outCubic(prog(l1, 0.3, 0.9)), 0, 0.92 + 0.08 * outCubic(prog(l1, 0.3, 1.2)));
+
+  // 2. Words land one by one; the seal presses.
+  const l2 = t - SCENES.s2[0];
+  document.querySelectorAll("#s2line .word").forEach((w, i) => { const p = outCubic(prog(l2, 0.15 + i * 0.16, 0.65 + i * 0.16)); w.style.opacity = p; w.style.transform = `translateY(${(1 - p) * 4 * u}px)`; });
+  const sp = prog(l2, 2.35, 2.6);
+  const seal = $("seal2");
+  seal.style.right = `${8 * u}px`; seal.style.bottom = `${10 * u}px`;
+  seal.style.opacity = sp > 0 ? clamp(sp * 3) : 0;
+  seal.style.transform = `scale(${sp < 1 ? 2.4 - 1.4 * outCubic(sp) : 1 + 0.04 * Math.exp(-(l2 - 2.6) * 8) * Math.sin((l2 - 2.6) * 40)}) rotate(${-8 + 4 * sp}deg)`;
+  // A short shake on impact.
+  const shake = l2 > 2.6 && l2 < 2.9 ? Math.sin((l2 - 2.6) * 90) * (1 - (l2 - 2.6) / 0.3) * 0.5 * u : 0;
+  $("s2").style.transform = `translate(${shake}px, ${shake * 0.6}px)`;
+
+  // 3. The title.
+  const l3 = t - SCENES.s3[0];
+  const rp = inOut(prog(l3, 0.1, 1.1)); $("rule3").style.transform = `scaleX(${rp})`; $("rule3").style.opacity = rp;
+  { const p = outExpo(prog(l3, 0.4, 1.6)); $("title3").style.opacity = p; $("title3").style.letterSpacing = `${-0.035 + (1 - p) * 0.08}em`; $("title3").style.filter = `blur(${(1 - p) * 10}px)`; }
+  reveal($("sub3"), l3, 1.4);
+  document.querySelectorAll("#tags3 .tag").forEach((el, i) => reveal(el, l3, 2.0 + i * 0.18, 0.5, 2));
+
+  // 4. The four lanes, one per beat, each lighting its colour.
+  const l4 = t - SCENES.s4[0];
+  document.querySelectorAll("#s4 .lane").forEach((el, i) => {
+    const a = 0.5 + i * 1.2; const p = outCubic(prog(l4, a, a + 0.6));
+    el.style.opacity = p; el.style.transform = `translateX(${(1 - p) * -6 * u}px)`;
+    const glow = Math.exp(-Math.max(0, l4 - a - 0.3) * 1.6) * clamp(prog(l4, a, a + 0.3));
+    const colour = ["255 176 0", "116 128 255", "237 232 220", "255 90 54"][i];
+    el.style.borderColor = `rgb(${colour} / ${0.09 + glow * 0.5})`; el.style.background = `rgb(${colour} / ${0.03 + glow * 0.08})`;
+  });
+
+  // 5. The workspace builds.
+  const l5 = t - SCENES.s5[0];
+  if ($("s5").style.visibility === "visible") typeTerm($("t5"), T5, l5);
+  document.querySelectorAll("#models5 .tag").forEach((el, i) => reveal(el, l5, 4.7 + i * 0.14, 0.45, 2));
+  reveal($("cap5"), l5, 5.5);
+  set($("s5").querySelector(".term"), outCubic(prog(l5, 0, 0.5)), (1 - outCubic(prog(l5, 0, 0.5))) * 3 * u);
+
+  // 6. The checks.
+  const l6 = t - SCENES.s6[0];
+  if ($("s6").style.visibility === "visible") typeTerm($("t6"), T6, l6);
+  reveal($("cap6"), l6, 4.4);
+
+  // 7. Telegram: the card arrives, the finger taps Approve, the seal stamps, the hash signs.
+  const l7 = t - SCENES.s7[0];
+  reveal($("s7h"), l7, 0.2); reveal($("s7b"), l7, 0.7);
+  { const p = outCubic(prog(l7, 0, 0.7)); $("phone7").style.opacity = p; $("phone7").style.transform = `translateY(${(1 - p) * 8 * u}px) rotate(${(1 - p) * 3}deg)`; }
+  reveal($("pre7"), l7, 0.5, 0.4, 2);
+  { const p = outBack(prog(l7, 0.9, 1.5)); $("card7").style.opacity = clamp(p); $("card7").style.transform = `translateY(${(1 - p) * 4 * u}px) scale(${0.94 + 0.06 * p})`; }
+  reveal($("btns7"), l7, 1.5, 0.4, 2);
+  const tapAt = 3.6;
+  { const f = $("finger7"); const btn = $("btns7").querySelector(".ok"); const ph = $("phone7");
+    const br = btn.getBoundingClientRect(), pr = ph.getBoundingClientRect();
+    const k = ph.offsetWidth / pr.width || 1; // undo the phone's own transform scale
+    const tx = (br.left - pr.left) * k + btn.offsetWidth / 2 - f.offsetWidth / 2, ty = (br.top - pr.top) * k + btn.offsetHeight / 2 - f.offsetHeight / 2;
+    const move = inOut(prog(l7, 2.4, tapAt));
+    f.style.left = `${tx + (1 - move) * 10 * u}px`; f.style.top = `${ty + (1 - move) * 16 * u}px`;
+    f.style.opacity = clamp(prog(l7, 2.3, 2.6)) * (1 - prog(l7, tapAt + 0.4, tapAt + 0.8));
+    const press = l7 > tapAt - 0.08 && l7 < tapAt + 0.18 ? 0.82 : 1; f.style.transform = `scale(${press})`;
+    const rip = prog(l7, tapAt, tapAt + 0.6); $("ripple7").style.opacity = rip > 0 && rip < 1 ? 1 - rip : 0; $("ripple7").style.transform = `scale(${1 + rip * 8})`;
+    btn.style.background = l7 > tapAt ? "#1e6b47" : "#22303e"; }
+  { const sp7 = prog(l7, tapAt + 0.35, tapAt + 0.6); const st = $("stamp7"); st.style.opacity = sp7 > 0 ? clamp(sp7 * 3) : 0; st.style.transform = `scale(${sp7 < 1 ? 2.6 - 1.6 * outCubic(sp7) : 1}) rotate(${-12 + 4 * sp7}deg)`; }
+  reveal($("hash7"), l7, tapAt + 0.9, 0.5, 1);
+
+  // 8. WhatsApp: the message types into the box, the send button pulses.
+  const l8 = t - SCENES.s8[0];
+  { const p = outCubic(prog(l8, 0, 0.6)); $("phone8").style.opacity = p; $("phone8").style.transform = `translateY(${(1 - p) * 8 * u}px)`; }
+  const chars = Math.floor(MESSAGE.length * outCubic(prog(l8, 0.5, 1.6)));
+  $("input8").textContent = MESSAGE.slice(0, chars) || " ";
+  { const pulse = l8 > 1.8 ? 1 + 0.08 * Math.max(0, Math.sin((l8 - 1.8) * 6)) : 1; $("send8").style.transform = `scale(${pulse})`; $("send8").style.boxShadow = l8 > 1.8 ? `0 0 0 ${(((l8 - 1.8) * 1.2) % 1) * 3 * u}px rgb(0 168 132 / ${0.5 - (((l8 - 1.8) * 1.2) % 1) * 0.5})` : "none"; }
+  document.querySelectorAll("#noes8 div").forEach((el, i) => reveal(el, l8, 2.4 + i * 0.35, 0.45, 2));
+
+  // 9. Fifteen tools pop in; two that don't exist are struck out.
+  const l9 = t - SCENES.s9[0];
+  document.querySelectorAll("#tools9 .tool").forEach((el, i) => { const a = 0.4 + i * 0.09 + (i >= 15 ? 0.5 : 0); const p = outBack(prog(l9, a, a + 0.35)); el.style.opacity = clamp(p); el.style.transform = `scale(${0.8 + 0.2 * p})`; });
+  reveal($("cap9"), l9, 2.7);
+
+  // 10. A correction becomes a rule; the gold seam draws between them.
+  const l10 = t - SCENES.s10[0];
+  reveal($("log10a"), l10, 0.3);
+  const path = $("seampath"); const len = path.getTotalLength(); const dp = inOut(prog(l10, 1.0, 1.8));
+  path.style.strokeDasharray = len; path.style.strokeDashoffset = len * (1 - dp);
+  $("seam10").style.top = `${$("log10a").offsetHeight}px`;
+  reveal($("log10b"), l10, 1.7);
+  reveal($("cap10"), l10, 2.4);
+
+  // 11. The end card.
+  const l11 = t - SCENES.s11[0];
+  { const p = outCubic(prog(l11, 0, 2.5)); $("kanji11").style.opacity = p; $("kanji11").style.transform = `scale(${1.08 - 0.08 * p})`; }
+  document.querySelectorAll("#s11 > :not(.bigkanji)").forEach((el, i) => reveal(el, l11, 0.3 + i * 0.3));
+}
+
+window.DURATION = DURATION;
+window.seek = seek;
+// Played live in a browser (no ?frame), loop in real time; the renderer drives seek() itself.
+if (!params.has("render")) { const start = performance.now(); const loop = () => { seek(((performance.now() - start) / 1000) % DURATION); requestAnimationFrame(loop); }; document.fonts.ready.then(loop); }
+else seek(0);
+</script>
+</body>
+</html>
