@@ -209,6 +209,13 @@ Stages 1–3 measure the first two before we commit to the full hosted build.
   - "Auto" runs on our AI Gateway key, with each request tagged by founder and capped by a budget.
   - "My model" uses the founder's endpoint, so a failed key can't fall back to our account. The gateway's per-request key can, so we don't use it without a quota.
 - **Billing.** Stripe subscriptions through the existing client; agents pay per call over x402.
+- **Scheduled posts** (decision 2). The plan is Drive: *Publish scheduler spec v0.1*, 8 Oct.
+  - Postiz runs unmodified as an AGPL sidecar, called over HTTP, behind a pg-boss queue.
+  - Each post variant is approved against its `content_hash`; any edit sends it back to pending.
+  - Agents get draft-only tools: no approve, publish or delete tool.
+  - MVP channels: X, LinkedIn (a personal profile), Instagram (Business or Creator), YouTube and a Telegram channel.
+  - X costs $0.015 a post, or $0.20 with a link, and the cost shows on the card.
+  - The spec approves inside the hosted app only. Telegram approve buttons are its open question 4; the local harness already signs Telegram approvals bound to the hash, so v1.1 can reuse that ledger.
 - **The GTM API** (`gtm-api.md`):
   - the Approval API, which turns the workspace's signed, hash-bound approvals into a paid call with a signed receipt;
   - a key-and-balance rail beside x402, for people without a wallet;
@@ -341,8 +348,11 @@ That's about $5,150 that month. Gross margin waits for measured costs: the eval 
 1. **Our own numbers.** Shonin's internal run (stage 1) becomes post 7 of the launch thread: the messages approved, the replies, the calls. Real numbers, or no post.
 2. **Design partners.** Five founders, five short case studies, each with their permission.
 3. **Open source.** The harness in its own public repo (decision 4), listed where agents look for skills and MCP servers. A Show HN post leads with the eval table, because it's technical and open.
-4. **Content.** Thread 08, a 60-second demo cut by the Video Desk, and one post a day in launch week (`content-engine.md`).
-5. **Founder communities.** In Celo channels, only the free tool, with no prices and no links to paid tiers (`conflicts-of-interest.md`, rules 1–2).
+4. **Content.**
+   - The motion film (`packages/video/launch/gtm-harness-v2`, thread 09), first, on 10 Oct.
+   - Thread 08 and a 60-second capture of a real run on domain day.
+   - One post a day in launch week (`content-engine.md`).
+5. **Founder communities.** In Celo channels, only the free tool, with no prices and no links to paid tiers (`conflicts-of-interest.md`, rules 1–2). The hackathon activations (`hackathon-activations.md`) are the first real test of the harness on WhatsApp and Telegram groups; their counts, once logged, are the proof.
 6. **Product Hunt** on a Tuesday, after 50 public runs.
 
 **The funnel:**

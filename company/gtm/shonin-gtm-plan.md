@@ -1,6 +1,6 @@
 # Shonin GTM plan: from live site to launch
 
-**Status:** written 27 Sep 2026; timeline revised 7 Oct. The domain (`shonin.ai`, about $160) moves to the end of October, and the public launch moves with it: the firm and the GTM Harness v2 launch together (`harness-plan.md`). Until then the site runs on its Vercel URL. Numbers below are either sourced (with the file) or marked as targets.
+**Status:** written 27 Sep 2026; timeline revised 7 Oct, and again 10 Oct with the weekend film and the hackathon activations. The domain (`shonin.ai`, about $160) moves to the end of October, and the public launch moves with it: the firm and the GTM Harness v2 launch together (`harness-plan.md`). Until then the site runs on its Vercel URL. Numbers below are either sourced (with the file) or marked as targets.
 
 ## 1. What we're launching
 
@@ -38,6 +38,8 @@ Revised 7 Oct. The 29 Sep timeline put the domain and the announcement in early 
 | When | Move | Owner | Done when |
 |---|---|---|---|
 | **Wed 7 – Sat 10 Oct** | Deploy from the Vercel Pro account if it isn't live yet (`ops/deploy-vercel.md`). Submit Frontier (6–10 Oct, `funding/plan.md`) | Edidiong | The vercel.app URL serves the temple page; Frontier submitted |
+| **Sat 10 Oct, 12:00 GMT** | The GTM Harness v2 film (60 s, 16:9 and 9:16, `packages/video/launch/gtm-harness-v2`) on personal X; Reels, Shorts and TikTok the same day; LinkedIn Mon 12 Oct, 08:00 GMT. Copy in `content/threads/09-gtm-harness-film.md`. Sunday stays clear for the Jarvis launch (Sun 11 Oct, 15:30 GMT) | Edidiong posts; Claude rendered the film | Posted; impressions and replies logged after 48 hours |
+| **Mon 12 Oct – Mon 9 Nov** | Hackathon activations on WhatsApp and Telegram, run on the harness as a free tool (`gtm/hackathon-activations.md`). Ambassador work, not a Shonin campaign: no Shonin in Celo channels | Edidiong approves and sends | The §5 counts filled in from the workspace, so the result can be quoted |
 | **From Thu 8 Oct, daily** | Run Shonin's own go-to-market on the harness: `pnpm gtm` with Telegram approvals (`harness-plan.md`, stage 1) | Edidiong; agents prepare | 20 approved messages sent from the harness by 16 Oct |
 | **Mon 12 Oct** | First AI Study Group Pro cohort starts | Edidiong | First session held |
 | **Mon 12 – Fri 16 Oct** | Harness: evals on four models, Gmail drafts and a Sheets pipeline (Google app in testing mode); recruit 5 design-partner founders (`harness-plan.md`, stage 2) | Claude builds; Edidiong recruits | Evals published in the repo; 5 founders confirmed |
@@ -45,6 +47,11 @@ Revised 7 Oct. The 29 Sep timeline put the domain and the announcement in early 
 | **Mon 26 – Fri 30 Oct** | Domain day: register `shonin.ai`, attach it, set `NEXT_PUBLIC_SITE_URL`, redeploy (`ops/deploy-vercel.md` §5). Record the trailer (§5) and the harness demo | Edidiong buys; Claude checks the redeploy and prepares the footage | `https://shonin.ai/llms.txt` lists the new URL; trailer approved |
 | **The day after the domain works** | Public launch: the trailer, the "Shonin is open" thread (§6) and the GTM Harness v2 thread, pinned | Edidiong | Live on X, LinkedIn, YouTube Shorts, Instagram Reels, TikTok |
 | **Launch +1 to +7** | One post a day (`gtm/content-engine.md`); reply to every comment within a working day; Product Hunt for the harness on a Tuesday after the first 50 public runs | Edidiong, drafts by agents | Seven posts out |
+
+**What we know on 10 Oct:**
+
+- On 6 Oct `shonin.ai` did not resolve, and nothing in the Drive confirms the domain or the trailer since. Treat the domain as end of October, as above.
+- The GTM Agent Harness milestone post (6 Oct, 16:04) drew 291 impressions and 2 replies (our data, Drive: *Weekend Plan*, §1.5). A personal milestone told as a story beat the plain announcements, so the film's post leads with the story.
 
 The past items (deploy, GTM Harness v1 launch on 29 Sep, Office Hours demo on 1 Oct, week-1 numbers on 3 Oct) are recorded in the 29 Sep revision in git history.
 
@@ -78,6 +85,8 @@ From `research/first-customers.md` §4, with the new site in each:
 | 33–41 s | The hanging scroll unrolls; a request is routed live. Then the shop boards swing, with prices. | "For businesses: finished work, priced per unit, never per hour." |
 | 41–47 s | The paper lantern (GTM Harness), then the kintsugi bowl's gold seams drawing in. | "Every correction becomes a rule, mended in gold." |
 | 47–55 s | The bell swings. "Enter." | End card: **shonin.ai** · "Agents, businesses, founders: start free." |
+
+**The harness film is separate.** It is a 60-second motion film of the GTM Harness, rendered from code (`packages/video/launch/gtm-harness-v2`), not shot from the site. It goes out first, on 10 Oct; this trailer stays for domain day.
 
 **How to make it:**
 

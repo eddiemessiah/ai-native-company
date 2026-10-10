@@ -22,6 +22,7 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 | [`gtm/study-group-global.md`](gtm/study-group-global.md) | AI Study Group v2: pods, cohorts, chapters, pricing, the global rollout |
 | [`gtm/harness-plan.md`](gtm/harness-plan.md) | GTM Harness v2: any model, connectors, the headless-browser stance, competitors, the hosted runtime on Vercel, pricing, the four stages to launch, and the decisions for Edidiong |
 | [`gtm/gtm-api.md`](gtm/gtm-api.md) | Selling go-to-market per call, the Monid way: plans, reviews, scores and approvals with signed receipts; rails, discovery, packaging, decisions 10–18 |
+| [`gtm/hackathon-activations.md`](gtm/hackathon-activations.md) | The Agents on Open Rails hackathon on WhatsApp and Telegram, run on the GTM Harness as a free tool: what happened on 6 Oct, the facts, the weekly plays, and the counts to log before quoting a result |
 | [`gtm/gtm-harness-launch.md`](gtm/gtm-harness-launch.md) | GTM Harness launch (Tue 29 Sep) and the Celo Devs Office Hours demo (Thu 1 Oct) |
 | [`../content/threads/`](../content/threads) | Seven ready-to-post X threads |
 
