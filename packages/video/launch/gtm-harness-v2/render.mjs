@@ -4,7 +4,7 @@
 // about 12 times slower, and x264 re-encodes it anyway). Deterministic, so a re-render is identical.
 //
 //   node render.mjs --format 16x9|9x16 [--fps 30] [--out file.mp4] [--cta "Try it free · link in the post"]
-//                   [--plain] [--audio] [--frames 0,300,900 --still-dir dir]
+//                   [--plain] [--audio] [--frames 0,300,900 --still-dir dir] [--remux render.mp4 --audio]
 //
 // Needs playwright-core and ffmpeg-static (RENDER_TOOLS points at their node_modules) and a Chromium
 // (CHROMIUM_PATH, or Playwright's own under PLAYWRIGHT_BROWSERS_PATH). Fonts come from the repo's
@@ -82,10 +82,22 @@ if (flag("frames")) {
 // The soundtrack, made here from sine waves so there is no licence to track: a slow low pulse, a thud
 // when each seal lands, and a bell on the end card. Times match the timeline in index.html.
 const thuds = [7.2, 37.6, 38.2]; // the 承 seal (scene 2), the Approve tap and the stamp (scene 7)
-const pulse = "0.32*sin(2*PI*55*t)*exp(-7*mod(t,1.2))*between(t,0.4,54.6)";
-const thud = thuds.map((s) => `0.9*sin(2*PI*(48+40*exp(-30*(t-${s})))*(t-${s}))*exp(-9*(t-${s}))*gte(t,${s})`).join("+");
-const bell = [523.25, 1046.5, 1569.75, 2637].map((f, i) => `${[0.35, 0.18, 0.1, 0.05][i]}*sin(2*PI*${f}*(t-55.2))*exp(-${1.1 + i * 0.6}*(t-55.2))*gte(t,55.2)`).join("+");
+// 55 Hz carries the weight on headphones; the 110 Hz octave keeps the pulse audible on a phone speaker.
+const pulse = "(0.22*sin(2*PI*55*t)+0.12*sin(2*PI*110*t))*exp(-7*mod(t,1.2))*between(t,0.4,54.6)";
+// Every envelope uses max(t-start,0): before its start, exp() of a large positive number overflows to inf and
+// sin(inf) is NaN, which multiplying by zero does not cancel.
+const since = (s) => `max(t-${s},0)`;
+const thud = thuds.map((s) => `0.9*sin(2*PI*(48+40*exp(-30*${since(s)}))*${since(s)})*exp(-9*${since(s)})*gte(t,${s})`).join("+");
+const bell = [523.25, 1046.5, 1569.75, 2637].map((f, i) => `${[0.35, 0.18, 0.1, 0.05][i]}*sin(2*PI*${f}*${since(55.2)})*exp(-${1.1 + i * 0.6}*${since(55.2)})*gte(t,55.2)`).join("+");
 const audio = has("audio") ? ["-f", "lavfi", "-i", `aevalsrc='${pulse}+${thud}+${bell}':s=48000:d=${duration}`] : [];
+
+// --remux <file.mp4>: put the soundtrack on an existing render without re-rendering the frames.
+if (flag("remux")) {
+  const r = spawn(ffmpeg, ["-y", "-loglevel", "error", "-i", resolve(flag("remux")), ...audio, "-filter_complex", "[1:a]alimiter=limit=0.8,afade=t=in:d=0.3,afade=t=out:st=" + (duration - 1.2) + ":d=1.2[a]", "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out], { stdio: "inherit" });
+  const rc = await new Promise((ok) => r.on("close", ok));
+  await browser.close(); server.close();
+  process.exit(rc ?? 1);
+}
 
 const enc = spawn(ffmpeg, [
   "-y", "-loglevel", "error",
