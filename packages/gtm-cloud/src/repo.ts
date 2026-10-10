@@ -37,10 +37,11 @@ export const saveFiles = (ctx: Ctx, wsId: string, files: Record<string, string>)
 export const getAction = (ctx: Ctx, id: string) => getJson<Action>(ctx.store, keys.action(id));
 export const saveAction = (ctx: Ctx, action: Action) => setJson(ctx.store, keys.action(action.id), action);
 
-export async function listActions(ctx: Ctx, wsId: string, limit = 200): Promise<Action[]> {
-  const ids = await ctx.store.lrange(keys.actions(wsId), 0, limit - 1);
-  const actions = await Promise.all(ids.map((id) => getAction(ctx, id)));
-  return actions.filter((a): a is Action => a !== null);
+/** The newest actions, read in one round trip. */
+export async function listActions(ctx: Ctx, wsId: string, limit = 50, offset = 0): Promise<Action[]> {
+  const ids = await ctx.store.lrange(keys.actions(wsId), offset, offset + limit - 1);
+  const raws = await ctx.store.mget(ids.map(keys.action));
+  return raws.filter((r): r is string => r !== null).map((r) => JSON.parse(r) as Action);
 }
 
 export async function logEvent(ctx: Ctx, wsId: string, event: Omit<ActivityEvent, "at">): Promise<void> {

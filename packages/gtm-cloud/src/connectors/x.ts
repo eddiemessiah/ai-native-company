@@ -71,6 +71,7 @@ export async function postTweet(access: string, text: string, fetcher: typeof fe
     method: "POST",
     headers: { authorization: `Bearer ${access}`, "content-type": "application/json" },
     body: JSON.stringify({ text }),
+    signal: AbortSignal.timeout(15_000),
   });
   const json = (await res.json().catch(() => null)) as { data?: { id?: string }; detail?: string; title?: string } | null;
   if (!res.ok || !json?.data?.id) throw new Error(`X post failed: ${json?.detail ?? json?.title ?? res.status}`);

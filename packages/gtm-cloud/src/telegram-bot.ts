@@ -37,6 +37,9 @@ const HELP = [
 export async function handleTelegramUpdate(ctx: Ctx, update: TelegramUpdate, deps: BotDeps = {}): Promise<void> {
   if (!ctx.cfg.telegram) return;
   const bot: Bot = { token: ctx.cfg.telegram.token, ...(ctx.fetch ? { fetch: ctx.fetch } : {}) };
+  // Group chatter never reaches the store: only private messages, button presses and membership changes count.
+  if (update.message && (update.message.chat.type !== "private" || !update.message.text || update.message.from?.is_bot)) return;
+  if (!update.message && !update.callback_query && !update.my_chat_member) return;
   // Telegram retries a webhook it thinks failed; each update is handled once.
   if (!(await ctx.store.set(`tg-update:${update.update_id}`, "1", { ex: 86_400, nx: true }))) return;
 
@@ -62,7 +65,7 @@ export async function handleTelegramUpdate(ctx: Ctx, update: TelegramUpdate, dep
   // A tap on Approve or Reject.
   if (update.callback_query) {
     const q = update.callback_query;
-    const [kind, actionId] = (q.data ?? "").split(":");
+    const [kind, actionId, seen] = (q.data ?? "").split(":");
     const action = actionId ? await getAction(ctx, actionId) : null;
     const ws = action ? await getWorkspace(ctx, action.workspaceId) : null;
     const fromFounder = ws?.telegram && ws.telegram.userId === q.from.id && q.message?.chat.id === ws.telegram.chatId;
@@ -71,8 +74,9 @@ export async function handleTelegramUpdate(ctx: Ctx, update: TelegramUpdate, dep
       return;
     }
     try {
-      const after = await decide(ctx, ws, action.id, kind === "a" ? "approved" : "rejected", q.from.username ? `@${q.from.username}` : `telegram:${q.from.id}`, "telegram");
-      const note = after.status === "done" ? "Approved and posted" : after.status === "failed" ? "Approved, but posting failed" : after.status === "approved" ? "Approved: tap the link to send" : after.status === "rejected" ? "Rejected" : `Already ${after.status}`;
+      // The card carries the first 12 characters of the hash of the text it showed; an edited text won't match.
+      const after = await decide(ctx, ws, action.id, kind === "a" ? "approved" : "rejected", q.from.username ? `@${q.from.username}` : `telegram:${q.from.id}`, "telegram", seen ?? "");
+      const note = after.status === "done" ? "Approved and posted" : after.status === "failed" ? "Approved, but posting failed" : after.status === "unknown" ? "Approved; not sure it posted, see the Desk" : after.status === "approved" ? "Approved: tap the link to send" : after.status === "rejected" ? "Rejected" : `Already ${after.status}`;
       await answerCallback(bot, q.id, note).catch(() => undefined);
     } catch (error) {
       await answerCallback(bot, q.id, error instanceof ActionError ? error.message : "Something went wrong; decide on the Desk").catch(() => undefined);

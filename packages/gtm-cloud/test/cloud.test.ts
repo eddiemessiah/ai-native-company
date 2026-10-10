@@ -47,7 +47,7 @@ interface Call {
 }
 
 /** A fetch that records every call and answers like Telegram, X and Slack do. */
-function fakeFetch(opts: { xFails?: boolean } = {}) {
+function fakeFetch(opts: { xFails?: boolean; xTimesOut?: boolean } = {}) {
   const calls: Call[] = [];
   let messageId = 100;
   const fn = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -69,6 +69,7 @@ function fakeFetch(opts: { xFails?: boolean } = {}) {
       }
       return json(200, { ok: true, result: true });
     }
+    if (url === "https://api.x.com/2/tweets" && opts.xTimesOut) throw Object.assign(new Error("The operation timed out."), { name: "TimeoutError" });
     if (url === "https://api.x.com/2/tweets") return opts.xFails ? json(429, { title: "Too Many Requests" }) : json(201, { data: { id: "1844" } });
     if (url.startsWith("https://hooks.slack.com/")) return new Response("ok", { status: 200 });
     return json(404, { error: "unexpected" });
@@ -241,6 +242,115 @@ describe("the action loop", () => {
   });
 });
 
+describe("the review's must-fix list", () => {
+  it("fails closed when a deployment is missing its keys or its store", () => {
+    const cfg = betaConfig({ VERCEL_ENV: "production" });
+    expect(cfg.missing).toEqual(expect.arrayContaining(["BETA_SESSION_SECRET", "BETA_SIGNING_KEY", "BETA_ENCRYPTION_KEY", "KV_REST_API_URL (connect Upstash)"]));
+    expect(cfg.signingKey.equals(betaConfig({ VERCEL_ENV: "production" }).signingKey)).toBe(false); // random, never the dev key
+    expect(betaConfig({}).missing).toEqual([]);
+  });
+
+  it("refuses a decision on text the founder didn't see", async () => {
+    const { ctx, workspace } = await setup();
+    const a = await createAction(ctx, workspace, { channel: "email", to: "ada@example.com", text: "Ada, Thursday at 10?", source: "web", author: "ada" });
+    await expect(decide(ctx, workspace, a.id, "approved", "ada", "web", "0".repeat(64))).rejects.toMatchObject({ status: 409 });
+    expect((await decide(ctx, workspace, a.id, "approved", "ada", "web", a.hash)).status).toBe("approved");
+  });
+
+  it("takes the buttons off an old Telegram card when the text is edited, and its tap no longer counts", async () => {
+    const { ctx, calls, workspace } = await setup();
+    const url = (await telegramLinkUrl(ctx, workspace))!;
+    await handleTelegramUpdate(ctx, { update_id: 1, message: { message_id: 1, from: { id: 42, username: "ada" }, chat: { id: 42, type: "private" }, text: `/start ${url.split("start=")[1]}` } });
+    const ws = (await getWorkspace(ctx, workspace.id))!;
+    const a = await createAction(ctx, ws, { channel: "whatsapp", to: "+2348012345678", text: "Ada, Thursday?", source: "web", author: "ada" });
+    const asked = await requestApproval(ctx, ws, a.id);
+    await editAction(ctx, ws, a.id, "Ada, Friday?", "ada");
+    expect(calls.some((c) => c.url.endsWith("/editMessageReplyMarkup") && JSON.stringify(c.body).includes('"inline_keyboard":[]'))).toBe(true);
+    await handleTelegramUpdate(ctx, { update_id: 2, callback_query: { id: "cb", data: `a:${a.id}:${asked.hash.slice(0, 12)}`, from: { id: 42 }, message: { message_id: asked.card!.messageId, chat: { id: 42 } } } });
+    expect((await getAction(ctx, a.id))!.status).toBe("draft");
+  });
+
+  it("posts once when two approvals race", async () => {
+    const { ctx, calls, workspace } = await setup();
+    const ws = await connectX(ctx, workspace);
+    const a = await createAction(ctx, ws, { channel: "x", text: "Racing approvals post once.", source: "web", author: "ada" });
+    const results = await Promise.all([decide(ctx, ws, a.id, "approved", "ada", "web"), decide(ctx, ws, a.id, "approved", "ada", "telegram"), decide(ctx, ws, a.id, "rejected", "ada", "web")]);
+    expect(calls.filter((c) => c.url === "https://api.x.com/2/tweets").length).toBeLessThanOrEqual(1);
+    const final = (await getAction(ctx, a.id))!;
+    expect(results.length).toBe(3);
+    expect(["done", "rejected"]).toContain(final.status);
+    expect(final.status === "done").toBe(calls.some((c) => c.url === "https://api.x.com/2/tweets"));
+  });
+
+  it("marks a timed-out post unknown, and only runs it again once the founder says it didn't post", async () => {
+    const { ctx, workspace } = await setup({}, fakeFetch({ xTimesOut: true }));
+    const ws = await connectX(ctx, workspace);
+    const a = await createAction(ctx, ws, { channel: "x", text: "Did this post?", source: "web", author: "ada" });
+    expect((await decide(ctx, ws, a.id, "approved", "ada", "web")).status).toBe("unknown");
+    const working: Ctx = { ...ctx, fetch: fakeFetch().fn };
+    await expect(retry(working, ws, a.id)).rejects.toMatchObject({ status: 409 });
+    expect((await retry(working, ws, a.id, { confirmedNotPosted: true })).status).toBe("done");
+  });
+
+  it("records a post the founder confirms did go out", async () => {
+    const { ctx, workspace } = await setup({}, fakeFetch({ xTimesOut: true }));
+    const ws = await connectX(ctx, workspace);
+    const a = await createAction(ctx, ws, { channel: "x", text: "It did post.", source: "web", author: "ada" });
+    await decide(ctx, ws, a.id, "approved", "ada", "web");
+    const done = await retry(ctx, ws, a.id, { postedRef: "https://x.com/kolapay/status/1" });
+    expect(done.status).toBe("done");
+    expect(verify(ctx.cfg.signingKey, done.receipt)).toBe(true);
+  });
+
+  it("turns a stale run into unknown", async () => {
+    const { ctx, workspace } = await setup();
+    const a = await createAction(ctx, workspace, { channel: "slack", text: "Stale.", source: "web", author: "ada" });
+    await saveAction(ctx, { ...(await getAction(ctx, a.id))!, status: "running", updatedAt: "2026-10-11T08:50:00Z" });
+    await expect(retry(ctx, workspace, a.id)).rejects.toMatchObject({ status: 409 });
+    expect((await getAction(ctx, a.id))!.status).toBe("unknown");
+  });
+
+  it("with the kill switch on, approves posts as links and never runs them", async () => {
+    const { ctx, calls, workspace } = await setup({ BETA_RUNS: "off" });
+    const ws = await connectX(ctx, workspace);
+    const a = await createAction(ctx, ws, { channel: "x", text: "Kill switch test.", source: "web", author: "ada" });
+    const approved = await decide(ctx, ws, a.id, "approved", "ada", "web");
+    expect(approved.status).toBe("approved");
+    expect(linkFor(approved, ctx.cfg.runs)?.url).toMatch(/^https:\/\/x\.com\/intent\/post/);
+    expect(calls.some((c) => c.url === "https://api.x.com/2/tweets")).toBe(false);
+  });
+
+  it("caps posts on X per day", async () => {
+    const { ctx, calls, workspace } = await setup({ BETA_MAX_X_POSTS_PER_DAY: "1" });
+    const ws = await connectX(ctx, workspace);
+    const one = await createAction(ctx, ws, { channel: "x", text: "First post today.", source: "web", author: "ada" });
+    const two = await createAction(ctx, ws, { channel: "x", text: "Second post today.", source: "web", author: "ada" });
+    expect((await decide(ctx, ws, one.id, "approved", "ada", "web")).status).toBe("done");
+    const capped = await decide(ctx, ws, two.id, "approved", "ada", "web");
+    expect(capped.status).toBe("failed");
+    expect(capped.error).toMatch(/limit/);
+    expect(calls.filter((c) => c.url === "https://api.x.com/2/tweets")).toHaveLength(1);
+  });
+
+  it("keeps every lead when agents add them at the same time", async () => {
+    const { ctx, workspace } = await setup();
+    const { token } = await rotateAgentToken(ctx, workspace);
+    const add = (n: number) =>
+      handleBridgeRequest(
+        ctx,
+        new Request("https://staging.example.com/api/beta/mcp", {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json, text/event-stream", authorization: `Bearer ${token}` },
+          body: JSON.stringify({ jsonrpc: "2.0", id: n, method: "tools/call", params: { name: "gtm_add_lead", arguments: { name: `Trader ${n}`, handle: `+23480000000${n}`, channel: "whatsapp", source: "Balogun market WhatsApp group" } } }),
+        }),
+      );
+    await Promise.all([1, 2, 3, 4, 5].map(add));
+    const { getFiles } = await import("../src/repo");
+    const csv = (await getFiles(ctx, workspace.id))["pipeline.csv"]!;
+    for (const n of [1, 2, 3, 4, 5]) expect(csv).toContain(`Trader ${n}`);
+  });
+});
+
 describe("the Telegram bot", () => {
   const start = (id: number, text: string, from = 42) => ({ update_id: id, message: { message_id: id, from: { id: from, username: "ada" }, chat: { id: from, type: "private" }, text } });
 
@@ -261,8 +371,10 @@ describe("the Telegram bot", () => {
     const { ctx, calls, workspace } = await linked();
     const a = await createAction(ctx, workspace, { channel: "whatsapp", to: "+2348012345678", text: "Ada, want to try it this week?", source: "web", author: "ada" });
     await requestApproval(ctx, workspace, a.id);
-    const card = (await getAction(ctx, a.id))!.card!;
-    const tap = (id: number, from: number) => ({ update_id: id, callback_query: { id: `cb${id}`, data: `a:${a.id}`, from: { id: from }, message: { message_id: card.messageId, chat: { id: card.chatId } } } });
+    const pending = (await getAction(ctx, a.id))!;
+    const card = pending.card!;
+    const data = `a:${a.id}:${pending.hash.slice(0, 12)}`;
+    const tap = (id: number, from: number) => ({ update_id: id, callback_query: { id: `cb${id}`, data, from: { id: from }, message: { message_id: card.messageId, chat: { id: card.chatId } } } });
     await handleTelegramUpdate(ctx, tap(10, 99));
     expect((await getAction(ctx, a.id))!.status).toBe("pending");
     await handleTelegramUpdate(ctx, tap(11, 42));
@@ -287,7 +399,7 @@ describe("the Telegram bot", () => {
     expect(done.status).toBe("done");
     expect(done.receipt?.ref).toMatch(/^https:\/\/t\.me\/kolapay\/\d+$/);
     expect(calls.some((c) => c.url.endsWith("/sendMessage") && (c.body as { chat_id: number }).chat_id === -1001)).toBe(true);
-    await expect(createAction(ctx, ws, { channel: "telegram_post", to: "-999", text: "x", source: "web", author: "ada" })).rejects.toThrow(/isn't one of this workspace's/);
+    await expect(createAction(ctx, ws, { channel: "telegram_post", to: "-999", text: "x", source: "web", author: "ada" })).rejects.toThrow(/Pick one of this workspace's Telegram/);
   });
 
   it("drafts from a chat message and sends the card back for approval", async () => {

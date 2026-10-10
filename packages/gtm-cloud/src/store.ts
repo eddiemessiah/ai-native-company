@@ -16,6 +16,28 @@ export interface Store {
   ltrim(key: string, keep: number): Promise<void>;
   /** Adds one and returns the new value; the first increment sets the expiry. */
   incr(key: string, ex?: number): Promise<number>;
+  /** Many values in one round trip, in order; null where a key is missing. */
+  mget(keys: readonly string[]): Promise<(string | null)[]>;
+}
+
+export class StoreError extends Error {}
+
+/**
+ * Runs fn while holding a short lock, so two writers (concurrent subagents, a double tap, a token
+ * refresh racing a post) can't interleave. Waits up to about two seconds for the lock, then gives up.
+ */
+export async function withLock<T>(store: Store, key: string, fn: () => Promise<T>, opts: { ttl?: number; waitMs?: number } = {}): Promise<T> {
+  const lock = `lock:${key}`;
+  const deadline = Date.now() + (opts.waitMs ?? 2000);
+  while (!(await store.set(lock, "1", { ex: opts.ttl ?? 30, nx: true }))) {
+    if (Date.now() > deadline) throw new StoreError("Busy: another change is in progress. Try again in a moment.");
+    await new Promise((r) => setTimeout(r, 80));
+  }
+  try {
+    return await fn();
+  } finally {
+    await store.del(lock);
+  }
 }
 
 export async function getJson<T>(store: Store, key: string): Promise<T | null> {
@@ -62,6 +84,9 @@ export class MemoryStore implements Store {
   async ltrim(key: string, keep: number) {
     this.lists.set(key, (this.lists.get(key) ?? []).slice(0, keep));
   }
+  async mget(list: readonly string[]) {
+    return list.map((k) => this.live(k)?.value ?? null);
+  }
   async incr(key: string, ex?: number) {
     const current = Number(this.live(key)?.value ?? 0) + 1;
     const existing = this.live(key);
@@ -84,9 +109,12 @@ export class UpstashStore implements Store {
       headers: { authorization: `Bearer ${this.token}`, "content-type": "application/json" },
       body: JSON.stringify(args),
       cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    }).catch((error: unknown) => {
+      throw new StoreError(`Storage didn't answer (${(error as Error).name}). Nothing ran.`);
     });
     const json = (await res.json().catch(() => null)) as { result?: T; error?: string } | null;
-    if (!res.ok || !json || json.error) throw new Error(`Store ${String(args[0])} failed: ${json?.error ?? res.status}`);
+    if (!res.ok || !json || json.error) throw new StoreError(`Storage ${String(args[0])} failed: ${json?.error ?? res.status}. Nothing ran.`);
     return json.result as T;
   }
   async get(key: string) {
@@ -110,6 +138,9 @@ export class UpstashStore implements Store {
   async ltrim(key: string, keep: number) {
     await this.command("LTRIM", key, 0, keep - 1);
   }
+  async mget(list: readonly string[]) {
+    return list.length ? this.command<(string | null)[]>("MGET", ...list) : [];
+  }
   async incr(key: string, ex?: number) {
     const value = await this.command<number>("INCR", key);
     if (value === 1 && ex) await this.command("EXPIRE", key, ex);
@@ -121,10 +152,15 @@ type Env = Record<string, string | undefined>;
 
 /** Upstash when its REST credentials are set (Vercel's Upstash integration injects KV_REST_API_*), memory otherwise. */
 export function storeFromEnv(env: Env = process.env, fetcher?: typeof fetch): { store: Store; kind: "upstash" | "memory" } {
-  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+  const { url, token } = storeCredentials(env);
   if (url && token) return { store: new UpstashStore(url, token, fetcher), kind: "upstash" };
   return { store: memory, kind: "memory" };
+}
+
+export function storeCredentials(env: Env): { url?: string; token?: string } {
+  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
+  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+  return { ...(url ? { url } : {}), ...(token ? { token } : {}) };
 }
 
 /** One memory store per server process, so local dev keeps state between requests. */

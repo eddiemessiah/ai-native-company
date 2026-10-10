@@ -16,6 +16,7 @@ export async function botCall<T>(bot: Bot, method: string, body: Record<string, 
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(10_000),
   });
   const json = (await res.json().catch(() => null)) as { ok?: boolean; result?: T; description?: string } | null;
   if (!res.ok || !json?.ok) throw new Error(`Telegram ${method} failed: ${json?.description ?? res.status}`);

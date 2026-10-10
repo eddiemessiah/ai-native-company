@@ -6,6 +6,6 @@ export function isSlackWebhook(url: string): boolean {
 
 export async function postToSlack(webhook: string, text: string, fetcher: typeof fetch = fetch): Promise<void> {
   if (!isSlackWebhook(webhook)) throw new Error("That isn't a Slack incoming webhook URL.");
-  const res = await fetcher(webhook, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+  const res = await fetcher(webhook, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }), signal: AbortSignal.timeout(10_000) });
   if (!res.ok) throw new Error(`Slack answered ${res.status}: ${(await res.text().catch(() => "")).slice(0, 120)}`);
 }

@@ -62,7 +62,11 @@ export interface Workspace {
   agent?: { readonly tokenHash: string; readonly hint: string; readonly createdAt: string };
 }
 
-export type ActionStatus = "held" | "draft" | "pending" | "approved" | "done" | "failed" | "rejected";
+/**
+ * running: the post is being made right now. unknown: a run started and we can't tell whether it posted
+ * (a timeout, a crash); the founder checks the channel and says, before anything runs again.
+ */
+export type ActionStatus = "held" | "draft" | "pending" | "approved" | "running" | "done" | "failed" | "unknown" | "rejected";
 
 export interface Review {
   readonly verdict: "ready" | "revise" | "blocked";
