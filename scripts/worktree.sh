@@ -23,7 +23,8 @@ gtm|3008|company/gtm and content/threads: outbound, content engine, launches
 ops|3009|company/ops and company/funding: playbooks, rulebook, grants
 agents|3010|packages/agents and packages/mcp: Shonin Check, Shonin Receipt, shonin-mcp
 gtm-harness|3011|GTM Harness for founders: packages/gtm-harness, app/gtm, app/api/gtm
-video|3012|Video Desk and explainer shorts: packages/video, their playbooks and research; footage stays out of git'
+video|3012|Video Desk and explainer shorts: packages/video, their playbooks and research; footage stays out of git
+beta|3013|The hosted GTM beta: packages/gtm-cloud, app/beta, app/api/beta, the beta plan and deploy runbook'
 
 die() { printf 'worktree: %s\n' "$*" >&2; exit 1; }
 

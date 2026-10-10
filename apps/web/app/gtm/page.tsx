@@ -2,6 +2,7 @@
 // GTM Harness. Copyright (c) 2026 Edidiong Umana; licence text in packages/gtm-harness/LICENSE.
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { GtmHarness } from "@/components/gtm-harness";
 
 export const metadata: Metadata = {
@@ -42,6 +43,10 @@ export default function GtmPage() {
           </li>
         ))}
       </ul>
+      <Link href="/beta" className="mt-8 inline-flex min-h-11 items-center gap-3 rounded-full border border-line-2 px-5 font-mono text-[13px] text-dim transition-colors hover:border-fg hover:text-fg">
+        <span className="dot" style={{ background: "var(--human)" }} />
+        Private beta: run it hosted, approve from your phone
+      </Link>
       <div className="mt-16">
         <GtmHarness />
       </div>

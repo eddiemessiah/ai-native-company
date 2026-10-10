@@ -25,6 +25,9 @@ packages/agents     @repo/agents: what agents buy. Shonin Check (pre-payment che
 packages/mcp        @repo/mcp: shonin-mcp, the MCP server that exposes the agent products to any MCP client
 packages/gtm-harness @repo/gtm-harness (MIT): the GTM Harness. A plan writer for any model, the workspace it packs
                     (brain, workflows, skills, campaigns), approval-gated connectors and the `pnpm gtm` CLI
+packages/gtm-cloud  @repo/gtm-cloud (proprietary): the hosted GTM beta. Workspaces, hash-bound approvals and signed
+                    receipts only the server writes, the executor for the founder's own channels (X, Telegram
+                    channel/group, Slack), the Telegram bot, and the agent bridge (remote MCP, no send or approve tool)
 packages/video      @repo/video: the Video Desk pipeline. A recording and its transcript in; brain-scored clips,
                     trailers, chapters and tightened cuts out. Also explainer shorts: topic + sources in, a sourced
                     vertical video out. Rendered by ffmpeg
@@ -124,7 +127,8 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 - Store raw client state in decision logs. The log keeps a hash unless `includeStateInLogs` is set.
 - Commit client footage, transcripts or renders. Video jobs live in `video-jobs/`, which git ignores.
 - Commit GTM workspaces. They hold leads and approvals; `gtm-workspaces/` is git-ignored.
-- Let the GTM Harness send to a prospect. It prepares, reviews and builds one-tap links; the founder sends.
+- Let the GTM Harness send to a prospect. It prepares, reviews and builds one-tap links; the founder sends. The hosted beta runs an approved post only on the founder's own channels (X, their Telegram channel or group, their Slack), only after they approve that exact text, and only once.
+- Automate a person's own Telegram (or any messaging) account through its web client or an unofficial client. Use the official Bot API.
 - Commit secrets. `.env*` is ignored except `.env.example`.
 - Publish a claim, number or proof that isn't in `brand.proofs`, `research/` or our own data.
 - Apply to Prezenti Boost, or judge a program we compete in. See `company/ops/conflicts-of-interest.md`.
@@ -146,6 +150,7 @@ Plain, specific, short. Lead with a number, a name or a line of code. Every numb
 | ops | 3009 | `company/ops`, `company/funding` |
 | agents | 3010 | `packages/agents`, `packages/mcp` |
 | gtm-harness | 3011 | GTM Harness for founders: `packages/gtm-harness`, `apps/web/app/gtm`, `apps/web/app/api/gtm` |
+| beta | 3013 | `packages/gtm-cloud`, `apps/web/app/beta`, `apps/web/app/api/beta`, `company/gtm/beta-plan.md`, `company/ops/deploy-beta-staging.md` |
 | video | 3012 | `packages/video`, `company/ops/playbooks/video-desk.md`, `company/ops/playbooks/explainer-shorts.md`, `research/video-editing.md`, `research/explainer-shorts.md` |
 
 Stay inside your line's files. Changes to the public API of `@repo/brain` or `@repo/catalog` go through their own line. Run `pnpm check` before each commit and merge back through a pull request.

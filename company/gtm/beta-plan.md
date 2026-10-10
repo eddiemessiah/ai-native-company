@@ -119,7 +119,46 @@ The plan goes through the gstack review modes: CEO (scope and the 10-star produc
 
 ## 10. Review findings
 
-Filled in after the review on Sat night.
+The gstack CEO and engineering reviews ran on Sat night. The full text is in `beta-review.md`: SELECTIVE EXPANSION mode, Lake Score 5/6, 10 critical gaps among 21 failure modes.
+
+**Fixed in `@repo/gtm-cloud`, each with a test (30 tests):**
+
+- **Config fails closed.** A deployment missing its keys or its Upstash store gets random keys and answers 503, never the dev keys.
+- **Approval binds to the text the founder saw.**
+  - The Desk sends the hash it displayed; a Telegram card carries 12 characters of it.
+  - Editing a draft takes the old card's buttons off.
+  - One decision per text, set atomically.
+- **Run once.**
+  - A permanent run marker per approved text is set before the external call.
+  - A timeout or crash becomes `unknown`, and nothing runs again until the founder says whether it posted.
+- **Caps.** Per workspace per day: 100 drafts, 30 runs and 5 X posts. Approving from a draft counts toward the card cap.
+- **Kill switch.** `BETA_RUNS=off` turns every own-channel post into a link the founder taps.
+- **Locks.** Lead and file writes, and the X token refresh, run under locks.
+- **Store.** One MGET per Desk load; store timeouts with a named error.
+- **The bridge.**
+  - Reviewer verdicts are computed on the server, so an agent can't hand in "ready".
+  - File reads are labelled as data.
+  - Concurrent lead writes keep every row.
+
+**Required of the web layer:**
+
+- Origin checks on every POST.
+- An HttpOnly, Secure, SameSite=Lax cookie.
+- Drafts rendered as plain text.
+- Send links limited to known schemes.
+- A daily cap on plan generations.
+- Telegram work done in `after()`.
+
+**Decisions the review added:**
+
+| # | Decision | Recommendation |
+|---|---|---|
+| D1 | X auto-posting bills Shonin's X developer app ($0.015, or $0.20 with a link), and one abuser could get the app suspended | Only Edidiong's workspace on Monday; others get the X intent link (`BETA_RUNS` per workspace comes next) |
+| D2 | The gate | Invite-only from the first deploy: the hostname appears in certificate-transparency logs within minutes. This overrides "open for now" in B4 if you agree |
+| D3 | MCP on Monday | The new thin hosted server (11 tools, none that send or approve), not the filesystem harness server |
+| D4 | Hosting before stage 1 proves value (`harness-plan.md` §12) | Break the rule on purpose, then invite only after one full day on staging with 5 or more approved actions and one post per channel |
+| D5 | One shared bot, or one bot per founder | Shared for the beta, with the founder-only tap checks; revisit at 20 users |
+| D6 | Third-party leads before a privacy note | Keep them out of hosted workspaces until the privacy note and export/delete ship |
 
 ## 11. Environment
 
