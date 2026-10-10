@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { GtmInput, GtmPlan, HarnessFiles, OutreachReview } from "@repo/gtm-harness";
-import { createAction } from "./actions";
+import { ActionError, createAction } from "./actions";
 import { encrypt, randomId, sha256 } from "./crypto";
 import { isSlackWebhook, postToSlack } from "./connectors/slack";
 import { authorizeUrl, exchangeCode, pkcePair, whoAmI } from "./connectors/x";
@@ -26,7 +26,7 @@ export async function createWorkspace(
   input: GtmInput,
   generated: { plan: GtmPlan; generatedBy: string; files: HarnessFiles; reviews: readonly (OutreachReview | null)[] },
 ): Promise<{ workspace: Workspace; actions: Action[] }> {
-  if (user.workspaceIds.length >= 3) throw new Error("The beta allows three workspaces per person.");
+  if (user.workspaceIds.length >= 3) throw new ActionError("The beta allows three workspaces per person.", 409);
   const workspace: Workspace = {
     id: randomId("ws"),
     ownerId: user.id,
@@ -70,8 +70,10 @@ export async function redeemTelegramCode(ctx: Ctx, code: string): Promise<Worksp
 // ── Slack ───────────────────────────────────────────────────────────────────────────────────
 
 export async function connectSlack(ctx: Ctx, ws: Workspace, webhook: string, label: string): Promise<Workspace> {
-  if (!isSlackWebhook(webhook)) throw new Error("Paste the incoming webhook URL Slack gave you (https://hooks.slack.com/services/…).");
-  await postToSlack(webhook, `Shonin GTM is connected. Approved updates for ${ws.name} will post here.`, ctx.fetch);
+  if (!isSlackWebhook(webhook)) throw new ActionError("Paste the incoming webhook URL Slack gave you (https://hooks.slack.com/services/…).");
+  await postToSlack(webhook, `Shonin GTM is connected. Approved updates for ${ws.name} will post here.`, ctx.fetch).catch((e: Error) => {
+    throw new ActionError(`Slack didn't take the test message: ${e.message}`, 502);
+  });
   const next: Workspace = { ...ws, slack: { webhook: encrypt(ctx.cfg.encryptionKey, webhook.trim()), label: label.trim().slice(0, 60) || "Slack" } };
   await saveWorkspace(ctx, next);
   await logEvent(ctx, ws.id, { actor: "founder", what: `Connected Slack (${next.slack!.label})` });
@@ -114,7 +116,7 @@ export async function workspaceForAgentToken(ctx: Ctx, token: string | undefined
 // ── X: OAuth 2.0 with PKCE ───────────────────────────────────────────────────────────────────
 
 const xApp = (ctx: Ctx) => {
-  if (!ctx.cfg.x) throw new Error("X isn't configured on this deployment (X_CLIENT_ID).");
+  if (!ctx.cfg.x) throw new ActionError("X isn't configured on this deployment (X_CLIENT_ID).", 503);
   return { clientId: ctx.cfg.x.clientId, ...(ctx.cfg.x.clientSecret ? { clientSecret: ctx.cfg.x.clientSecret } : {}), redirectUri: `${ctx.cfg.siteUrl}/api/beta/x/callback`, ...(ctx.fetch ? { fetch: ctx.fetch } : {}) };
 };
 
@@ -132,9 +134,9 @@ export async function finishXConnect(ctx: Ctx, state: string, code: string, user
   const key = keys.xOauth(state);
   const entry = await getJson<{ workspaceId: string; ownerId: string; verifier: string }>(ctx.store, key);
   await ctx.store.del(key);
-  if (!entry || entry.ownerId !== userId) throw new Error("That X connection expired or belongs to another account. Start again from the Desk.");
+  if (!entry || entry.ownerId !== userId) throw new ActionError("That X connection expired or belongs to another account. Start again from the Desk.", 403);
   const ws = await getWorkspace(ctx, entry.workspaceId);
-  if (!ws) throw new Error("The workspace is gone.");
+  if (!ws) throw new ActionError("The workspace is gone.", 404);
   const now = (ctx.now?.() ?? new Date()).getTime();
   const tokens = await exchangeCode(xApp(ctx), code, entry.verifier, now);
   const username = await whoAmI(tokens.access, ctx.fetch);

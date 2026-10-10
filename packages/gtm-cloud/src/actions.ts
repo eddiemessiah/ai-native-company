@@ -39,6 +39,8 @@ export function findingsFor(files: Readonly<Record<string, string>>, a: Pick<Act
   let findings = checkDraft(asDraft(a), draftContext(files));
   // The outreach rules (word limit, no links in a first message) are for messages to people, not the founder's own posts.
   if (RUNS_ON_APPROVAL.has(a.channel)) findings = findings.filter((f) => !f.rule.startsWith("rules/outreach.md"));
+  // The harness speaks in workspace-file terms; on the Desk, say it plainly.
+  findings = findings.map((f) => (f.fix.includes("**To:**") ? { ...f, problem: "no recipient", fix: "Add who it's for, or the link opens without one." } : f));
   const max = MAX_LENGTH[a.channel];
   if (max && [...a.text].length > max) {
     findings.push({ level: "error", path: `actions/${a.id}`, rule: `${CHANNEL_LABELS[a.channel]}: at most ${max} characters`, problem: `${[...a.text].length} characters`, fix: `Cut it to ${max} characters or fewer.` });
@@ -339,8 +341,11 @@ export function linkFor(action: Action, runs = true) {
 export async function markSent(ctx: Ctx, ws: Workspace, id: string, by: string): Promise<Action> {
   const action = await load(ctx, ws, id);
   if (action.status === "done") return action;
-  if (action.status !== "approved" || RUNS_ON_APPROVAL.has(action.channel) || !approvalCovers(ctx, action)) throw new ActionError("Only an approved message to a person can be marked sent.");
-  const receipt: ReceiptRecord = { kind: "receipt", actionId: id, workspaceId: ws.id, hash: action.hash, channel: action.channel, result: "marked_sent", ...(linkFor(action) ? { ref: linkFor(action)!.url.slice(0, 60) } : {}), at: nowIso(ctx) };
+  // With the kill switch on, the founder posts their own channels by link too, so those can be marked sent.
+  const byLink = !RUNS_ON_APPROVAL.has(action.channel) || !ctx.cfg.runs;
+  if (action.status !== "approved" || !byLink || !approvalCovers(ctx, action)) throw new ActionError("Only an approved action you send yourself can be marked sent.");
+  const link = linkFor(action, ctx.cfg.runs);
+  const receipt: ReceiptRecord = { kind: "receipt", actionId: id, workspaceId: ws.id, hash: action.hash, channel: action.channel, result: "marked_sent", ...(link ? { ref: link.url.slice(0, 60) } : {}), at: nowIso(ctx) };
   const done: Action = { ...action, status: "done", receipt: sign(ctx.cfg.signingKey, receipt), updatedAt: receipt.at };
   await saveAction(ctx, done);
   await logEvent(ctx, ws.id, { actor: "founder", what: `Sent ${CHANNEL_LABELS[action.channel]} (${by})`, actionId: id });

@@ -163,5 +163,5 @@ export function storeCredentials(env: Env): { url?: string; token?: string } {
   return { ...(url ? { url } : {}), ...(token ? { token } : {}) };
 }
 
-/** One memory store per server process, so local dev keeps state between requests. */
-const memory = new MemoryStore();
+/** One memory store per server process, so local dev keeps state between requests. Next bundles pages and routes separately, so it lives on globalThis. */
+const memory: MemoryStore = ((globalThis as { __gtmCloudMemory?: MemoryStore }).__gtmCloudMemory ??= new MemoryStore());
