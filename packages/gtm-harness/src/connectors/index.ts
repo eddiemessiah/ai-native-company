@@ -1,9 +1,20 @@
 import { describeRoute, routeModel } from "../models";
 import type { ToolStatus } from "../tools";
+import { graphFromEnv } from "./graph";
 import { telegramFromEnv } from "./telegram";
 
 export { pollDecisions, sendReviewCard, telegramFromEnv, type TelegramConfig, type TelegramDecision } from "./telegram";
 export { postForReview } from "./slack";
+export {
+  evidenceMarkdown,
+  graphFromEnv,
+  listResources,
+  readOnlySqlProblem,
+  runEvidence,
+  type Evidence,
+  type EvidenceQuery,
+  type GraphConfig,
+} from "./graph";
 export type { ToolStatus } from "../tools";
 
 type Env = Record<string, string | undefined>;
@@ -26,6 +37,14 @@ export function toolStatus(env: Env = process.env): ToolStatus[] {
     env.GTM_SLACK_WEBHOOK_URL
       ? { name: "Slack review copies", connected: true, does: "Posts a copy of each draft for the team to read" }
       : { name: "Slack review copies", connected: false, does: "Show drafts to your team in Slack", needs: "GTM_SLACK_WEBHOOK_URL (an incoming webhook)" },
+    graphFromEnv(env)
+      ? { name: "Company graph", connected: true, does: "Numbers drafts may quote, counted by SQL over your own data in Helix Foundry; only the totals reach the workspace" }
+      : {
+          name: "Company graph",
+          connected: false,
+          does: "Ground claims in your own data (Postgres, Stripe, files) through a Helix Foundry workspace on your machine",
+          needs: "FOUNDRY_URL, FOUNDRY_WORKSPACE_ID and a read-only FOUNDRY_TOKEN",
+        },
     { name: "One-tap send links", connected: true, does: "WhatsApp click-to-chat, email, X posts and Telegram share links, filled in for the founder to send" },
     { name: "Gmail drafts", connected: false, does: "Approved emails land in Gmail as drafts", needs: "Planned: Google OAuth (gmail.compose)" },
     { name: "Google Sheets pipeline", connected: false, does: "pipeline.csv kept in a sheet the harness creates", needs: "Planned: Google OAuth (drive.file, which reaches only that sheet)" },

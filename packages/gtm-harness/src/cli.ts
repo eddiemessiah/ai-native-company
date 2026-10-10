@@ -4,10 +4,24 @@ import { dirname, join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
+import { z } from "zod";
 import { brainFromEnv, providersFromEnv } from "@repo/brain/env";
 import { checkDraft, checkWorkspace, draftContext, formatFindings, type DraftContext, type Finding } from "./check";
 import { unfilledSlots } from "./claims";
-import { pollDecisions, postForReview, sendReviewCard, telegramFromEnv, toolStatus, type TelegramConfig } from "./connectors";
+import {
+  evidenceMarkdown,
+  graphFromEnv,
+  pollDecisions,
+  postForReview,
+  runEvidence,
+  sendReviewCard,
+  telegramFromEnv,
+  toolStatus,
+  type Evidence,
+  type EvidenceQuery,
+  type GraphConfig,
+  type TelegramConfig,
+} from "./connectors";
 import { evalModel, evalTable } from "./evals";
 import { buildHarness, CLAUDE_SKILLS_DIR, SKILLS_DIR } from "./harness";
 import { gtmInputSchema, type GtmInput } from "./input";
@@ -58,6 +72,9 @@ Usage: pnpm gtm <command> [options]   (add --env <file> to load keys, e.g. --env
   sent <dir> <draft>           Record that you sent an approved draft (at your terminal)
   approve <dir> --campaign <name>
                                Approve a campaign's direction, deliverables and budget (at your terminal)
+  ground <dir> --queries <file>
+                               Run evidence queries (JSON: [{claim, inputs, sql}]) in your Helix Foundry
+                               workspace; one number each goes to brain/products/evidence.md, never rows
   sync <dir>                   Copy the skills in .agents/skills/ to .claude/skills/ for Claude Code
   mcp <dir>                    Serve the workspace as MCP tools (stdio) for any agent; no tool sends or approves
   eval --input <file> --models a,b [--runs N] [--out <dir>]
@@ -575,6 +592,41 @@ async function filesUnder(root: string, rel = ""): Promise<string[]> {
   return out.sort();
 }
 
+const evidenceQueriesSchema = z
+  .array(z.object({ claim: z.string().min(3).max(200), inputs: z.array(z.string().min(1)).min(1).max(20), sql: z.string().min(1).max(8000) }))
+  .min(1)
+  .max(50);
+
+/**
+ * Grounds the workspace in the founder's own data: each query runs in their Helix Foundry
+ * workspace, and its one value is written to brain/products/evidence.md with its SQL. A query
+ * that fails or returns more than one value is reported and left out; the file keeps what ran.
+ */
+export async function ground(dir: string, queries: unknown, opts: { env?: Env; graph?: GraphConfig; now?: Date } = {}): Promise<string[]> {
+  if (!(await exists(join(dir, "AGENTS.md")))) throw new Error(`${dir} isn't a workspace (no AGENTS.md)`);
+  const graph = opts.graph ?? graphFromEnv(opts.env ?? process.env);
+  if (!graph) throw new Error("No company graph: set FOUNDRY_URL, FOUNDRY_WORKSPACE_ID and a read-only FOUNDRY_TOKEN");
+  const parsed: EvidenceQuery[] = evidenceQueriesSchema.parse(queries);
+  const evidence: Evidence[] = [];
+  const lines: string[] = [];
+  for (const query of parsed) {
+    try {
+      const e = await runEvidence(graph, query, opts.now);
+      evidence.push(e);
+      lines.push(`ok      ${e.claim}: ${e.value}`);
+    } catch (error) {
+      lines.push(`skipped ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  if (evidence.length) {
+    await writeFiles(dir, { "brain/products/evidence.md": evidenceMarkdown(evidence, graph) });
+    lines.push(`Wrote ${evidence.length} of ${parsed.length} to brain/products/evidence.md. Drafts may now quote these numbers.`);
+  } else {
+    lines.push("Nothing written: no query returned a single number.");
+  }
+  return lines;
+}
+
 /**
  * Claude Code reads skills only from .claude/skills/, every other agent from .agents/skills/.
  * This copies the second over the first. A skill only Claude Code has is reported, never deleted.
@@ -653,7 +705,7 @@ function flag(args: string[], name: string): string | undefined {
 }
 
 /** The commands that act on a workspace leave a line in its trace: the command and its flags, nothing personal. */
-const TRACED = new Set(["status", "check", "due", "review", "wait", "links", "sent", "approve", "sync"]);
+const TRACED = new Set(["status", "check", "due", "review", "wait", "links", "sent", "approve", "sync", "ground"]);
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
   const code = await run(argv);
@@ -730,6 +782,12 @@ async function run(argv: string[]): Promise<number> {
         const campaign = flag(argv, "campaign");
         if (!target || !campaign) throw new Error("Usage: pnpm gtm approve <dir> --campaign <name>");
         console.log(await approveCampaign(target, campaign));
+        return 0;
+      }
+      case "ground": {
+        const queriesPath = flag(argv, "queries");
+        if (!target || !queriesPath) throw new Error("Usage: pnpm gtm ground <dir> --queries <file.json>");
+        console.log((await ground(target, JSON.parse(await readFile(at(queriesPath), "utf8")))).join("\n"));
         return 0;
       }
       case "sync":

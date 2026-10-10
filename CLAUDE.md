@@ -54,6 +54,7 @@ pnpm gtm doctor                   # GTM Harness: which model, reviewer and conne
 pnpm gtm new gtm-workspaces/<name> --input <answers.json>   # a workspace for any agent; see packages/gtm-harness
 pnpm gtm check gtm-workspaces/<name>                        # the workspace's rules as code; every finding has a fix
 pnpm --silent gtm mcp gtm-workspaces/<name>                 # the workspace as MCP tools; no tool sends or approves
+pnpm gtm ground gtm-workspaces/<name> --queries <file>     # numbers from the company graph (Helix Foundry), totals only
 pnpm video doctor                 # Video Desk: checks ffmpeg, the transcriber, the brain keys and the font
 pnpm video short                  # Explainer shorts: topic + sources → a sourced 30–60 s vertical video
 ```

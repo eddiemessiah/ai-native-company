@@ -6,6 +6,7 @@
 - **Launch:** the public launch goes out with the domain at the end of October (`shonin-gtm-plan.md` §3).
 - **Sources:** `research/gtm-harnesses.md`, `research/harness-engineering.md`, `research/agent-tool-gateways.md` and our own runs. A number marked "target" is a goal, not a result.
 - **Selling per call:** the Monid-style GTM API is in `gtm-api.md`, with decisions 10–18.
+- **The whole product:** `gtm-harness-master-plan.md` (10 Oct) maps every GTM feature into one harness, adds the company graph, Agent HQ, Publish, and the enterprise and government editions.
 
 ## 1. The decision
 
