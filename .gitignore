@@ -16,3 +16,5 @@ next-env.d.ts
 __pycache__/
 # Video Desk jobs hold client footage, transcripts and renders
 video-jobs/
+# GTM workspaces hold leads (names, handles, numbers) and approvals: never commit them
+gtm-workspaces/

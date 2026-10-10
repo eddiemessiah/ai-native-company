@@ -20,6 +20,8 @@ Everything that runs Shonin besides code. Agents read these before doing client 
 | [`gtm/outbound.md`](gtm/outbound.md) | Ten outreach scripts and a proposal template |
 | [`gtm/content-engine.md`](gtm/content-engine.md) | Formats, the draft → gate → publish pipeline, weekly calendar, voice rules |
 | [`gtm/study-group-global.md`](gtm/study-group-global.md) | AI Study Group v2: pods, cohorts, chapters, pricing, the global rollout |
+| [`gtm/harness-plan.md`](gtm/harness-plan.md) | GTM Harness v2: any model, connectors, the headless-browser stance, competitors, the hosted runtime on Vercel, pricing, the four stages to launch, and the decisions for Edidiong |
+| [`gtm/gtm-api.md`](gtm/gtm-api.md) | Selling go-to-market per call, the Monid way: plans, reviews, scores and approvals with signed receipts; rails, discovery, packaging, decisions 10–18 |
 | [`gtm/gtm-harness-launch.md`](gtm/gtm-harness-launch.md) | GTM Harness launch (Tue 29 Sep) and the Celo Devs Office Hours demo (Thu 1 Oct) |
 | [`../content/threads/`](../content/threads) | Seven ready-to-post X threads |
 
@@ -47,4 +49,4 @@ Every correction a person makes to delivered work goes into [`ops/rulebook-log.m
 
 ## Research behind all of it
 
-[`../research/`](../research) holds the sourced notes: Jev (TypeSafe System One), the company-brain teardown, Greg Isenberg's AI-native services, AI roll-ups, first customers for the agent products, African AI and the Accra summit, x402 on Celo, and funding.
+[`../research/`](../research) holds the sourced notes: Jev (TypeSafe System One), the company-brain teardown, Greg Isenberg's AI-native services, AI roll-ups, first customers for the agent products, African AI and the Accra summit, x402 on Celo, funding, GTM harnesses (competitors, connectors and platform rules, any-model design), harness engineering, and agent-tool gateways (Monid, approval as a service).

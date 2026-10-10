@@ -1,0 +1,11 @@
+{
+  "product": "Shonin",
+  "pitch": "Shonin Check, Gate and Receipt let an AI agent check a payment or an action before it makes it, for $0.01 a call over x402, with no account.",
+  "url": "",
+  "audience": "Developers building AI agents that pay for APIs or act for their users",
+  "stage": "live",
+  "goal": "10 developers wire Shonin Check into their agent",
+  "channels": ["x", "telegram", "communities", "email"],
+  "regions": "Worldwide",
+  "onchain": false
+}

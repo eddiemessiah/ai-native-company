@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // GTM Harness. Copyright (c) 2026 Edidiong Umana; licence text in packages/gtm-harness/LICENSE.
 
-import { buildHarness, generatePlan, gtmInputSchema, reviewOutreach, templatePlan, type GeneratedPlan } from "@repo/gtm-harness";
+import { buildHarness, generatePlan, gtmInputSchema, reviewOutreach, routeModel, templatePlan, type GeneratedPlan } from "@repo/gtm-harness";
 import { NextResponse } from "next/server";
 import { getPublicBrain } from "@/lib/brain";
 import { notify } from "@/lib/notify";
@@ -36,10 +36,12 @@ export async function POST(req: Request) {
 
   let generated: GeneratedPlan;
   let note: string | undefined;
-  if (process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN) {
+  // Any model: Claude by default, or GTM_MODEL=provider/model through AI Gateway or OpenRouter.
+  const route = routeModel(process.env);
+  if (route) {
     try {
       const effort = process.env.GTM_EFFORT === "medium" || process.env.GTM_EFFORT === "high" ? process.env.GTM_EFFORT : "low";
-      generated = await generatePlan(input, { effort, signal: AbortSignal.timeout(90_000) });
+      generated = await generatePlan(input, { route, effort, signal: AbortSignal.timeout(90_000) });
     } catch (error) {
       console.error("[gtm] plan failed, using templates:", error instanceof Error ? error.message : error);
       generated = templatePlan(input);
