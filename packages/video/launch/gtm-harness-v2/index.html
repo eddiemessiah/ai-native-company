@@ -243,9 +243,9 @@
       <div class="phone" id="phone7">
         <div class="notch"></div>
         <div class="app tg">
-          <div class="apphead"><div class="avatar">承</div><div><b>Shonin GTM</b><small>bot · your approvals</small></div></div>
+          <div class="apphead"><div class="avatar">承</div><div><b id="bot7">Shonin GTM</b><small>bot · your approvals</small></div></div>
           <div class="msgs">
-            <div class="card" id="pre7"><div class="meta">SHONIN GTM · TODAY</div>4 drafts checked. 1 ready for you; 3 held back with their fixes.</div>
+            <div class="card" id="pre7"><div class="meta" id="botmeta7">SHONIN GTM · TODAY</div>4 drafts checked. 1 ready for you; 3 held back with their fixes.</div>
             <div class="card" id="card7">
               <div class="stamp" id="stamp7">承</div>
               <div class="meta">DRAFT 01 · WHATSAPP · TO ADA O.</div>
@@ -321,7 +321,7 @@ const params = new URLSearchParams(location.search);
 if (params.get("cta")) document.getElementById("cta11").textContent = params.get("cta");
 // ?plain=1: the unbranded cut, for builder communities where only free tools are shared (no Shonin mark).
 const PLAIN = params.has("plain");
-if (PLAIN) { document.getElementById("presents3").textContent = "Free and open source"; document.getElementById("sign11").textContent = "AGENTS DO THE WORK · A PERSON SEALS WHAT MATTERS"; }
+if (PLAIN) { document.getElementById("presents3").textContent = "Free and open source"; document.getElementById("sign11").textContent = "AGENTS DO THE WORK · A PERSON SEALS WHAT MATTERS"; document.getElementById("bot7").textContent = "GTM Harness"; document.getElementById("botmeta7").textContent = "GTM HARNESS · TODAY"; }
 
 const DURATION = 60;
 const SCENES = { s1: [0, 4.6], s2: [4.6, 8.6], s3: [8.6, 13.6], s4: [13.6, 20.2], s5: [20.2, 27.4], s6: [27.4, 34], s7: [34, 41.4], s8: [41.4, 46.6], s9: [46.6, 51], s10: [51, 54.8], s11: [54.8, 60] };
